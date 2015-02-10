@@ -50,7 +50,7 @@ impl FromStr for Atom {
     }
 }
 
-fn tokenize<'a>(s: &'a str) -> Vec<String> {
+fn tokenize(s: &str) -> Vec<String> {
     s.replace("("," ( ")
         .replace(")", " ) ")
         .replace("\n", " ")
