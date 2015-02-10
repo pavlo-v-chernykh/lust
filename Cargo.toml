@@ -1,0 +1,5 @@
+[package]
+
+name = "lust"
+version = "0.0.1"
+authors = ["Pavel Chernykh <pavel.v.chernykh@gmail.com>"]
