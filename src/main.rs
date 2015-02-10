@@ -50,13 +50,22 @@ impl FromStr for Atom {
     }
 }
 
+fn tokenize<'a>(s: &'a str) -> Vec<String> {
+    s.replace("("," ( ")
+        .replace(")", " ) ")
+        .replace("\n", " ")
+        .split(' ')
+        .filter_map(|s| { if s.is_empty() { None } else { Some(s.to_string()) }})
+        .collect()
+}
+
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
 }
 
 #[cfg(test)]
 mod test {
-    use super::Atom;
+    use super::{Atom, tokenize};
 
     #[test]
     fn parse_integer() {
@@ -71,5 +80,23 @@ mod test {
     #[test]
     fn parse_symbol() {
         assert_eq!(Atom::Symbol("name".to_string()), "name".parse::<Atom>().ok().unwrap())
+    }
+
+    #[test]
+    fn tokenize_dense_expression() {
+        let expected_result = vec!("(", "def", "a", "1", ")")
+                                .iter()
+                                .map(|s| { s.to_string() })
+                                .collect();
+        assert_eq!(expected_result, tokenize("(def a 1)"))
+    }
+
+    #[test]
+    fn tokenize_sparse_expression() {
+        let expected_result = vec!("(", "def", "a", "1", ")")
+                                .iter()
+                                .map(|s| { s.to_string() })
+                                .collect();
+        assert_eq!(expected_result, tokenize(" ( \n def a\n1)   \n"))
     }
 }
