@@ -84,7 +84,7 @@ mod test {
 
     #[test]
     fn tokenize_dense_expression() {
-        let expected_result = vec!("(", "def", "a", "1", ")")
+        let expected_result = ["(", "def", "a", "1", ")"]
                                 .iter()
                                 .map(|s| { s.to_string() })
                                 .collect();
@@ -93,7 +93,7 @@ mod test {
 
     #[test]
     fn tokenize_sparse_expression() {
-        let expected_result = vec!("(", "def", "a", "1", ")")
+        let expected_result = ["(", "def", "a", "1", ")"]
                                 .iter()
                                 .map(|s| { s.to_string() })
                                 .collect();
