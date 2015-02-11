@@ -63,26 +63,28 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{Atom, ParseAtomError, tokenize};
+    use super::Atom::{self, Number, Symbol};
+    use super::ParseAtomError::IncorrectSymbolName;
+    use super::tokenize;
 
     #[test]
     fn test_parse_integer() {
-        assert_eq!(Atom::Number(64f64), "64".parse::<Atom>().ok().unwrap())
+        assert_eq!(Number(64f64), "64".parse::<Atom>().ok().unwrap())
     }
 
     #[test]
     fn test_parse_float() {
-        assert_eq!(Atom::Number(64.5), "64.5".parse::<Atom>().ok().unwrap())
+        assert_eq!(Number(64.5), "64.5".parse::<Atom>().ok().unwrap())
     }
 
     #[test]
     fn test_parse_symbol() {
-        assert_eq!(Atom::Symbol("name".to_string()), "name".parse::<Atom>().ok().unwrap())
+        assert_eq!(Symbol("name".to_string()), "name".parse::<Atom>().ok().unwrap())
     }
 
     #[test]
     fn test_parse_incorrect_symbol_starting_with_digit() {
-        assert_eq!(ParseAtomError::IncorrectSymbolName, "6name".parse::<Atom>().err().unwrap())
+        assert_eq!(IncorrectSymbolName, "6name".parse::<Atom>().err().unwrap())
     }
 
     #[test]
