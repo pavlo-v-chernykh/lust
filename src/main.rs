@@ -62,31 +62,31 @@ fn main() {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::{Atom, ParseAtomError, tokenize};
 
     #[test]
-    fn parse_integer() {
+    fn test_parse_integer() {
         assert_eq!(Atom::Number(64f64), "64".parse::<Atom>().ok().unwrap())
     }
 
     #[test]
-    fn parse_float() {
+    fn test_parse_float() {
         assert_eq!(Atom::Number(64.5), "64.5".parse::<Atom>().ok().unwrap())
     }
 
     #[test]
-    fn parse_symbol() {
+    fn test_parse_symbol() {
         assert_eq!(Atom::Symbol("name".to_string()), "name".parse::<Atom>().ok().unwrap())
     }
 
     #[test]
-    fn parse_incorrect_symbol_starting_with_digit() {
+    fn test_parse_incorrect_symbol_starting_with_digit() {
         assert_eq!(ParseAtomError::IncorrectSymbolName, "6name".parse::<Atom>().err().unwrap())
     }
 
     #[test]
-    fn tokenize_dense_expression() {
+    fn test_tokenize_dense_expression() {
         let expected_result = ["(", "def", "a", "1", ")"]
                                 .iter()
                                 .map(|s| { s.to_string() })
@@ -95,7 +95,7 @@ mod test {
     }
 
     #[test]
-    fn tokenize_sparse_expression() {
+    fn test_tokenize_sparse_expression() {
         let expected_result = ["(", "def", "a", "1", ")"]
                                 .iter()
                                 .map(|s| { s.to_string() })
