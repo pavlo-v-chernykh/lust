@@ -7,6 +7,7 @@ enum Atom {
     Symbol(String)
 }
 
+#[derive(Debug, PartialEq)]
 enum ParseAtomError {
     IncorrectSymbolName
 }
@@ -62,7 +63,7 @@ fn main() {
 
 #[cfg(test)]
 mod test {
-    use super::{Atom, tokenize};
+    use super::{Atom, ParseAtomError, tokenize};
 
     #[test]
     fn parse_integer() {
@@ -77,6 +78,11 @@ mod test {
     #[test]
     fn parse_symbol() {
         assert_eq!(Atom::Symbol("name".to_string()), "name".parse::<Atom>().ok().unwrap())
+    }
+
+    #[test]
+    fn parse_incorrect_symbol_starting_with_digit() {
+        assert_eq!(ParseAtomError::IncorrectSymbolName, "6name".parse::<Atom>().err().unwrap())
     }
 
     #[test]
