@@ -51,7 +51,8 @@ fn tokenize(s: &str) -> Vec<String> {
         .replace(")", " ) ")
         .replace("\n", " ")
         .split(' ')
-        .filter_map(|s| { if s.is_empty() { None } else { Some(s.to_string()) }})
+        .filter(|s| { !s.is_empty() })
+        .map(|s| { s.to_string() })
         .collect()
 }
 
