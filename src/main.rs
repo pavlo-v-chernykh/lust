@@ -34,14 +34,10 @@ impl FromStr for Atom {
             },
             Err(..) => {
                 match s.chars().next() {
-                    Some(c) => {
-                        if c.is_numeric() {
-                            Err(ParseAtomError::IncorrectSymbolName)
-                        } else {
-                            Ok(Atom::Symbol(s.to_string()))
-                        }
+                    Some(c) if !c.is_numeric() => {
+                        Ok(Atom::Symbol(s.to_string()))
                     },
-                    None => {
+                    _ => {
                         Err(ParseAtomError::IncorrectSymbolName)
                     }
                 }
