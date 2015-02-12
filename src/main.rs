@@ -1,12 +1,14 @@
 use std::str::FromStr;
+use std::collections::HashMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Atom {
     Number(f64),
-    Symbol(String)
+    Symbol(String),
+    Nil
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Sexp {
     Atom(Atom),
     List(Vec<Sexp>)
@@ -127,16 +129,41 @@ fn read(tokens: Vec<String>) -> Result<Vec<Sexp>, ReadError> {
     }
 }
 
+#[derive(Debug, PartialEq)]
+enum EvalError{
+    EvalError
+}
+
+fn eval(s: Sexp, e: &HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
+    match s {
+        Sexp::Atom(Atom::Number(_)) => {
+            Ok(s)
+        },
+        Sexp::Atom(Atom::Symbol(ref name)) => {
+            if let Some(s) = e.get(name) {
+                Ok(s.clone())
+            } else {
+                Err(EvalError::EvalError)
+            }
+        }
+        _ => {
+            Err(EvalError::EvalError)
+        }
+    }
+}
+
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Atom::{self, Number, Symbol};
+    use std::collections::HashMap;
+    use super::Atom::{self, Number, Symbol, Nil};
     use super::Sexp;
     use super::ParseAtomError::IncorrectSymbolName;
-    use super::{tokenize, read};
+    use super::EvalError::EvalError;
+    use super::{tokenize, read, eval};
 
     #[test]
     fn test_parse_integer() {
@@ -202,5 +229,40 @@ mod tests {
                                                     Sexp::Atom(Symbol("a".to_string())),
                                                     Sexp::Atom(Symbol("b".to_string()))])];
         assert_eq!(expected_result, read(tokenize("(def a 1)(def b 2)(+ a b)")).ok().unwrap())
+    }
+
+    #[test]
+    fn test_eval_atom_number() {
+        let number = 10f64;
+        let expected_result = Sexp::Atom(Number(number));
+        let actual_result = eval(Sexp::Atom(Number(number)), &HashMap::new());
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_atom_symbol_to_number() {
+        let num = 10f64;
+        let mut env = HashMap::new();
+        env.insert("a".to_string(), Sexp::Atom(Number(num)));
+        let expected_result = Sexp::Atom(Number(num));
+        let actual_result = eval(Sexp::Atom(Symbol("a".to_string())), &env);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_atom_symbol_to_nil() {
+        let mut env = HashMap::new();
+        env.insert("a".to_string(), Sexp::Atom(Nil));
+        let expected_result = Sexp::Atom(Nil);
+        let actual_result = eval(Sexp::Atom(Symbol("a".to_string())), &env);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_atom_symbol_to_non_value() {
+        let env = HashMap::new();
+        let expected_result = EvalError;
+        let actual_result = eval(Sexp::Atom(Symbol("a".to_string())), &env);
+        assert_eq!(expected_result, actual_result.err().unwrap());
     }
 }
