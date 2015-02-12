@@ -1,4 +1,3 @@
-use std::fmt;
 use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
@@ -16,19 +15,6 @@ enum Sexp {
 #[derive(Debug, PartialEq)]
 enum ParseAtomError {
     IncorrectSymbolName
-}
-
-impl fmt::Display for Atom {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Atom::Number(n) => {
-                write!(f, "{}", n)
-            },
-            Atom::Symbol(ref name) => {
-                write!(f, "'{}", name)
-            }
-        }
-    }
 }
 
 impl FromStr for Atom {
