@@ -25,7 +25,7 @@ impl FromStr for Atom {
             Ok(f) => {
                 Ok(Atom::Number(f))
             },
-            Err(..) => {
+            _ => {
                 match s.chars().next() {
                     Some(c) if !c.is_numeric() => {
                         Ok(Atom::Symbol(s.to_string()))
