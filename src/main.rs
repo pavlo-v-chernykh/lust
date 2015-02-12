@@ -74,9 +74,6 @@ fn read(tokens: Vec<String>) -> Result<Vec<Sexp>, ReadError> {
                         state = ReadState::OpenList;
                         result.push(Sexp::List(vec![]));
                     },
-                    None => {
-                        state = ReadState::EndRead;
-                    },
                     _ => {
                         state = ReadState::EndRead;
                     }
