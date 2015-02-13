@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use common::Sexp::{self, Atom};
 use common::Atom::{Number, Symbol, Nil};
+use common::Sexp::{self, Atom, List};
 
 #[derive(Debug, PartialEq)]
 enum EvalError{
@@ -18,6 +18,9 @@ fn eval(s: Sexp, e: &HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
             } else {
                 Err(EvalError::EvalError)
             }
+        },
+        List(ref l) if l.is_empty() => {
+            Ok(Atom(Nil))
         }
         _ => {
             Err(EvalError::EvalError)
@@ -29,12 +32,12 @@ fn eval(s: Sexp, e: &HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
 mod tests {
     use std::collections::HashMap;
     use common::Atom::{Number, Symbol, Nil};
-    use common::Sexp::Atom;
+    use common::Sexp::{Atom, List};
     use super::EvalError::EvalError;
     use super::eval;
 
     #[test]
-    fn test_eval_atom_number() {
+    fn test_eval_atom_number_to_itself() {
         let number = 10f64;
         let expected_result = Atom(Number(number));
         let actual_result = eval(Atom(Number(number)), &HashMap::new());
@@ -73,6 +76,14 @@ mod tests {
         let env = HashMap::new();
         let expected_result = Atom(Nil);
         let actual_result = eval(Atom(Nil), &env);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_empty_list_to_nil() {
+        let env = HashMap::new();
+        let expected_result = Atom(Nil);
+        let actual_result = eval(List(vec![]), &env);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 }
