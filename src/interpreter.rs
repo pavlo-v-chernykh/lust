@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use common::Atom::{Number, Symbol};
 use common::Sexp::{self, Atom};
+use common::Atom::{Number, Symbol, Nil};
 
 #[derive(Debug, PartialEq)]
 enum EvalError{
@@ -9,7 +9,7 @@ enum EvalError{
 
 fn eval(s: Sexp, e: &HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
     match s {
-        Atom(Number(_)) => {
+        Atom(Number(_)) | Atom(Nil) => {
             Ok(s)
         },
         Atom(Symbol(ref name)) => {
@@ -66,5 +66,13 @@ mod tests {
         let expected_result = EvalError;
         let actual_result = eval(Atom(Symbol("a".to_string())), &env);
         assert_eq!(expected_result, actual_result.err().unwrap());
+    }
+
+    #[test]
+    fn test_eval_atom_nil_to_itself() {
+        let env = HashMap::new();
+        let expected_result = Atom(Nil);
+        let actual_result = eval(Atom(Nil), &env);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 }
