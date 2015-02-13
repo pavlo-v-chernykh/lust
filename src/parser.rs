@@ -13,7 +13,7 @@ enum ParserState {
 enum ParserError {
 }
 
-fn parse(tokens: Vec<String>) -> Result<Vec<Sexp>, ParserError> {
+fn parse(tokens: &Vec<String>) -> Result<Vec<Sexp>, ParserError> {
     let mut state = ParserState::StartRead;
     let mut iter = tokens.iter();
     let mut result = vec![];
@@ -87,8 +87,7 @@ mod tests {
 
     #[test]
     fn test_parse_empty() {
-        let expected_result = vec![];
-        assert_eq!(expected_result, parse(vec![]).ok().unwrap())
+        assert_eq!(vec![], parse(&vec![]).ok().unwrap())
     }
 
     #[test]
@@ -100,7 +99,7 @@ mod tests {
                                 .iter()
                                 .map(|s| { s.to_string() })
                                 .collect();
-        let actual_result = parse(actual_input).ok().unwrap();
+        let actual_result = parse(&actual_input).ok().unwrap();
         assert_eq!(expected_result, actual_result);
     }
 
@@ -121,7 +120,7 @@ mod tests {
                                 .iter()
                                 .map(|s| { s.to_string() })
                                 .collect();
-        let actual_result = parse(actual_input).ok().unwrap();
+        let actual_result = parse(&actual_input).ok().unwrap();
         assert_eq!(expected_result, actual_result);
     }
 }
