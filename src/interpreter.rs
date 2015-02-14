@@ -7,10 +7,24 @@ enum EvalError{
     EvalError
 }
 
+struct Frame<'a> {
+    sexp: &'a Sexp,
+    parent: Option<Box<Frame<'a>>>,
+    children: Vec<Frame<'a>>
+}
+
 fn eval(s: Sexp, e: &HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
-    match s {
+    let mut root = Frame {
+        sexp: &s,
+        parent: None,
+        children: vec![]
+    };
+
+    let mut cur_frame = root;
+
+    match *cur_frame.sexp {
         Atom(Number(_)) | Atom(Nil) => {
-            Ok(s)
+            Ok(cur_frame.sexp.clone())
         },
         Atom(Symbol(ref name)) => {
             if let Some(s) = e.get(name) {
