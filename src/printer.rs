@@ -19,16 +19,17 @@ impl Display for Atom {
 
 impl Display for Vec<Sexp> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "(");
+        let mut a = "(".to_string();
         let i_last = self.len() - 1;
         for (i, s) in self.iter().enumerate() {
             if i < i_last {
-                write!(f, "{} ", s);
+                a.push_str(&format!("{} ", s))
             } else {
-                write!(f, "{}", s);
+                a.push_str(&format!("{}", s))
             }
         }
-        write!(f, ")")
+        a.push_str(")");
+        write!(f, "{}", a)
     }
 }
 
