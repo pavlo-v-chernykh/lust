@@ -43,31 +43,14 @@ impl FromStr for Atom {
 }
 
 enum Token {
-    ListStart,
-    ListEnd,
-    Boolean(bool),
+    Nil,
     Number(f64),
     String(String),
-    Nil,
     Error(LexerError),
-}
-
-struct Stack {
-    field: Option<usize>
-}
-
-impl Stack {
-    fn new() -> Stack {
-        Stack {
-            field: None
-        }
-    }
 }
 
 enum LexerState {
     Start,
-    ListStart,
-    ListEnd,
     BeforeFinish,
     Finish,
 }
@@ -77,7 +60,6 @@ pub struct Lexer<T> {
     cur_char: Option<char>,
     line: usize,
     col: usize,
-    stack: Stack,
     state: LexerState
 }
 
@@ -109,7 +91,6 @@ impl<T: Iterator<Item=char>> Lexer<T> {
             cur_char: None,
             line: 1,
             col: 0,
-            stack: Stack::new(),
             state: LexerState::Start
         };
         l.bump();
@@ -136,9 +117,6 @@ impl<T: Iterator<Item=char>> Lexer<T> {
             Token::Error(_) => {
                 LexerState::Finish
             },
-            Token::ListStart => {
-                LexerState::ListStart
-            },
             _ => LexerState::BeforeFinish,
         };
         token
@@ -150,22 +128,12 @@ impl<T: Iterator<Item=char>> Lexer<T> {
                 'n' => {
                     self.read_ident("il", Token::Nil)
                 },
-                't' => {
-                    self.read_ident("rue", Token::Boolean(true))
-                },
-                'f' => {
-                    self.read_ident("alse", Token::Boolean(false))
-                },
                 '0' ... '9' | '-' => {
                     self.read_number()
                 },
                 '"' => {
-                    self.read_str().unwrap_or_else(|e| Token::Error(e))
+                    self.read_string()
                 },
-                '(' => {
-                    self.bump();
-                    Token::ListStart
-                }
                 _ => {
                     self.error_token(LexerErrorCode::InvalidSyntax)
                 }
@@ -180,11 +148,7 @@ impl<T: Iterator<Item=char>> Lexer<T> {
             self.bump();
             token
         } else {
-            Token::Error(LexerError::SyntaxError {
-                code: LexerErrorCode::InvalidSyntax,
-                line: self.line,
-                col: self.col,
-            })
+            self.error_token(LexerErrorCode::InvalidSyntax)
         }
     }
 
@@ -192,14 +156,16 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         Token::Number(0.)
     }
 
-    fn read_str(&mut self) -> Result<Token, LexerError> {
         Ok(Token::String("".to_string()))
+    fn read_string(&mut self) -> Token {
     }
 
     fn read_whitespaces(&mut self) {
         while let Some(ch) = self.cur_char {
             if [' ', '\n', '\r', '\t'].contains(&ch) {
                 self.bump()
+            } else {
+                break
             }
         }
     }
@@ -263,7 +229,7 @@ mod tests {
     }
 
     #[test]
-    fn test_tokenize_dense_expression() {
+    fn test_read_dense_expression() {
         let expected_result = ["(", "def", "a", "1", ")"]
                                 .iter()
                                 .map(|s| { s.to_string() })
@@ -272,7 +238,7 @@ mod tests {
     }
 
     #[test]
-    fn test_tokenize_sread_expression() {
+    fn test_read_sparse_expression() {
         let expected_result = ["(", "def", "a", "1", ")"]
                                 .iter()
                                 .map(|s| { s.to_string() })
