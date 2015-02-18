@@ -1,12 +1,14 @@
 use std::str::FromStr;
 use common::Atom;
 
+#[derive(Debug, PartialEq)]
 enum LexerErrorCode {
     InvalidSyntax,
     TrailingCharacters,
     EOFWhileReadingToken,
 }
 
+#[derive(Debug, PartialEq)]
 enum LexerError {
     SyntaxError {
         code: LexerErrorCode,
@@ -42,6 +44,7 @@ impl FromStr for Atom {
     }
 }
 
+#[derive(Debug, PartialEq)]
 enum Token {
     Nil,
     Number(f64),
@@ -153,11 +156,56 @@ impl<T: Iterator<Item=char>> Lexer<T> {
     }
 
     fn read_number(&mut self) -> Token {
-        Token::Number(0.)
+        let mut neg = false;
+
+        if let Some('-') = self.cur_char {
+            self.bump();
+            neg = true;
+        }
+
+        let mut accum = 0_f64;
+
+        while let Some(c) = self.cur_char {
+            match c {
+                '0' ... '9' => {
+                    let c_as_usize = (c as usize) - ('0' as usize);
+                    accum *= 10_f64;
+                    accum += c_as_usize as f64;
+                    self.bump()
+                },
+                _ => {
+                    break
+                }
+            }
+        }
+
+        if neg {
+            accum *= -1_f64;
+        }
+
+        Token::Number(accum)
     }
 
-        Ok(Token::String("".to_string()))
     fn read_string(&mut self) -> Token {
+        let mut res = String::new();
+
+        self.bump();
+
+        while let Some(c) = self.cur_char {
+            match c {
+                '"' => {
+                    break
+                },
+                _ => {
+                    res.push(c);
+                }
+            }
+            self.bump();
+        }
+
+        self.bump();
+
+        Token::String(res)
     }
 
     fn read_whitespaces(&mut self) {
@@ -190,6 +238,8 @@ impl<T: Iterator<Item=char>> Lexer<T> {
     }
 }
 
+
+
 fn tokenize(s: &str) -> Vec<String> {
     s.replace("("," ( ")
         .replace(")", " ) ")
@@ -200,17 +250,27 @@ fn tokenize(s: &str) -> Vec<String> {
         .collect()
 }
 
-
 #[cfg(test)]
 mod tests {
     use common::Atom::{self, Symbol, Number};
-    use super::Lexer;
+    use super::{Lexer, Token};
     use super::ParseAtomError::IncorrectSymbolName;
     use super::tokenize;
 
     #[test]
-    fn test_read_integer() {
-        assert_eq!(Number(64f64), "64".parse::<Atom>().ok().unwrap())
+    fn test_read_integer_as_f64() {
+        let mut lexer = Lexer::new("64".chars());
+        assert_eq!(Some(Token::Number(64_f64)), lexer.next());
+        assert_eq!(None, lexer.next());
+    }
+
+    #[test]
+    fn test_read_string() {
+        let s = "rust is beautiful".to_string();
+        let actual_input = format!(r#""{}""#, s);
+        let mut lexer = Lexer::new(actual_input.chars());
+        assert_eq!(Some(Token::String(s)), lexer.next());
+        assert_eq!(None, lexer.next());
     }
 
     #[test]
