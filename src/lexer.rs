@@ -159,8 +159,8 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         let mut neg = false;
 
         if let Some('-') = self.cur_char {
-            self.bump();
             neg = true;
+            self.bump();
         }
 
         let mut accum = 0_f64;
@@ -256,6 +256,13 @@ mod tests {
     use super::{Lexer, Token};
     use super::ParseAtomError::IncorrectSymbolName;
     use super::tokenize;
+
+    #[test]
+    fn test_read_nil() {
+        let mut lexer = Lexer::new("nil".chars());
+        assert_eq!(Some(Token::Nil), lexer.next());
+        assert_eq!(None, lexer.next());
+    }
 
     #[test]
     fn test_read_integer_as_f64() {
