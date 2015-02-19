@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use common::{Atom, Sexp};
 
 #[derive(Debug, PartialEq)]
@@ -7,6 +8,33 @@ enum ParserState {
     AtomRead(Atom),
     CloseList,
     EndRead,
+}
+
+#[derive(Debug, PartialEq)]
+enum ParseAtomError {
+    IncorrectSymbolName
+}
+
+impl FromStr for Atom {
+    type Err = ParseAtomError;
+
+    fn from_str(s: &str) -> Result<Atom, ParseAtomError> {
+        match s.parse::<f64>() {
+            Ok(f) => {
+                Ok(Atom::Number(f))
+            },
+            _ => {
+                match s.chars().next() {
+                    Some(c) if !c.is_numeric() => {
+                        Ok(Atom::Symbol(s.to_string()))
+                    },
+                    _ => {
+                        Err(ParseAtomError::IncorrectSymbolName)
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
