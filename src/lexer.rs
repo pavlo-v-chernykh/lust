@@ -173,6 +173,24 @@ impl<T: Iterator<Item=char>> Lexer<T> {
                     accum += c_as_usize as f64;
                     self.bump()
                 },
+                '.' => {
+                    self.bump();
+
+                    let mut dec = 1.0;
+                    while let Some(c) = self.cur_char {
+                        match c {
+                            '0' ... '9' => {
+                                let c_as_usize = (c as usize) - ('0' as usize);
+                                dec /= 10.0;
+                                accum += (c_as_usize as f64) * dec;
+                                self.bump();
+                            },
+                            _ => {
+                                break
+                            }
+                        }
+                    }
+                }
                 _ => {
                     break
                 }
@@ -265,9 +283,16 @@ mod tests {
     }
 
     #[test]
-    fn test_read_integer_as_f64() {
+    fn test_read_integer_as_float() {
         let mut lexer = Lexer::new("64".chars());
         assert_eq!(Some(Token::Number(64_f64)), lexer.next());
+        assert_eq!(None, lexer.next());
+    }
+
+    #[test]
+    fn test_read_float() {
+        let mut lexer = Lexer::new("64.5".chars());
+        assert_eq!(Some(Token::Number(64.5)), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
@@ -278,11 +303,6 @@ mod tests {
         let mut lexer = Lexer::new(actual_input.chars());
         assert_eq!(Some(Token::String(s)), lexer.next());
         assert_eq!(None, lexer.next());
-    }
-
-    #[test]
-    fn test_read_float() {
-        assert_eq!(Number(64.5), "64.5".parse::<Atom>().ok().unwrap())
     }
 
     #[test]
