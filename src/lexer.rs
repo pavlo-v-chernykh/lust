@@ -46,9 +46,9 @@ impl FromStr for Atom {
 
 #[derive(Debug, PartialEq)]
 enum Token {
-    Nil,
     Number(f64),
     String(String),
+    Symbol(String),
     Error(LexerError),
 }
 
@@ -128,8 +128,8 @@ impl<T: Iterator<Item=char>> Lexer<T> {
     fn read_token(&mut self) -> Token {
         if let Some(c) = self.cur_char {
             match c {
-                'n' => {
-                    self.read_ident("il", Token::Nil)
+                'a' ... 'z' | 'A' ... 'Z' => {
+                    self.read_symbol()
                 },
                 '0' ... '9' | '-' => {
                     self.read_number()
@@ -146,13 +146,22 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         }
     }
 
-    fn read_ident(&mut self, ident: &str, token: Token) -> Token {
-        if ident.chars().all(|c| { self.bump(); Some(c) == self.cur_char }) {
+    fn read_symbol(&mut self) -> Token {
+        let mut res = String::new();
+
+        while let Some(c) = self.cur_char {
+            match c {
+                ' ' | '\t' | '\r' | '\n' => {
+                    break
+                },
+                _ => {
+                    res.push(c);
+                }
+            }
             self.bump();
-            token
-        } else {
-            self.error_token(LexerErrorCode::InvalidSyntax)
         }
+
+        Token::Symbol(res)
     }
 
     fn read_number(&mut self) -> Token {
@@ -277,8 +286,9 @@ mod tests {
 
     #[test]
     fn test_read_nil() {
-        let mut lexer = Lexer::new("nil".chars());
-        assert_eq!(Some(Token::Nil), lexer.next());
+        let sym_name = "nil".to_string();
+        let mut lexer = Lexer::new(sym_name.chars());
+        assert_eq!(Some(Token::Symbol(sym_name.clone())), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
@@ -307,7 +317,10 @@ mod tests {
 
     #[test]
     fn test_read_symbol() {
-        assert_eq!(Symbol("name".to_string()), "name".parse::<Atom>().ok().unwrap())
+        let sym_name = "my-symbol".to_string();
+        let mut lexer = Lexer::new(sym_name.chars());
+        assert_eq!(Some(Token::Symbol(sym_name.clone())), lexer.next());
+        assert_eq!(None, lexer.next());
     }
 
     #[test]
