@@ -199,9 +199,12 @@ impl<T: Iterator<Item=char>> Lexer<T> {
                             }
                         }
                     }
-                }
-                _ => {
+                },
+                ' ' | '\t' | '\r' | '\n' => {
                     break
+                },
+                _ => {
+                    return self.error_token(LexerErrorCode::InvalidSyntax)
                 }
             }
         }
@@ -236,11 +239,14 @@ impl<T: Iterator<Item=char>> Lexer<T> {
     }
 
     fn read_whitespaces(&mut self) {
-        while let Some(ch) = self.cur_char {
-            if [' ', '\n', '\r', '\t'].contains(&ch) {
-                self.bump()
-            } else {
-                break
+        while let Some(c) = self.cur_char {
+            match c {
+                ' ' | '\t' | '\r' | '\n' => {
+                    self.bump();
+                },
+                _ => {
+                    break;
+                }
             }
         }
     }
@@ -279,9 +285,7 @@ fn tokenize(s: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use common::Atom::{self, Symbol, Number};
-    use super::{Lexer, Token};
-    use super::ParseAtomError::IncorrectSymbolName;
+    use super::{Lexer, Token, LexerError, LexerErrorCode};
     use super::tokenize;
 
     #[test]
@@ -325,7 +329,15 @@ mod tests {
 
     #[test]
     fn test_read_incorrect_symbol_starting_with_digit() {
-        assert_eq!(IncorrectSymbolName, "6name".parse::<Atom>().err().unwrap())
+        let sym_name = "6-my-incorrect-symbol".to_string();
+        let mut lexer = Lexer::new(sym_name.chars());
+        let expected_result = Some(Token::Error(LexerError::SyntaxError {
+            code: LexerErrorCode::InvalidSyntax,
+            line: 1,
+            col: 2
+        }));
+        assert_eq!(expected_result, lexer.next());
+        assert_eq!(None, lexer.next());
     }
 
     #[test]
