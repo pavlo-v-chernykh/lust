@@ -1,5 +1,51 @@
 use std::str::FromStr;
 use common::{Atom, Sexp};
+use lexer::{Lexer, LexerEvent, LexerError};
+
+#[derive(Debug, PartialEq)]
+enum ParserError {
+    UnexpectedToken,
+    LexerError(LexerError),
+}
+
+struct Parser<T> {
+    lexer: Lexer<T>,
+    cur_evt: Option<LexerEvent>,
+}
+
+impl<T: Iterator<Item=char>> Parser<T> {
+    fn new(src: T) -> Parser<T> {
+        Parser {
+            lexer: Lexer::new(src),
+            cur_evt: None,
+        }
+    }
+
+    fn bump(&mut self) {
+        self.cur_evt = self.lexer.next()
+    }
+
+    fn parse(&mut self) -> Result<Sexp, ParserError> {
+        self.bump();
+        let result = self.parse_sexp();
+        match self.cur_evt {
+            None => {
+                result
+            },
+            Some(LexerEvent::Token(_)) => {
+                Err(ParserError::UnexpectedToken)
+            },
+            Some(LexerEvent::Error(e)) => {
+                Err(ParserError::LexerError(e))
+            },
+        }
+    }
+
+    fn parse_sexp(&mut self) -> Result<Sexp, ParserError> {
+        Ok(Sexp::Atom(Atom::Nil))
+    }
+}
+
 
 #[derive(Debug, PartialEq)]
 enum ParserState {
@@ -35,10 +81,6 @@ impl FromStr for Atom {
             }
         }
     }
-}
-
-#[derive(Debug, PartialEq)]
-enum ParserError {
 }
 
 fn parse(tokens: &Vec<String>) -> Result<Vec<Sexp>, ParserError> {

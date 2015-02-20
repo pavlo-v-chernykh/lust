@@ -1,12 +1,12 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy)]
 enum LexerErrorCode {
     InvalidSyntax,
     TrailingCharacters,
     EOFWhileReadingToken,
 }
 
-#[derive(Debug, PartialEq)]
-enum LexerError {
+#[derive(Debug, PartialEq, Copy)]
+pub enum LexerError {
     SyntaxError {
         code: LexerErrorCode,
         line: usize,
@@ -24,7 +24,7 @@ enum Token {
 }
 
 #[derive(Debug, PartialEq)]
-enum LexerEvent {
+pub enum LexerEvent {
     Token(Token),
     Error(LexerError),
 }
@@ -74,7 +74,7 @@ impl<T: Iterator<Item=char>> Iterator for Lexer<T> {
 }
 
 impl<T: Iterator<Item=char>> Lexer<T> {
-    fn new(reader: T) -> Lexer<T> {
+    pub fn new(reader: T) -> Lexer<T> {
         let mut l = Lexer {
             reader: reader,
             cur_char: None,
