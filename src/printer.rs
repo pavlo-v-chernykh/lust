@@ -10,9 +10,9 @@ impl Display for Atom {
             Atom::Symbol(ref s) => {
                 write!(f, "{}", s)
             },
-            Atom::Nil => {
-                write!(f, "nil")
-            }
+            Atom::String(ref s) => {
+                write!(f, r#""{}""#, s)
+            },
         }
     }
 }

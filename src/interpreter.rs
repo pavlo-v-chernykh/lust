@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use common::Atom::{Number, Symbol, Nil};
+use common::Atom::{Number, Symbol};
+use common::Atom::String as AtomString;
 use common::Sexp::{self, Atom, List};
 
 #[derive(Debug, PartialEq)]
@@ -76,7 +77,7 @@ fn eval_plus(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError>
 
 fn eval(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
     match *s {
-        Atom(Number(_)) | Atom(Nil) => {
+        Atom(Number(_)) => {
             Ok(s.clone())
         },
         Atom(Symbol(ref name)) => {
@@ -86,8 +87,11 @@ fn eval(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
                 Err(EvalError::EvalError)
             }
         },
+        Atom(AtomString(ref s)) => {
+            Ok(Atom(AtomString(s.clone())))
+        },
         List(ref l) if l.is_empty() => {
-            Ok(Atom(Nil))
+            Ok(Atom(Symbol("nil".to_string())))
         },
         List(ref l) => {
             if let Atom(Symbol(ref n)) = *l.first().unwrap() {
@@ -112,7 +116,7 @@ fn eval(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use common::Atom::{Number, Symbol, Nil};
+    use common::Atom::{Number, Symbol};
     use common::Sexp::{Atom, List};
     use super::EvalError::EvalError;
     use super::eval;
@@ -138,8 +142,8 @@ mod tests {
     #[test]
     fn test_eval_atom_symbol_to_nil() {
         let mut env = HashMap::new();
-        env.insert("a".to_string(), Atom(Nil));
-        let expected_result = Atom(Nil);
+        env.insert("a".to_string(), Atom(Symbol("nil".to_string())));
+        let expected_result = Atom(Symbol("nil".to_string()));
         let actual_result = eval(&Atom(Symbol("a".to_string())), &mut env);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -155,15 +159,16 @@ mod tests {
     #[test]
     fn test_eval_atom_nil_to_itself() {
         let mut env = HashMap::new();
-        let expected_result = Atom(Nil);
-        let actual_result = eval(&Atom(Nil), &mut env);
+        env.insert("nil".to_string(), Atom(Symbol("nil".to_string())));
+        let expected_result = Atom(Symbol("nil".to_string()));
+        let actual_result = eval(&Atom(Symbol("nil".to_string())), &mut env);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_empty_list_to_nil() {
         let mut env = HashMap::new();
-        let expected_result = Atom(Nil);
+        let expected_result = Atom(Symbol("nil".to_string()));
         let actual_result = eval(&List(vec![]), &mut env);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }

@@ -1,8 +1,8 @@
 #[derive(Debug, PartialEq, Clone)]
 pub enum Atom {
     Number(f64),
+    String(String),
     Symbol(String),
-    Nil
 }
 
 #[derive(Debug, PartialEq, Clone)]
