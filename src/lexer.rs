@@ -21,14 +21,19 @@ enum Token {
     Symbol(String),
     ListStart,
     ListEnd,
+}
+
+#[derive(Debug, PartialEq)]
+enum LexerEvent {
+    Token(Token),
     Error(LexerError),
 }
 
 #[derive(Debug, PartialEq)]
 enum LexerState {
     Start,
-    BeforeFinish,
     ReadList,
+    BeforeFinish,
     Finish,
 }
 
@@ -42,21 +47,27 @@ pub struct Lexer<T> {
 }
 
 impl<T: Iterator<Item=char>> Iterator for Lexer<T> {
-    type Item = Token;
+    type Item = LexerEvent;
 
-    fn next(&mut self) -> Option<Token> {
+    fn next(&mut self) -> Option<LexerEvent> {
         match self.state {
+            LexerState::BeforeFinish => {
+                self.consume_whitespaces();
+                match self.cur_char {
+                    Some(_) => {
+                        Some(self.emit_syntax_error(LexerErrorCode::TrailingCharacters))
+                    },
+                    None => {
+                        self.state = LexerState::Finish;
+                        None
+                    }
+                }
+            },
             LexerState::Finish => {
                 None
             },
-            LexerState::BeforeFinish => {
-                self.read_whitespaces();
-                self.cur_char
-                    .and(Some(self.error_token(LexerErrorCode::TrailingCharacters)))
-                    .or_else(|| { self.state = LexerState::Finish; None })
-            },
             _ => {
-                Some(self.read())
+                Some(self.emit())
             }
         }
     }
@@ -86,69 +97,69 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         }
     }
 
-    fn read(&mut self) -> Token {
+    fn emit(&mut self) -> LexerEvent {
         loop {
-            self.read_whitespaces();
+            self.consume_whitespaces();
             match self.state {
                 LexerState::Start => {
-                    return self.read_start()
+                    return self.emit_at_start()
                 },
                 LexerState::ReadList => {
-                    return self.read_list()
+                    return self.emit_at_read_list()
                 },
                 _ => {
-                    return self.error_token(LexerErrorCode::InvalidSyntax)
+                    return self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
                 }
             }
         }
     }
 
-    fn read_start(&mut self) -> Token {
-        let token = self.read_token();
-        self.state = match token {
-            Token::Error(_) => {
-                LexerState::Finish
-            },
-            Token::ListStart => {
+    fn emit_at_start(&mut self) -> LexerEvent {
+        let evt = self.emit_next();
+        self.state = match evt {
+            LexerEvent::Token(Token::ListStart) => {
                 LexerState::ReadList
+            },
+            LexerEvent::Error(_) => {
+                LexerState::Finish
             },
             _ => {
                 LexerState::BeforeFinish
             },
         };
-        token
+        evt
     }
 
-    fn read_token(&mut self) -> Token {
+    fn emit_next(&mut self) -> LexerEvent {
         if let Some(c) = self.cur_char {
             match c {
                 'a' ... 'z' | 'A' ... 'Z' | '+' => {
-                    self.read_symbol()
+                    self.emit_symbol()
                 },
                 '0' ... '9' | '-' => {
-                    self.read_number()
+                    self.emit_number()
                 },
                 '"' => {
-                    self.read_string()
+                    self.emit_string()
                 },
                 '(' => {
                     self.bump();
-                    Token::ListStart
+                    self.emit_token(Token::ListStart)
                 },
                 ')' => {
                     self.bump();
-                    Token::ListEnd
+                    self.emit_token(Token::ListEnd)
                 },
                 _ => {
-                    self.error_token(LexerErrorCode::InvalidSyntax)
+                    self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
                 }
             }
         } else {
-            self.error_token(LexerErrorCode::EOFWhileReadingToken)
+            self.emit_syntax_error(LexerErrorCode::EOFWhileReadingToken)
         }
     }
 
-    fn read_symbol(&mut self) -> Token {
+    fn emit_symbol(&mut self) -> LexerEvent {
         let mut res = String::new();
 
         while let Some(c) = self.cur_char {
@@ -163,10 +174,10 @@ impl<T: Iterator<Item=char>> Lexer<T> {
             self.bump();
         }
 
-        Token::Symbol(res)
+        self.emit_token(Token::Symbol(res))
     }
 
-    fn read_number(&mut self) -> Token {
+    fn emit_number(&mut self) -> LexerEvent {
         let mut neg = false;
 
         if let Some('-') = self.cur_char {
@@ -206,7 +217,7 @@ impl<T: Iterator<Item=char>> Lexer<T> {
                     break
                 },
                 _ => {
-                    return self.error_token(LexerErrorCode::InvalidSyntax)
+                    return self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
                 }
             }
         }
@@ -215,10 +226,10 @@ impl<T: Iterator<Item=char>> Lexer<T> {
             accum *= -1_f64;
         }
 
-        Token::Number(accum)
+        self.emit_token(Token::Number(accum))
     }
 
-    fn read_string(&mut self) -> Token {
+    fn emit_string(&mut self) -> LexerEvent {
         let mut res = String::new();
 
         self.bump();
@@ -237,76 +248,77 @@ impl<T: Iterator<Item=char>> Lexer<T> {
 
         self.bump();
 
-        Token::String(res)
+        self.emit_token(Token::String(res))
     }
 
-    fn read_list(&mut self) -> Token {
-        let token = self.read_token();
-        match token {
-            Token::ListStart => {
+    fn emit_at_read_list(&mut self) -> LexerEvent {
+        let evt = self.emit_next();
+        match evt {
+            LexerEvent::Token(Token::ListStart) => {
                 self.lvl += 1;
             },
-            Token::ListEnd => {
+            LexerEvent::Token(Token::ListEnd) => {
                 if self.lvl > 0 {
                     self.lvl -= 1;
                 } else {
                     self.state = LexerState::BeforeFinish
                 }
             },
-            Token::Error(_) => {
+            LexerEvent::Error(_) => {
                 self.state = LexerState::Finish
             },
             _ => {}
         };
-        token
+        evt
     }
 
-    fn read_whitespaces(&mut self) {
-        while let Some(c) = self.cur_char {
-            match c {
-                ' ' | '\t' | '\r' | '\n' => {
-                    self.bump();
-                },
-                _ => {
-                    break;
-                }
-            }
-        }
+    fn emit_token(&mut self, token: Token) -> LexerEvent {
+        LexerEvent::Token(token)
     }
 
-    fn error_token(&mut self, ec: LexerErrorCode) -> Token {
+    fn emit_syntax_error(&mut self, ec: LexerErrorCode) -> LexerEvent {
         self.state = LexerState::Finish;
-        Token::Error(LexerError::SyntaxError {
+        LexerEvent::Error(LexerError::SyntaxError {
             code: ec,
             line: self.line,
             col: self.col
         })
     }
+
+    fn consume_whitespaces(&mut self) {
+        while let Some(c) = self.cur_char {
+            if c.is_whitespace() {
+                self.bump()
+            } else {
+                break
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Lexer, Token, LexerError, LexerErrorCode};
+    use super::{Lexer, LexerEvent, Token, LexerError, LexerErrorCode};
 
     #[test]
     fn test_read_nil() {
         let sym_name = "nil".to_string();
         let mut lexer = Lexer::new(sym_name.chars());
-        assert_eq!(Some(Token::Symbol(sym_name.clone())), lexer.next());
+        assert_eq!(Some(LexerEvent::Token(Token::Symbol(sym_name.clone()))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
     #[test]
     fn test_read_integer_as_float() {
         let mut lexer = Lexer::new("64".chars());
-        assert_eq!(Some(Token::Number(64_f64)), lexer.next());
+        assert_eq!(Some(LexerEvent::Token(Token::Number(64_f64))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
     #[test]
     fn test_read_float() {
         let mut lexer = Lexer::new("64.5".chars());
-        assert_eq!(Some(Token::Number(64.5)), lexer.next());
+        assert_eq!(Some(LexerEvent::Token(Token::Number(64.5))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
@@ -315,7 +327,7 @@ mod tests {
         let s = "rust is beautiful".to_string();
         let actual_input = format!(r#""{}""#, s);
         let mut lexer = Lexer::new(actual_input.chars());
-        assert_eq!(Some(Token::String(s)), lexer.next());
+        assert_eq!(Some(LexerEvent::Token(Token::String(s))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
@@ -323,7 +335,7 @@ mod tests {
     fn test_read_symbol() {
         let sym_name = "my-symbol".to_string();
         let mut lexer = Lexer::new(sym_name.chars());
-        assert_eq!(Some(Token::Symbol(sym_name.clone())), lexer.next());
+        assert_eq!(Some(LexerEvent::Token(Token::Symbol(sym_name.clone()))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
@@ -331,7 +343,7 @@ mod tests {
     fn test_read_incorrect_symbol_starting_with_digit() {
         let sym_name = "6-my-incorrect-symbol".to_string();
         let mut lexer = Lexer::new(sym_name.chars());
-        let expected_result = Some(Token::Error(LexerError::SyntaxError {
+        let expected_result = Some(LexerEvent::Error(LexerError::SyntaxError {
             code: LexerErrorCode::InvalidSyntax,
             line: 1,
             col: 2
@@ -343,37 +355,37 @@ mod tests {
     #[test]
     fn test_read_dense_expression() {
         let lexer = Lexer::new("(def a 1)".chars());
-        let expected_result = vec![Token::ListStart,
-                                   Token::Symbol("def".to_string()),
-                                   Token::Symbol("a".to_string()),
-                                   Token::Number(1_f64),
-                                   Token::ListEnd];
-        assert_eq!(expected_result, lexer.collect::<Vec<Token>>())
+        let expected_result = vec![LexerEvent::Token(Token::ListStart),
+                                   LexerEvent::Token(Token::Symbol("def".to_string())),
+                                   LexerEvent::Token(Token::Symbol("a".to_string())),
+                                   LexerEvent::Token(Token::Number(1_f64)),
+                                   LexerEvent::Token(Token::ListEnd)];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerEvent>>());
     }
 
     #[test]
     fn test_read_sparse_expression() {
         let lexer = Lexer::new(" ( \n def a\n1)   \n".chars());
-        let expected_result = vec![Token::ListStart,
-                                   Token::Symbol("def".to_string()),
-                                   Token::Symbol("a".to_string()),
-                                   Token::Number(1_f64),
-                                   Token::ListEnd];
-        assert_eq!(expected_result, lexer.collect::<Vec<Token>>())
+        let expected_result = vec![LexerEvent::Token(Token::ListStart),
+                                   LexerEvent::Token(Token::Symbol("def".to_string())),
+                                   LexerEvent::Token(Token::Symbol("a".to_string())),
+                                   LexerEvent::Token(Token::Number(1_f64)),
+                                   LexerEvent::Token(Token::ListEnd)];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerEvent>>());
     }
 
     #[test]
     fn test_read_nested_list_expressions() {
         let lexer = Lexer::new("(def a (+ 1 1))".chars());
-        let expected_result = vec![Token::ListStart,
-                                   Token::Symbol("def".to_string()),
-                                   Token::Symbol("a".to_string()),
-                                   Token::ListStart,
-                                   Token::Symbol("+".to_string()),
-                                   Token::Number(1_f64),
-                                   Token::Number(1_f64),
-                                   Token::ListEnd,
-                                   Token::ListEnd];
-        assert_eq!(expected_result, lexer.collect::<Vec<Token>>())
+        let expected_result = vec![LexerEvent::Token(Token::ListStart),
+                                   LexerEvent::Token(Token::Symbol("def".to_string())),
+                                   LexerEvent::Token(Token::Symbol("a".to_string())),
+                                   LexerEvent::Token(Token::ListStart),
+                                   LexerEvent::Token(Token::Symbol("+".to_string())),
+                                   LexerEvent::Token(Token::Number(1_f64)),
+                                   LexerEvent::Token(Token::Number(1_f64)),
+                                   LexerEvent::Token(Token::ListEnd),
+                                   LexerEvent::Token(Token::ListEnd)];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerEvent>>());
     }
 }
