@@ -15,7 +15,7 @@ pub enum LexerError {
 }
 
 #[derive(Debug, PartialEq)]
-enum Token {
+pub enum Token {
     Number(f64),
     String(String),
     Symbol(String),

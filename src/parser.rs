@@ -1,10 +1,11 @@
 use std::str::FromStr;
 use common::{Atom, Sexp};
-use lexer::{Lexer, LexerEvent, LexerError};
+use lexer::{Lexer, LexerEvent, Token, LexerError};
 
 #[derive(Debug, PartialEq)]
 enum ParserError {
     UnexpectedToken,
+    EOFWhileParsingExpression,
     LexerError(LexerError),
 }
 
@@ -42,7 +43,33 @@ impl<T: Iterator<Item=char>> Parser<T> {
     }
 
     fn parse_sexp(&mut self) -> Result<Sexp, ParserError> {
-        Ok(Sexp::Atom(Atom::Nil))
+        match self.cur_evt {
+            Some(LexerEvent::Token(Token::Number(n))) => {
+                Ok(Sexp::Atom(Atom::Number(n)))
+            },
+            Some(LexerEvent::Token(Token::String(ref s))) => {
+                Ok(Sexp::Atom(Atom::String(s.clone())))
+            },
+            Some(LexerEvent::Token(Token::Symbol(ref s))) => {
+                Ok(Sexp::Atom(Atom::Symbol(s.clone())))
+            },
+            Some(LexerEvent::Token(Token::ListStart)) => {
+                self.parse_list()
+            },
+            Some(LexerEvent::Token(Token::ListEnd)) => {
+                Err(ParserError::UnexpectedToken)
+            },
+            Some(LexerEvent::Error(e)) => {
+                Err(ParserError::LexerError(e))
+            }
+            None => {
+                Err(ParserError::EOFWhileParsingExpression)
+            }
+        }
+    }
+
+    fn parse_list(&mut self) -> Result<Sexp, ParserError> {
+        Ok(Sexp::Atom(Atom::Symbol("nil".to_string())))
     }
 }
 
