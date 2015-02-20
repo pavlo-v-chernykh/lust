@@ -14,12 +14,6 @@ enum LexerError {
     }
 }
 
-#[derive(Debug, PartialEq, Copy)]
-enum ListState {
-    Open,
-    Item,
-}
-
 #[derive(Debug, PartialEq)]
 enum Token {
     Number(f64),
@@ -34,7 +28,7 @@ enum Token {
 enum LexerState {
     Start,
     BeforeFinish,
-    ReadList(ListState),
+    ReadList,
     Finish,
 }
 
@@ -44,6 +38,7 @@ pub struct Lexer<T> {
     line: usize,
     col: usize,
     state: LexerState,
+    lvl: isize,
 }
 
 impl<T: Iterator<Item=char>> Iterator for Lexer<T> {
@@ -75,6 +70,7 @@ impl<T: Iterator<Item=char>> Lexer<T> {
             line: 1,
             col: 0,
             state: LexerState::Start,
+            lvl: 0,
         };
         l.bump();
         l
@@ -87,8 +83,8 @@ impl<T: Iterator<Item=char>> Lexer<T> {
                 LexerState::Start => {
                     return self.read_start()
                 },
-                LexerState::ReadList(ls) => {
-                    return self.read_list(ls)
+                LexerState::ReadList => {
+                    return self.read_list()
                 },
                 _ => {
                     return self.error_token(LexerErrorCode::InvalidSyntax)
@@ -104,7 +100,7 @@ impl<T: Iterator<Item=char>> Lexer<T> {
                 LexerState::Finish
             },
             Token::ListStart => {
-                LexerState::ReadList(ListState::Open)
+                LexerState::ReadList
             },
             _ => {
                 LexerState::BeforeFinish
@@ -128,6 +124,10 @@ impl<T: Iterator<Item=char>> Lexer<T> {
                 '(' => {
                     self.bump();
                     Token::ListStart
+                },
+                ')' => {
+                    self.bump();
+                    Token::ListEnd
                 },
                 _ => {
                     self.error_token(LexerErrorCode::InvalidSyntax)
@@ -230,33 +230,29 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         Token::String(res)
     }
 
-    fn read_list(&mut self, ls: ListState) -> Token {
-        if Some(')') == self.cur_char {
-            match ls {
-                ListState::Item => {
-                    self.state = LexerState::BeforeFinish;
-                    self.bump();
-                    Token::ListEnd
-                },
-                _ => {
-                    self.error_token(LexerErrorCode::InvalidSyntax)
-                },
-            }
-        } else {
-            let token = self.read_token();
-            self.state = match token {
-                Token::Error(_) => {
-                    LexerState::Finish
-                },
-                Token::ListStart => {
-                    LexerState::ReadList(ListState::Open)
-                },
-                _ => {
-                    LexerState::ReadList(ListState::Item)
+    fn read_list(&mut self) -> Token {
+        let token = self.read_token();
+        self.state = match token {
+            Token::Error(_) => {
+                LexerState::Finish
+            },
+            Token::ListStart => {
+                self.lvl += 1;
+                LexerState::ReadList
+            },
+            Token::ListEnd => {
+                if self.lvl > 0 {
+                    self.lvl -= 1;
+                    LexerState::ReadList
+                } else {
+                    LexerState::BeforeFinish
                 }
-            };
-            token
-        }
+            },
+            _ => {
+                LexerState::ReadList
+            }
+        };
+        token
     }
 
     fn read_whitespaces(&mut self) {
