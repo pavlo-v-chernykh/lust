@@ -76,6 +76,16 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         l
     }
 
+    fn bump(&mut self) {
+        self.cur_char = self.reader.next();
+        if Some('\n') == self.cur_char {
+            self.line += 1;
+            self.col = 1;
+        } else {
+            self.col += 1;
+        }
+    }
+
     fn read(&mut self) -> Token {
         loop {
             self.read_whitespaces();
@@ -112,7 +122,7 @@ impl<T: Iterator<Item=char>> Lexer<T> {
     fn read_token(&mut self) -> Token {
         if let Some(c) = self.cur_char {
             match c {
-                'a' ... 'z' | 'A' ... 'Z' => {
+                'a' ... 'z' | 'A' ... 'Z' | '+' => {
                     self.read_symbol()
                 },
                 '0' ... '9' | '-' => {
@@ -232,25 +242,21 @@ impl<T: Iterator<Item=char>> Lexer<T> {
 
     fn read_list(&mut self) -> Token {
         let token = self.read_token();
-        self.state = match token {
-            Token::Error(_) => {
-                LexerState::Finish
-            },
+        match token {
             Token::ListStart => {
                 self.lvl += 1;
-                LexerState::ReadList
             },
             Token::ListEnd => {
                 if self.lvl > 0 {
                     self.lvl -= 1;
-                    LexerState::ReadList
                 } else {
-                    LexerState::BeforeFinish
+                    self.state = LexerState::BeforeFinish
                 }
             },
-            _ => {
-                LexerState::ReadList
-            }
+            Token::Error(_) => {
+                self.state = LexerState::Finish
+            },
+            _ => {}
         };
         token
     }
@@ -265,16 +271,6 @@ impl<T: Iterator<Item=char>> Lexer<T> {
                     break;
                 }
             }
-        }
-    }
-
-    fn bump(&mut self) {
-        self.cur_char = self.reader.next();
-        if Some('\n') == self.cur_char {
-            self.line += 1;
-            self.col = 1;
-        } else {
-            self.col += 1;
         }
     }
 
@@ -362,6 +358,21 @@ mod tests {
                                    Token::Symbol("def".to_string()),
                                    Token::Symbol("a".to_string()),
                                    Token::Number(1_f64),
+                                   Token::ListEnd];
+        assert_eq!(expected_result, lexer.collect::<Vec<Token>>())
+    }
+
+    #[test]
+    fn test_read_nested_list_expressions() {
+        let lexer = Lexer::new("(def a (+ 1 1))".chars());
+        let expected_result = vec![Token::ListStart,
+                                   Token::Symbol("def".to_string()),
+                                   Token::Symbol("a".to_string()),
+                                   Token::ListStart,
+                                   Token::Symbol("+".to_string()),
+                                   Token::Number(1_f64),
+                                   Token::Number(1_f64),
+                                   Token::ListEnd,
                                    Token::ListEnd];
         assert_eq!(expected_result, lexer.collect::<Vec<Token>>())
     }
