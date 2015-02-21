@@ -163,13 +163,10 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         let mut res = String::new();
 
         while let Some(c) = self.cur_char {
-            match c {
-                ' ' | '\t' | '\r' | '\n' => {
-                    break
-                },
-                _ => {
-                    res.push(c);
-                }
+            if c.is_whitespace() {
+                break
+            } else {
+                res.push(c)
             }
             self.bump();
         }
@@ -180,7 +177,7 @@ impl<T: Iterator<Item=char>> Lexer<T> {
     fn emit_number(&mut self) -> LexerEvent {
         let mut neg = false;
 
-        if let Some('-') = self.cur_char {
+        if Some('-') == self.cur_char {
             neg = true;
             self.bump();
         }
@@ -235,13 +232,10 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         self.bump();
 
         while let Some(c) = self.cur_char {
-            match c {
-                '"' => {
-                    break
-                },
-                _ => {
-                    res.push(c);
-                }
+            if c == '"' {
+                break
+            } else {
+                res.push(c)
             }
             self.bump();
         }
