@@ -8,13 +8,13 @@ enum ParserError {
     LexerError(LexerError),
 }
 
-struct Parser<T> {
+pub struct Parser<T> {
     lexer: Lexer<T>,
     cur_evt: Option<LexerEvent>,
 }
 
 impl<T: Iterator<Item=char>> Parser<T> {
-    fn new(src: T) -> Parser<T> {
+    pub fn new(src: T) -> Parser<T> {
         Parser {
             lexer: Lexer::new(src),
             cur_evt: None,

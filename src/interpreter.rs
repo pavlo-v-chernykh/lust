@@ -1,7 +1,6 @@
 use std::collections::HashMap;
-use common::Atom::{Number, Symbol};
-use common::Atom::String as AtomString;
-use common::Sexp::{self, Atom, List};
+use common::{Atom, Sexp};
+use parser::{Parser};
 
 #[derive(Debug, PartialEq)]
 enum EvalError{
@@ -11,13 +10,60 @@ enum EvalError{
     IncorrectTypeOfArgument
 }
 
+struct Env {
+    current: HashMap<String, Sexp>,
+    parent: Option<Box<Env>>,
+}
+
+impl Env {
+    fn new() -> Env {
+        Env {
+            current: HashMap::new(),
+            parent: None,
+        }
+    }
+
+    fn new_std() -> Env {
+        let mut env = Env::new();
+        env.current.insert("nil".to_string(),
+                           Sexp::Atom(Atom::Symbol("nil".to_string())));
+        env
+    }
+}
+
+
+struct Interpretator<T> {
+    parser: Parser<T>,
+    env: Env
+}
+
+impl<T: Iterator<Item=char>> Interpretator<T> {
+    fn new(src: T) -> Interpretator<T> {
+        Interpretator {
+            parser: Parser::new(src),
+            env: Env::new(),
+        }
+    }
+
+    fn new_std(src: T) -> Interpretator<T> {
+        Interpretator {
+            parser: Parser::new(src),
+            env: Env::new_std(),
+        }
+    }
+
+    fn eval(&mut self) -> Result<Sexp, EvalError> {
+        Ok(Sexp::Atom(Atom::Symbol("nil".to_string())))
+    }
+}
+
 fn eval_def(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
-    if let List(ref l) = *s {
-        if let Atom(Symbol(ref n)) = *l.first().unwrap() {
+    if let Sexp::List(ref l) = *s {
+        if let Sexp::Atom(Atom::Symbol(ref n)) = *l.first().unwrap() {
             match &n[..] {
                 "def" => {
                     if l.len() == 3 {
-                        if let Atom(Symbol(ref n)) = l[1] {
+                        if let Sexp::Atom(Atom::Symbol(ref n)) = l[1] {
                             eval(&l[2], e).and_then(|a| {
                                 e.insert(n.clone(), a.clone());
                                 Ok(a)
@@ -42,15 +88,15 @@ fn eval_def(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> 
 }
 
 fn eval_plus(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
-    if let List(ref l) = *s {
-        if let Atom(Symbol(ref n)) = *l.first().unwrap() {
+    if let Sexp::List(ref l) = *s {
+        if let Sexp::Atom(Atom::Symbol(ref n)) = *l.first().unwrap() {
             match &n[..] {
                 "+" => {
                     if l.len() > 1 {
                         let mut a = 0_f64;
                         for i in l.iter().skip(1) {
                             match eval(i, e) {
-                                Ok(Atom(Number(n))) => {
+                                Ok(Sexp::Atom(Atom::Number(n))) => {
                                     a += n
                                 },
                                 _ => {
@@ -58,7 +104,7 @@ fn eval_plus(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError>
                                 }
                             }
                         }
-                        return Ok(Atom(Number(a)))
+                        return Ok(Sexp::Atom(Atom::Number(a)))
                     } else {
                         Err(EvalError::IncorrectNumberOfArguments)
                     }
@@ -77,24 +123,24 @@ fn eval_plus(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError>
 
 fn eval(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
     match *s {
-        Atom(Number(_)) => {
+        Sexp::Atom(Atom::Number(_)) => {
             Ok(s.clone())
         },
-        Atom(Symbol(ref name)) => {
+        Sexp::Atom(Atom::Symbol(ref name)) => {
             if let Some(s) = e.get(name) {
                 Ok(s.clone())
             } else {
                 Err(EvalError::EvalError)
             }
         },
-        Atom(AtomString(ref s)) => {
-            Ok(Atom(AtomString(s.clone())))
+        Sexp::Atom(Atom::String(ref s)) => {
+            Ok(Sexp::Atom(Atom::String(s.clone())))
         },
-        List(ref l) if l.is_empty() => {
-            Ok(Atom(Symbol("nil".to_string())))
+        Sexp::List(ref l) if l.is_empty() => {
+            Ok(Sexp::Atom(Atom::Symbol("nil".to_string())))
         },
-        List(ref l) => {
-            if let Atom(Symbol(ref n)) = *l.first().unwrap() {
+        Sexp::List(ref l) => {
+            if let Sexp::Atom(Atom::Symbol(ref n)) = *l.first().unwrap() {
                 match &n[..] {
                     "def" => {
                         eval_def(s, e)
