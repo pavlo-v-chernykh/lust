@@ -14,7 +14,7 @@ enum EvalError{
 fn eval_def(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
     if let List(ref l) = *s {
         if let Atom(Symbol(ref n)) = *l.first().unwrap() {
-            match &n[] {
+            match &n[..] {
                 "def" => {
                     if l.len() == 3 {
                         if let Atom(Symbol(ref n)) = l[1] {
@@ -44,10 +44,10 @@ fn eval_def(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> 
 fn eval_plus(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
     if let List(ref l) = *s {
         if let Atom(Symbol(ref n)) = *l.first().unwrap() {
-            match &n[] {
+            match &n[..] {
                 "+" => {
                     if l.len() > 1 {
-                        let mut a = 0f64;
+                        let mut a = 0_f64;
                         for i in l.iter().skip(1) {
                             match eval(i, e) {
                                 Ok(Atom(Number(n))) => {
@@ -95,7 +95,7 @@ fn eval(s: &Sexp, e: &mut HashMap<String, Sexp>) -> Result<Sexp, EvalError> {
         },
         List(ref l) => {
             if let Atom(Symbol(ref n)) = *l.first().unwrap() {
-                match &n[] {
+                match &n[..] {
                     "def" => {
                         eval_def(s, e)
                     },
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_eval_atom_number_to_itself() {
-        let number = 10f64;
+        let number = 10_f64;
         let expected_result = Atom(Number(number));
         let actual_result = eval(&Atom(Number(number)), &mut HashMap::new());
         assert_eq!(expected_result, actual_result.ok().unwrap());
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_eval_atom_symbol_to_number() {
-        let num = 10f64;
+        let num = 10_f64;
         let mut env = HashMap::new();
         env.insert("a".to_string(), Atom(Number(num)));
         let expected_result = Atom(Number(num));
@@ -176,7 +176,7 @@ mod tests {
     #[test]
     fn test_eval_def_special_form() {
         let mut env = HashMap::new();
-        let num = 1f64;
+        let num = 1_f64;
         let actual_input = List(vec![Atom(Symbol("def".to_string())),
                                      Atom(Symbol("a".to_string())),
                                      Atom(Number(num))]);
@@ -189,11 +189,11 @@ mod tests {
     fn test_eval_nested_plus_special_form() {
         let actual_input = List(vec![Atom(Symbol("+".to_string())),
                                      List(vec![Atom(Symbol("+".to_string())),
-                                               Atom(Number(1f64)),
-                                               Atom(Number(2f64))]),
-                                     Atom(Number(3f64))]);
+                                               Atom(Number(1_f64)),
+                                               Atom(Number(2_f64))]),
+                                     Atom(Number(3_f64))]);
         let actual_result = eval(&actual_input, &mut HashMap::new());
-        let expected_result = Atom(Number(6f64));
+        let expected_result = Atom(Number(6_f64));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 }

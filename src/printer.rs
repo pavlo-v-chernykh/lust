@@ -56,8 +56,8 @@ mod tests {
         let actual_input = List(vec![Atom(Symbol("def".to_string())),
                                      Atom(Symbol("a".to_string())),
                                      List(vec![Atom(Symbol("+".to_string())),
-                                               Atom(Number(1f64)),
-                                               Atom(Number(2f64))])]);
+                                               Atom(Number(1_f64)),
+                                               Atom(Number(2_f64))])]);
         let actual_result = format!("{}", actual_input);
         let expected_result = "(def a (+ 1 2))";
         assert_eq!(expected_result, actual_result);
