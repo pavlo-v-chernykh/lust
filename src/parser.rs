@@ -25,7 +25,7 @@ impl<T: Iterator<Item=char>> Parser<T> {
         self.cur_evt = self.lexer.next()
     }
 
-    fn parse(&mut self) -> Result<Sexp, ParserError> {
+    pub fn parse(&mut self) -> Result<Sexp, ParserError> {
         self.bump();
         let result = self.parse_sexp();
         if result.is_ok() {
