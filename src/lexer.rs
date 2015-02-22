@@ -133,11 +133,35 @@ impl<T: Iterator<Item=char>> Lexer<T> {
     fn emit_next(&mut self) -> LexerEvent {
         if let Some(c) = self.cur_char {
             match c {
-                'a' ... 'z' | 'A' ... 'Z' | '+' => {
+                '-' | '+' => {
+                    self.bump();
+                    if let Some(nc) = self.cur_char {
+                        if nc.is_whitespace() {
+                            self.emit_token(Token::Symbol(c.to_string()))
+                        } else {
+                            self.emit_number(c == '-')
+                        }
+                    } else {
+                        self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
+                    }
+                },
+                '/' | '*' | '%' => {
+                    self.bump();
+                    if let Some(nc) = self.cur_char {
+                        if nc.is_whitespace() {
+                            self.emit_token(Token::Symbol(c.to_string()))
+                        } else {
+                            self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
+                        }
+                    } else {
+                        self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
+                    }
+                },
+                'a' ... 'z' | 'A' ... 'Z' => {
                     self.emit_symbol()
                 },
-                '0' ... '9' | '-' => {
-                    self.emit_number()
+                '0' ... '9' => {
+                    self.emit_number(false)
                 },
                 '"' => {
                     self.emit_string()
@@ -174,14 +198,7 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         self.emit_token(Token::Symbol(res))
     }
 
-    fn emit_number(&mut self) -> LexerEvent {
-        let mut neg = false;
-
-        if Some('-') == self.cur_char {
-            neg = true;
-            self.bump();
-        }
-
+    fn emit_number(&mut self, neg: bool) -> LexerEvent {
         let mut accum = 0_f64;
 
         while let Some(c) = self.cur_char {
@@ -347,6 +364,22 @@ mod tests {
     }
 
     #[test]
+    fn test_read_explicitly_positive_number() {
+        let mut lexer = Lexer::new("+1".chars());
+        let expected_result = Some(LexerEvent::Token(Token::Number(1_f64)));
+        assert_eq!(expected_result, lexer.next());
+        assert_eq!(None, lexer.next());
+    }
+
+    #[test]
+    fn test_read_explicitly_negative_number() {
+        let mut lexer = Lexer::new("-1".chars());
+        let expected_result = Some(LexerEvent::Token(Token::Number(-1_f64)));
+        assert_eq!(expected_result, lexer.next());
+        assert_eq!(None, lexer.next());
+    }
+
+    #[test]
     fn test_read_dense_expression() {
         let lexer = Lexer::new("(def a 1)".chars());
         let expected_result = vec![LexerEvent::Token(Token::ListStart),
@@ -379,6 +412,39 @@ mod tests {
                                    LexerEvent::Token(Token::Number(1_f64)),
                                    LexerEvent::Token(Token::Number(1_f64)),
                                    LexerEvent::Token(Token::ListEnd),
+                                   LexerEvent::Token(Token::ListEnd)];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerEvent>>());
+    }
+
+    #[test]
+    fn test_read_mul_special_form() {
+        let lexer = Lexer::new("(* 1 1)".chars());
+        let expected_result = vec![LexerEvent::Token(Token::ListStart),
+                                   LexerEvent::Token(Token::Symbol("*".to_string())),
+                                   LexerEvent::Token(Token::Number(1_f64)),
+                                   LexerEvent::Token(Token::Number(1_f64)),
+                                   LexerEvent::Token(Token::ListEnd)];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerEvent>>());
+    }
+
+    #[test]
+    fn test_read_div_special_form() {
+        let lexer = Lexer::new("(/ 1 1)".chars());
+        let expected_result = vec![LexerEvent::Token(Token::ListStart),
+                                   LexerEvent::Token(Token::Symbol("/".to_string())),
+                                   LexerEvent::Token(Token::Number(1_f64)),
+                                   LexerEvent::Token(Token::Number(1_f64)),
+                                   LexerEvent::Token(Token::ListEnd)];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerEvent>>());
+    }
+
+    #[test]
+    fn test_read_rem_special_form() {
+        let lexer = Lexer::new("(% 1 1)".chars());
+        let expected_result = vec![LexerEvent::Token(Token::ListStart),
+                                   LexerEvent::Token(Token::Symbol("%".to_string())),
+                                   LexerEvent::Token(Token::Number(1_f64)),
+                                   LexerEvent::Token(Token::Number(1_f64)),
                                    LexerEvent::Token(Token::ListEnd)];
         assert_eq!(expected_result, lexer.collect::<Vec<LexerEvent>>());
     }

@@ -80,6 +80,15 @@ impl Interpreter {
                         "+" => {
                             self.eval_plus(s)
                         },
+                        "-" => {
+                            self.eval_minus(s)
+                        },
+                        "/" => {
+                            self.eval_div(s)
+                        },
+                        "*" => {
+                            self.eval_mul(s)
+                        },
                         _ => {
                             Err(EvalError::EvalError)
                         }
@@ -154,6 +163,116 @@ impl Interpreter {
             Err(EvalError::EvalError)
         }
     }
+
+    fn eval_minus(&mut self, s: &Sexp) -> Result<Sexp, EvalError> {
+        if let Sexp::List(ref l) = *s {
+            if let Sexp::Atom(Atom::Symbol(ref n)) = *l.first().unwrap() {
+                match &n[..] {
+                    "-" => {
+                        if l.len() > 1 {
+                            if let Sexp::Atom(Atom::Number(n)) = l[1] {
+                                let mut a = n;
+                                for i in l.iter().skip(2) {
+                                    match self.eval_sexp(i) {
+                                        Ok(Sexp::Atom(Atom::Number(n))) => {
+                                            a -= n
+                                        },
+                                        _ => {
+                                            return Err(EvalError::IncorrectTypeOfArgument)
+                                        }
+                                    }
+                                }
+                                Ok(Sexp::Atom(Atom::Number(a)))
+                            } else {
+                                Err(EvalError::IncorrectTypeOfArgument)
+                            }
+                        } else {
+                            Err(EvalError::IncorrectNumberOfArguments)
+                        }
+                    },
+                    _ => {
+                        Err(EvalError::IncorrectSpecialForm)
+                    }
+                }
+            } else {
+                Err(EvalError::EvalError)
+            }
+        } else {
+            Err(EvalError::EvalError)
+        }
+    }
+
+    fn eval_div(&mut self, s: &Sexp) -> Result<Sexp, EvalError> {
+        if let Sexp::List(ref l) = *s {
+            if let Sexp::Atom(Atom::Symbol(ref n)) = *l.first().unwrap() {
+                match &n[..] {
+                    "/" => {
+                        if l.len() > 1 {
+                            if let Sexp::Atom(Atom::Number(n)) = l[1] {
+                                let mut a = n;
+                                for i in l.iter().skip(2) {
+                                    match self.eval_sexp(i) {
+                                        Ok(Sexp::Atom(Atom::Number(n))) => {
+                                            a /= n
+                                        },
+                                        _ => {
+                                            return Err(EvalError::IncorrectTypeOfArgument)
+                                        }
+                                    }
+                                }
+                                Ok(Sexp::Atom(Atom::Number(a)))
+                            } else {
+                                Err(EvalError::IncorrectTypeOfArgument)
+                            }
+                        } else {
+                            Err(EvalError::IncorrectNumberOfArguments)
+                        }
+                    },
+                    _ => {
+                        Err(EvalError::IncorrectSpecialForm)
+                    }
+                }
+            } else {
+                Err(EvalError::EvalError)
+            }
+        } else {
+            Err(EvalError::EvalError)
+        }
+    }
+
+    fn eval_mul(&mut self, s: &Sexp) -> Result<Sexp, EvalError> {
+        if let Sexp::List(ref l) = *s {
+            if let Sexp::Atom(Atom::Symbol(ref n)) = *l.first().unwrap() {
+                match &n[..] {
+                    "*" => {
+                        if l.len() > 1 {
+                            let mut a = 1_f64;
+                            for i in l.iter().skip(1) {
+                                match self.eval_sexp(i) {
+                                    Ok(Sexp::Atom(Atom::Number(n))) => {
+                                        a *= n
+                                    },
+                                    _ => {
+                                        return Err(EvalError::IncorrectTypeOfArgument)
+                                    }
+                                }
+                            }
+                            Ok(Sexp::Atom(Atom::Number(a)))
+                        } else {
+                            Err(EvalError::IncorrectNumberOfArguments)
+                        }
+                    },
+                    _ => {
+                        Err(EvalError::IncorrectSpecialForm)
+                    }
+                }
+            } else {
+                Err(EvalError::EvalError)
+            }
+        } else {
+            Err(EvalError::EvalError)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -201,6 +320,30 @@ mod tests {
         let mut intr = Interpreter::new();
         let actual_result = intr.eval("(+ (+ 1 2) 3)".chars());
         let expected_result = Sexp::Atom(Atom::Number(6_f64));
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_minus_special_form() {
+        let mut intr = Interpreter::new();
+        let actual_result = intr.eval("(- 3 2)".chars());
+        let expected_result = Sexp::Atom(Atom::Number(1_f64));
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_div_special_form() {
+        let mut intr = Interpreter::new();
+        let actual_result = intr.eval("(/ 3 2)".chars());
+        let expected_result = Sexp::Atom(Atom::Number(1.5));
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_mul_special_form() {
+        let mut intr = Interpreter::new();
+        let actual_result = intr.eval("(* 3.5 2)".chars());
+        let expected_result = Sexp::Atom(Atom::Number(7_f64));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
