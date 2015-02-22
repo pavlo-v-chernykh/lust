@@ -163,7 +163,7 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         let mut res = String::new();
 
         while let Some(c) = self.cur_char {
-            if c.is_whitespace() {
+            if c.is_whitespace() || c == ')' {
                 break
             } else {
                 res.push(c)
@@ -379,6 +379,18 @@ mod tests {
                                    LexerEvent::Token(Token::Number(1_f64)),
                                    LexerEvent::Token(Token::Number(1_f64)),
                                    LexerEvent::Token(Token::ListEnd),
+                                   LexerEvent::Token(Token::ListEnd)];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerEvent>>());
+    }
+
+    #[test]
+    fn test_read_list_of_symbols() {
+        let lexer = Lexer::new("(+ a b c)".chars());
+        let expected_result = vec![LexerEvent::Token(Token::ListStart),
+                                   LexerEvent::Token(Token::Symbol("+".to_string())),
+                                   LexerEvent::Token(Token::Symbol("a".to_string())),
+                                   LexerEvent::Token(Token::Symbol("b".to_string())),
+                                   LexerEvent::Token(Token::Symbol("c".to_string())),
                                    LexerEvent::Token(Token::ListEnd)];
         assert_eq!(expected_result, lexer.collect::<Vec<LexerEvent>>());
     }
