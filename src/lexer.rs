@@ -1,3 +1,5 @@
+use std::iter::Peekable;
+
 #[derive(Debug, PartialEq, Copy)]
 enum LexerErrorCode {
     InvalidSyntax,
@@ -37,8 +39,8 @@ enum LexerState {
     Finish,
 }
 
-pub struct Lexer<T> {
-    reader: T,
+pub struct Lexer<I: Iterator> {
+    reader: Peekable<I>,
     cur_char: Option<char>,
     line: usize,
     col: usize,
@@ -46,7 +48,7 @@ pub struct Lexer<T> {
     lvl: isize,
 }
 
-impl<T: Iterator<Item=char>> Iterator for Lexer<T> {
+impl<I: Iterator<Item=char>> Iterator for Lexer<I> {
     type Item = LexerEvent;
 
     fn next(&mut self) -> Option<LexerEvent> {
@@ -73,10 +75,10 @@ impl<T: Iterator<Item=char>> Iterator for Lexer<T> {
     }
 }
 
-impl<T: Iterator<Item=char>> Lexer<T> {
-    pub fn new(reader: T) -> Lexer<T> {
+impl<I: Iterator<Item=char>> Lexer<I> {
+    pub fn new(reader: I) -> Lexer<I> {
         let mut l = Lexer {
-            reader: reader,
+            reader: reader.peekable(),
             cur_char: None,
             line: 1,
             col: 0,
@@ -134,34 +136,21 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         if let Some(c) = self.cur_char {
             match c {
                 '-' | '+' => {
-                    self.bump();
-                    if let Some(nc) = self.cur_char {
-                        if nc.is_whitespace() {
-                            self.emit_token(Token::Symbol(c.to_string()))
-                        } else {
-                            self.emit_number(c == '-')
-                        }
+                    let mut is_digit = false;
+                    if let Some(nc) = self.reader.peek() {
+                        is_digit = nc.is_digit(10)
+                    }
+                    if is_digit {
+                        self.emit_number()
                     } else {
-                        self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
+                        self.emit_symbol()
                     }
                 },
-                '/' | '*' | '%' => {
-                    self.bump();
-                    if let Some(nc) = self.cur_char {
-                        if nc.is_whitespace() {
-                            self.emit_token(Token::Symbol(c.to_string()))
-                        } else {
-                            self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
-                        }
-                    } else {
-                        self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
-                    }
-                },
-                'a' ... 'z' | 'A' ... 'Z' => {
+                'a' ... 'z' | 'A' ... 'Z' | '/' | '*' | '%' => {
                     self.emit_symbol()
                 },
                 '0' ... '9' => {
-                    self.emit_number(false)
+                    self.emit_number()
                 },
                 '"' => {
                     self.emit_string()
@@ -198,15 +187,22 @@ impl<T: Iterator<Item=char>> Lexer<T> {
         self.emit_token(Token::Symbol(res))
     }
 
-    fn emit_number(&mut self, neg: bool) -> LexerEvent {
+    fn emit_number(&mut self) -> LexerEvent {
+        let mut neg = false;
+        if Some('-') == self.cur_char {
+            neg = true;
+            self.bump();
+        } else if Some('+') == self.cur_char {
+            self.bump();
+        }
+
         let mut accum = 0_f64;
 
         while let Some(c) = self.cur_char {
             match c {
                 '0' ... '9' => {
-                    let c_as_usize = (c as usize) - ('0' as usize);
                     accum *= 10_f64;
-                    accum += c_as_usize as f64;
+                    accum += c.to_digit(10).unwrap() as f64;
                     self.bump()
                 },
                 '.' => {
@@ -216,9 +212,8 @@ impl<T: Iterator<Item=char>> Lexer<T> {
                     while let Some(c) = self.cur_char {
                         match c {
                             '0' ... '9' => {
-                                let c_as_usize = (c as usize) - ('0' as usize);
                                 dec /= 10.0;
-                                accum += (c_as_usize as f64) * dec;
+                                accum += dec * c.to_digit(10).unwrap() as f64;
                                 self.bump();
                             },
                             _ => {

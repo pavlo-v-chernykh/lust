@@ -1,3 +1,4 @@
+#![feature(unicode)]
 #![feature(old_io)]
 use std::old_io;
 use interpreter::Interpreter;
