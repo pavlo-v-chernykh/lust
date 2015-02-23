@@ -21,6 +21,10 @@ impl Env {
         };
         env.current.insert("nil".to_string(),
                            Sexp::Atom(Atom::Symbol("nil".to_string())));
+        env.current.insert("true".to_string(),
+                           Sexp::Atom(Atom::Bool(true)));
+        env.current.insert("false".to_string(),
+                           Sexp::Atom(Atom::Bool(false)));
         env
     }
 
@@ -59,6 +63,9 @@ impl Interpreter {
     fn eval_sexp(&mut self, s: &Sexp) -> Result<Sexp, EvalError> {
         match *s {
             Sexp::Atom(Atom::Number(_)) => {
+                Ok(s.clone())
+            },
+            Sexp::Atom(Atom::Bool(_)) => {
                 Ok(s.clone())
             },
             Sexp::Atom(Atom::Symbol(ref name)) => {
@@ -282,7 +289,7 @@ mod tests {
     use super::EvalError::EvalError;
 
     #[test]
-    fn test_eval_atom_number_to_itself() {
+    fn test_eval_number_to_itself() {
         let number = 10_f64;
         let s = format!("{}", number);
         let mut intr = Interpreter::new();
@@ -292,7 +299,17 @@ mod tests {
     }
 
     #[test]
-    fn test_eval_atom_symbol_to_non_value() {
+    fn test_eval_string_to_itself() {
+        let s = "rust is awesome";
+        let actual_input = format!(r#""{}""#, s);
+        let expected_result = Sexp::Atom(Atom::String(s.to_string()));
+        let mut intr = Interpreter::new();
+        let actual_result = intr.eval(actual_input.chars());
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_undefined_symbol_to_error() {
         let mut intr = Interpreter::new();
         let expected_result = EvalError;
         let actual_result = intr.eval("a".chars());
@@ -300,7 +317,23 @@ mod tests {
     }
 
     #[test]
-    fn test_eval_atom_nil_to_itself() {
+    fn test_eval_true_to_matching_bool() {
+        let mut intr = Interpreter::new();
+        let expected_result = Sexp::Atom(Atom::Bool(true));
+        let actual_result = intr.eval("true".chars());
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_false_to_matching_bool() {
+        let mut intr = Interpreter::new();
+        let expected_result = Sexp::Atom(Atom::Bool(false));
+        let actual_result = intr.eval("false".chars());
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_nil_to_itself() {
         let mut intr = Interpreter::new();
         let expected_result = Sexp::Atom(Atom::Symbol("nil".to_string()));
         let actual_result = intr.eval("nil".chars());

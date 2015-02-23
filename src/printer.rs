@@ -7,6 +7,9 @@ impl Display for Atom {
             Atom::Number(n) => {
                 write!(f, "{}", n)
             },
+            Atom::Bool(b) => {
+                write!(f, "{}", b)
+            },
             Atom::Symbol(ref s) => {
                 write!(f, "{}", s)
             },
