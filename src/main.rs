@@ -2,18 +2,18 @@
 #![feature(old_io)]
 use std::old_io;
 use parser::Parser;
-use interpreter::Interpreter;
+use context::Context;
 
 mod common;
 mod token;
 mod lexer;
 mod parser;
-mod interpreter;
+mod context;
 mod printer;
 
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
-    let mut intr = Interpreter::new();
+    let mut intr = Context::new();
     loop {
         print!("-> ");
         let input = old_io::stdin()
