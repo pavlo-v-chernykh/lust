@@ -9,43 +9,22 @@ enum EvalError{
     IncorrectTypeOfArgument
 }
 
-struct Env {
-    current: HashMap<String, Sexp>,
-}
-
-impl Env {
-    fn new() -> Env {
-        let mut env = Env {
-            current: HashMap::new(),
-        };
-        env.current.insert("nil".to_string(),
-                           Sexp::Atom(Atom::Symbol("nil".to_string())));
-        env.current.insert("true".to_string(),
-                           Sexp::Atom(Atom::Bool(true)));
-        env.current.insert("false".to_string(),
-                           Sexp::Atom(Atom::Bool(false)));
-        env
-    }
-
-    fn get(&self, k: &String) -> Option<&Sexp> {
-        self.current.get(k)
-    }
-
-    fn insert(&mut self, k: String, v: Sexp) -> Option<Sexp> {
-        self.current.insert(k, v)
-    }
-}
-
-
 pub struct Interpreter {
-    env: Env
+    env: HashMap<String, Sexp>
 }
 
 impl Interpreter {
     pub fn new() -> Interpreter {
-        Interpreter {
-            env: Env::new(),
-        }
+        let mut intr = Interpreter {
+            env: HashMap::new(),
+        };
+        intr.env.insert("nil".to_string(),
+                        Sexp::Atom(Atom::Symbol("nil".to_string())));
+        intr.env.insert("true".to_string(),
+                        Sexp::Atom(Atom::Bool(true)));
+        intr.env.insert("false".to_string(),
+                        Sexp::Atom(Atom::Bool(false)));
+        intr
     }
 
     pub fn eval(&mut self, s: &Sexp) -> Result<Sexp, EvalError> {
