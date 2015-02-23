@@ -1,4 +1,5 @@
 use std::iter::Peekable;
+use token::Token;
 
 #[derive(Debug, PartialEq, Copy)]
 enum LexerErrorCode {
@@ -12,15 +13,6 @@ pub struct LexerError {
     code: LexerErrorCode,
     line: usize,
     col: usize,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Token {
-    Number(f64),
-    String(String),
-    Symbol(String),
-    ListStart,
-    ListEnd,
 }
 
 pub type LexerResult = Result<Token, LexerError>;
@@ -294,7 +286,8 @@ impl<I: Iterator<Item=char>> Lexer<I> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Lexer, LexerResult, Token, LexerError, LexerErrorCode};
+    use token::Token;
+    use super::{Lexer, LexerResult, LexerError, LexerErrorCode};
 
     #[test]
     fn test_read_nil() {

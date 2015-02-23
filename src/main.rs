@@ -5,6 +5,7 @@ use parser::Parser;
 use interpreter::Interpreter;
 
 mod common;
+mod token;
 mod lexer;
 mod parser;
 mod interpreter;

@@ -1,5 +1,6 @@
 use common::{Atom, Sexp};
-use lexer::{Lexer, LexerResult, Token, LexerError};
+use token::Token;
+use lexer::{Lexer, LexerResult, LexerError};
 
 #[derive(Debug, PartialEq)]
 enum ParserError {
