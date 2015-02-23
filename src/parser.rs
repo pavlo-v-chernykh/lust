@@ -1,5 +1,5 @@
 use common::{Atom, Sexp};
-use lexer::{Lexer, LexerEvent, Token, LexerError};
+use lexer::{Lexer, LexerResult, Token, LexerError};
 
 #[derive(Debug, PartialEq)]
 enum ParserError {
@@ -10,7 +10,7 @@ enum ParserError {
 
 pub struct Parser<I: Iterator> {
     lexer: Lexer<I>,
-    cur_evt: Option<LexerEvent>,
+    cur_evt: Option<LexerResult>,
 }
 
 impl<I: Iterator<Item=char>> Parser<I> {
@@ -35,10 +35,10 @@ impl<I: Iterator<Item=char>> Parser<I> {
             None => {
                 result
             },
-            Some(LexerEvent::Token(_)) => {
+            Some(Ok(_)) => {
                 Err(ParserError::UnexpectedToken)
             },
-            Some(LexerEvent::Error(e)) => {
+            Some(Err(e)) => {
                 Err(ParserError::LexerError(e))
             },
         }
@@ -46,22 +46,22 @@ impl<I: Iterator<Item=char>> Parser<I> {
 
     fn parse_sexp(&mut self) -> Result<Sexp, ParserError> {
         match self.cur_evt {
-            Some(LexerEvent::Token(Token::Number(n))) => {
+            Some(Ok(Token::Number(n))) => {
                 Ok(Sexp::Atom(Atom::Number(n)))
             },
-            Some(LexerEvent::Token(Token::String(ref s))) => {
+            Some(Ok(Token::String(ref s))) => {
                 Ok(Sexp::Atom(Atom::String(s.clone())))
             },
-            Some(LexerEvent::Token(Token::Symbol(ref s))) => {
+            Some(Ok(Token::Symbol(ref s))) => {
                 Ok(Sexp::Atom(Atom::Symbol(s.clone())))
             },
-            Some(LexerEvent::Token(Token::ListStart)) => {
+            Some(Ok(Token::ListStart)) => {
                 self.parse_list()
             },
-            Some(LexerEvent::Token(Token::ListEnd)) => {
+            Some(Ok(Token::ListEnd)) => {
                 Err(ParserError::UnexpectedToken)
             },
-            Some(LexerEvent::Error(e)) => {
+            Some(Err(e)) => {
                 Err(ParserError::LexerError(e))
             },
             None => {
@@ -74,7 +74,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
         let mut list = Vec::new();
         loop {
             self.bump();
-            if self.cur_evt == Some(LexerEvent::Token(Token::ListEnd)) {
+            if self.cur_evt == Some(Ok(Token::ListEnd)) {
                 return Ok(Sexp::List(list))
             }
             match self.parse_sexp() {
