@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use common::{Atom, Sexp};
-use parser::{Parser};
 
 #[derive(Debug, PartialEq)]
 enum EvalError{
@@ -49,18 +48,7 @@ impl Interpreter {
         }
     }
 
-    pub fn eval<T: Iterator<Item=char>>(&mut self, src: T) -> Result<Sexp, EvalError> {
-        match Parser::new(src).parse() {
-            Ok(sexp) => {
-                self.eval_sexp(&sexp)
-            },
-            Err(_) => {
-                Err(EvalError::EvalError)
-            }
-        }
-    }
-
-    fn eval_sexp(&mut self, s: &Sexp) -> Result<Sexp, EvalError> {
+    pub fn eval(&mut self, s: &Sexp) -> Result<Sexp, EvalError> {
         match *s {
             Sexp::Atom(Atom::Number(_)) => {
                 Ok(s.clone())
@@ -114,7 +102,7 @@ impl Interpreter {
                     "def" => {
                         if l.len() == 3 {
                             if let Sexp::Atom(Atom::Symbol(ref n)) = l[1] {
-                                self.eval_sexp(&l[2]).and_then(|a| {
+                                self.eval(&l[2]).and_then(|a| {
                                     self.env.insert(n.clone(), a.clone());
                                     Ok(a)
                                 })
@@ -145,7 +133,7 @@ impl Interpreter {
                         if l.len() > 1 {
                             let mut a = 0_f64;
                             for i in l.iter().skip(1) {
-                                match self.eval_sexp(i) {
+                                match self.eval(i) {
                                     Ok(Sexp::Atom(Atom::Number(n))) => {
                                         a += n
                                     },
@@ -180,7 +168,7 @@ impl Interpreter {
                             if let Sexp::Atom(Atom::Number(n)) = l[1] {
                                 let mut a = n;
                                 for i in l.iter().skip(2) {
-                                    match self.eval_sexp(i) {
+                                    match self.eval(i) {
                                         Ok(Sexp::Atom(Atom::Number(n))) => {
                                             a -= n
                                         },
@@ -218,7 +206,7 @@ impl Interpreter {
                             if let Sexp::Atom(Atom::Number(n)) = l[1] {
                                 let mut a = n;
                                 for i in l.iter().skip(2) {
-                                    match self.eval_sexp(i) {
+                                    match self.eval(i) {
                                         Ok(Sexp::Atom(Atom::Number(n))) => {
                                             a /= n
                                         },
@@ -255,7 +243,7 @@ impl Interpreter {
                         if l.len() > 1 {
                             let mut a = 1_f64;
                             for i in l.iter().skip(1) {
-                                match self.eval_sexp(i) {
+                                match self.eval(i) {
                                     Ok(Sexp::Atom(Atom::Number(n))) => {
                                         a *= n
                                     },
@@ -290,21 +278,19 @@ mod tests {
 
     #[test]
     fn test_eval_number_to_itself() {
-        let number = 10_f64;
-        let s = format!("{}", number);
+        let num = 10_f64;
         let mut intr = Interpreter::new();
-        let expected_result = Sexp::Atom(Atom::Number(number));
-        let actual_result = intr.eval(s.chars());
+        let expected_result = Sexp::Atom(Atom::Number(num));
+        let actual_result = intr.eval(&Sexp::Atom(Atom::Number(num)));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_string_to_itself() {
         let s = "rust is awesome";
-        let actual_input = format!(r#""{}""#, s);
-        let expected_result = Sexp::Atom(Atom::String(s.to_string()));
         let mut intr = Interpreter::new();
-        let actual_result = intr.eval(actual_input.chars());
+        let expected_result = Sexp::Atom(Atom::String(s.to_string()));
+        let actual_result = intr.eval(&Sexp::Atom(Atom::String(s.to_string())));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -312,7 +298,7 @@ mod tests {
     fn test_eval_undefined_symbol_to_error() {
         let mut intr = Interpreter::new();
         let expected_result = EvalError;
-        let actual_result = intr.eval("a".chars());
+        let actual_result = intr.eval(&Sexp::Atom(Atom::Symbol("a".to_string())));
         assert_eq!(expected_result, actual_result.err().unwrap());
     }
 
@@ -320,7 +306,7 @@ mod tests {
     fn test_eval_true_to_matching_bool() {
         let mut intr = Interpreter::new();
         let expected_result = Sexp::Atom(Atom::Bool(true));
-        let actual_result = intr.eval("true".chars());
+        let actual_result = intr.eval(&Sexp::Atom(Atom::Symbol("true".to_string())));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -328,7 +314,7 @@ mod tests {
     fn test_eval_false_to_matching_bool() {
         let mut intr = Interpreter::new();
         let expected_result = Sexp::Atom(Atom::Bool(false));
-        let actual_result = intr.eval("false".chars());
+        let actual_result = intr.eval(&Sexp::Atom(Atom::Symbol("false".to_string())));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -336,22 +322,31 @@ mod tests {
     fn test_eval_nil_to_itself() {
         let mut intr = Interpreter::new();
         let expected_result = Sexp::Atom(Atom::Symbol("nil".to_string()));
-        let actual_result = intr.eval("nil".chars());
+        let actual_result = intr.eval(&Sexp::Atom(Atom::Symbol("nil".to_string())));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_def_special_form() {
+        let num = 1_f64;
         let mut intr = Interpreter::new();
-        let actual_result = intr.eval("(def a 1)".chars());
-        let expected_result = Sexp::Atom(Atom::Number(1_f64));
+        let expected_result = Sexp::Atom(Atom::Number(num));
+        let actual_input = Sexp::List(vec![Sexp::Atom(Atom::Symbol("def".to_string())),
+                                           Sexp::Atom(Atom::Symbol("a".to_string())),
+                                           Sexp::Atom(Atom::Number(num))]);
+        let actual_result = intr.eval(&actual_input);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_nested_plus_special_form() {
         let mut intr = Interpreter::new();
-        let actual_result = intr.eval("(+ (+ 1 2) 3)".chars());
+        let actual_input = Sexp::List(vec![Sexp::Atom(Atom::Symbol("+".to_string())),
+                                           Sexp::List(vec![Sexp::Atom(Atom::Symbol("+".to_string())),
+                                                           Sexp::Atom(Atom::Number(1_f64)),
+                                                           Sexp::Atom(Atom::Number(2_f64))]),
+                                           Sexp::Atom(Atom::Number(3_f64))]);
+        let actual_result = intr.eval(&actual_input);
         let expected_result = Sexp::Atom(Atom::Number(6_f64));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -359,7 +354,10 @@ mod tests {
     #[test]
     fn test_eval_minus_special_form() {
         let mut intr = Interpreter::new();
-        let actual_result = intr.eval("(- 3 2)".chars());
+        let actual_input = Sexp::List(vec![Sexp::Atom(Atom::Symbol("-".to_string())),
+                                           Sexp::Atom(Atom::Number(3_f64)),
+                                           Sexp::Atom(Atom::Number(2_f64))]);
+        let actual_result = intr.eval(&actual_input);
         let expected_result = Sexp::Atom(Atom::Number(1_f64));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -367,7 +365,10 @@ mod tests {
     #[test]
     fn test_eval_div_special_form() {
         let mut intr = Interpreter::new();
-        let actual_result = intr.eval("(/ 3 2)".chars());
+        let actual_input = Sexp::List(vec![Sexp::Atom(Atom::Symbol("/".to_string())),
+                                           Sexp::Atom(Atom::Number(3_f64)),
+                                           Sexp::Atom(Atom::Number(2_f64))]);
+        let actual_result = intr.eval(&actual_input);
         let expected_result = Sexp::Atom(Atom::Number(1.5));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -375,7 +376,10 @@ mod tests {
     #[test]
     fn test_eval_mul_special_form() {
         let mut intr = Interpreter::new();
-        let actual_result = intr.eval("(* 3.5 2)".chars());
+        let actual_input = Sexp::List(vec![Sexp::Atom(Atom::Symbol("*".to_string())),
+                                           Sexp::Atom(Atom::Number(3.5)),
+                                           Sexp::Atom(Atom::Number(2_f64))]);
+        let actual_result = intr.eval(&actual_input);
         let expected_result = Sexp::Atom(Atom::Number(7_f64));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -383,10 +387,16 @@ mod tests {
     #[test]
     fn test_eval_plus_special_form_using_defined_symbols() {
         let mut intr = Interpreter::new();
-        intr.eval("(def a 1)".chars()).ok().unwrap();
-        intr.eval("(def b 2)".chars()).ok().unwrap();
+        intr.eval(&Sexp::List(vec![Sexp::Atom(Atom::Symbol("def".to_string())),
+                                   Sexp::Atom(Atom::Symbol("a".to_string())),
+                                   Sexp::Atom(Atom::Number(1_f64))])).ok().unwrap();
+        intr.eval(&Sexp::List(vec![Sexp::Atom(Atom::Symbol("def".to_string())),
+                                   Sexp::Atom(Atom::Symbol("b".to_string())),
+                                   Sexp::Atom(Atom::Number(2_f64))])).ok().unwrap();
         let expected_result = Sexp::Atom(Atom::Number(3_f64));
-        let actual_result = intr.eval("(+ a b)".chars());
+        let actual_result = intr.eval(&Sexp::List(vec![Sexp::Atom(Atom::Symbol("+".to_string())),
+                                                       Sexp::Atom(Atom::Symbol("a".to_string())),
+                                                       Sexp::Atom(Atom::Symbol("b".to_string()))]));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 }
