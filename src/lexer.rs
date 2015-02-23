@@ -8,12 +8,10 @@ enum LexerErrorCode {
 }
 
 #[derive(Debug, PartialEq, Copy)]
-pub enum LexerError {
-    SyntaxError {
-        code: LexerErrorCode,
-        line: usize,
-        col: usize,
-    }
+pub struct LexerError {
+    code: LexerErrorCode,
+    line: usize,
+    col: usize,
 }
 
 #[derive(Debug, PartialEq)]
@@ -57,7 +55,7 @@ impl<I: Iterator<Item=char>> Iterator for Lexer<I> {
                 self.consume_whitespaces();
                 match self.cur_char {
                     Some(_) => {
-                        Some(self.emit_syntax_error(LexerErrorCode::TrailingCharacters))
+                        Some(self.emit_error(LexerErrorCode::TrailingCharacters))
                     },
                     None => {
                         self.state = LexerState::Finish;
@@ -110,7 +108,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                     return self.emit_at_read_list()
                 },
                 _ => {
-                    return self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
+                    return self.emit_error(LexerErrorCode::InvalidSyntax)
                 }
             }
         }
@@ -164,11 +162,11 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                     self.emit_token(Token::ListEnd)
                 },
                 _ => {
-                    self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
+                    self.emit_error(LexerErrorCode::InvalidSyntax)
                 }
             }
         } else {
-            self.emit_syntax_error(LexerErrorCode::EOFWhileReadingToken)
+            self.emit_error(LexerErrorCode::EOFWhileReadingToken)
         }
     }
 
@@ -226,7 +224,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                     break
                 },
                 _ => {
-                    return self.emit_syntax_error(LexerErrorCode::InvalidSyntax)
+                    return self.emit_error(LexerErrorCode::InvalidSyntax)
                 }
             }
         }
@@ -282,9 +280,9 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         LexerEvent::Token(token)
     }
 
-    fn emit_syntax_error(&mut self, ec: LexerErrorCode) -> LexerEvent {
+    fn emit_error(&mut self, ec: LexerErrorCode) -> LexerEvent {
         self.state = LexerState::Finish;
-        LexerEvent::Error(LexerError::SyntaxError {
+        LexerEvent::Error(LexerError {
             code: ec,
             line: self.line,
             col: self.col
@@ -349,7 +347,7 @@ mod tests {
     fn test_read_incorrect_symbol_starting_with_digit() {
         let sym_name = "6-my-incorrect-symbol".to_string();
         let mut lexer = Lexer::new(sym_name.chars());
-        let expected_result = Some(LexerEvent::Error(LexerError::SyntaxError {
+        let expected_result = Some(LexerEvent::Error(LexerError {
             code: LexerErrorCode::InvalidSyntax,
             line: 1,
             col: 2
