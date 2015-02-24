@@ -1,4 +1,4 @@
-use common::{Atom, Sexp};
+use ast::Expr;
 use token::Token;
 use lexer::{Lexer, LexerResult, LexerError};
 
@@ -11,28 +11,28 @@ enum ParserError {
 
 pub struct Parser<I: Iterator> {
     lexer: Lexer<I>,
-    cur_evt: Option<LexerResult>,
+    token: Option<LexerResult>,
 }
 
 impl<I: Iterator<Item=char>> Parser<I> {
     pub fn new(src: I) -> Parser<I> {
         Parser {
             lexer: Lexer::new(src),
-            cur_evt: None,
+            token: None,
         }
     }
 
     fn bump(&mut self) {
-        self.cur_evt = self.lexer.next()
+        self.token = self.lexer.next()
     }
 
-    pub fn parse(&mut self) -> Result<Sexp, ParserError> {
+    pub fn parse(&mut self) -> Result<Expr, ParserError> {
         self.bump();
         let result = self.parse_sexp();
         if result.is_ok() {
             self.bump()
         }
-        match self.cur_evt {
+        match self.token {
             None => {
                 result
             },
@@ -45,16 +45,16 @@ impl<I: Iterator<Item=char>> Parser<I> {
         }
     }
 
-    fn parse_sexp(&mut self) -> Result<Sexp, ParserError> {
-        match self.cur_evt {
+    fn parse_sexp(&mut self) -> Result<Expr, ParserError> {
+        match self.token {
             Some(Ok(Token::Number(n))) => {
-                Ok(Sexp::Atom(Atom::Number(n)))
+                Ok(Expr::Number(n))
             },
             Some(Ok(Token::String(ref s))) => {
-                Ok(Sexp::Atom(Atom::String(s.clone())))
+                Ok(Expr::String(s.clone()))
             },
             Some(Ok(Token::Symbol(ref s))) => {
-                Ok(Sexp::Atom(Atom::Symbol(s.clone())))
+                Ok(Expr::Symbol(s.clone()))
             },
             Some(Ok(Token::ListStart)) => {
                 self.parse_list()
@@ -71,12 +71,12 @@ impl<I: Iterator<Item=char>> Parser<I> {
         }
     }
 
-    fn parse_list(&mut self) -> Result<Sexp, ParserError> {
+    fn parse_list(&mut self) -> Result<Expr, ParserError> {
         let mut list = Vec::new();
         loop {
             self.bump();
-            if self.cur_evt == Some(Ok(Token::ListEnd)) {
-                return Ok(Sexp::List(list))
+            if self.token == Some(Ok(Token::ListEnd)) {
+                return Ok(Expr::List(list))
             }
             match self.parse_sexp() {
                 Ok(s) => {
@@ -92,15 +92,14 @@ impl<I: Iterator<Item=char>> Parser<I> {
 
 #[cfg(test)]
 mod tests {
-    use common::Atom::{Number, Symbol};
-    use common::Sexp::{List, Atom};
+    use ast::Expr;
     use super::Parser;
 
     #[test]
     fn test_parse_list_expression() {
-        let expected_result = List(vec![Atom(Symbol("def".to_string())),
-                                        Atom(Symbol("a".to_string())),
-                                        Atom(Number(1_f64))]);
+        let expected_result = Expr::List(vec![Expr::Symbol("def".to_string()),
+                                              Expr::Symbol("a".to_string()),
+                                              Expr::Number(1_f64)]);
         let mut parser = Parser::new("(def a 1)".chars());
         let actual_result = parser.parse().ok().unwrap();
         assert_eq!(expected_result, actual_result);
@@ -108,11 +107,11 @@ mod tests {
 
     #[test]
     fn test_parse_nested_list_expressions() {
-        let expected_result =  List(vec![Atom(Symbol("def".to_string())),
-                                         Atom(Symbol("a".to_string())),
-                                         List(vec![Atom(Symbol("+".to_string())),
-                                                   Atom(Number(1_f64)),
-                                                   Atom(Number(2_f64))])]);
+        let expected_result =  Expr::List(vec![Expr::Symbol("def".to_string()),
+                                               Expr::Symbol("a".to_string()),
+                                               Expr::List(vec![Expr::Symbol("+".to_string()),
+                                                               Expr::Number(1_f64),
+                                                               Expr::Number(2_f64)])]);
         let mut parser = Parser::new("(def a (+ 1 2))".chars());
         let actual_result = parser.parse().ok().unwrap();
         assert_eq!(expected_result, actual_result);

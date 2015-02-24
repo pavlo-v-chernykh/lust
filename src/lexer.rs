@@ -27,7 +27,7 @@ enum LexerState {
 
 pub struct Lexer<I: Iterator> {
     reader: Peekable<I>,
-    cur_char: Option<char>,
+    char: Option<char>,
     line: usize,
     col: usize,
     state: LexerState,
@@ -41,7 +41,7 @@ impl<I: Iterator<Item=char>> Iterator for Lexer<I> {
         match self.state {
             LexerState::BeforeFinish => {
                 self.consume_whitespaces();
-                match self.cur_char {
+                match self.char {
                     Some(_) => {
                         Some(self.error(LexerErrorCode::TrailingCharacters))
                     },
@@ -65,7 +65,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
     pub fn new(reader: I) -> Lexer<I> {
         let mut l = Lexer {
             reader: reader.peekable(),
-            cur_char: None,
+            char: None,
             line: 1,
             col: 0,
             state: LexerState::Start,
@@ -76,8 +76,8 @@ impl<I: Iterator<Item=char>> Lexer<I> {
     }
 
     fn bump(&mut self) {
-        self.cur_char = self.reader.next();
-        if Some('\n') == self.cur_char {
+        self.char = self.reader.next();
+        if Some('\n') == self.char {
             self.line += 1;
             self.col = 1;
         } else {
@@ -119,7 +119,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
     }
 
     fn read_next(&mut self) -> LexerResult {
-        if let Some(c) = self.cur_char {
+        if let Some(c) = self.char {
             match c {
                 '-' | '+' => {
                     let mut is_digit = false;
@@ -161,7 +161,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
     fn read_symbol(&mut self) -> LexerResult {
         let mut res = String::new();
 
-        while let Some(c) = self.cur_char {
+        while let Some(c) = self.char {
             if c.is_whitespace() || c == ')' {
                 break
             } else {
@@ -175,16 +175,16 @@ impl<I: Iterator<Item=char>> Lexer<I> {
 
     fn read_number(&mut self) -> LexerResult {
         let mut neg = false;
-        if Some('-') == self.cur_char {
+        if Some('-') == self.char {
             neg = true;
             self.bump();
-        } else if Some('+') == self.cur_char {
+        } else if Some('+') == self.char {
             self.bump();
         }
 
         let mut accum = 0_f64;
 
-        while let Some(c) = self.cur_char {
+        while let Some(c) = self.char {
             match c {
                 '0' ... '9' => {
                     accum *= 10_f64;
@@ -195,7 +195,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                     self.bump();
 
                     let mut dec = 1.0;
-                    while let Some(c) = self.cur_char {
+                    while let Some(c) = self.char {
                         match c {
                             '0' ... '9' => {
                                 dec /= 10.0;
@@ -229,7 +229,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
 
         self.bump();
 
-        while let Some(c) = self.cur_char {
+        while let Some(c) = self.char {
             if c == '"' {
                 break
             } else {
@@ -274,7 +274,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
     }
 
     fn consume_whitespaces(&mut self) {
-        while let Some(c) = self.cur_char {
+        while let Some(c) = self.char {
             if c.is_whitespace() {
                 self.bump()
             } else {

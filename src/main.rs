@@ -4,28 +4,31 @@ use std::old_io;
 use parser::Parser;
 use context::Context;
 
-mod common;
 mod token;
 mod lexer;
 mod parser;
+mod ast;
 mod context;
 mod printer;
 
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
-    let mut intr = Context::new();
+    let mut ctx = Context::new();
     loop {
         print!("-> ");
-        let input = old_io::stdin()
-                        .read_line()
-                        .ok()
-                        .expect("Unpredictable I/O error.");
-        let mut parser = Parser::new(input.chars());
-        match parser.parse() {
-            Ok(ref sexp) => {
-                match intr.eval(sexp) {
-                    Ok(ref res) => {
-                        println!("{}", res);
+        match old_io::stdin().read_line() {
+            Ok(input) => {
+                let mut parser = Parser::new(input.chars());
+                match parser.parse() {
+                    Ok(ref sexp) => {
+                        match ctx.eval(sexp) {
+                            Ok(ref res) => {
+                                println!("{}", res);
+                            },
+                            Err(e) => {
+                                println!("{:?}", e);
+                            }
+                        }
                     },
                     Err(e) => {
                         println!("{:?}", e);
@@ -34,6 +37,7 @@ fn main() {
             },
             Err(e) => {
                 println!("{:?}", e);
+                break
             }
         }
     }
