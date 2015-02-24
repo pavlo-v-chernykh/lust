@@ -20,8 +20,8 @@ fn main() {
             Ok(input) => {
                 let mut parser = Parser::new(input.chars());
                 match parser.parse() {
-                    Ok(ref sexp) => {
-                        match ctx.eval(sexp) {
+                    Ok(ref expr) => {
+                        match ctx.eval(expr) {
                             Ok(ref res) => {
                                 println!("{}", res);
                             },

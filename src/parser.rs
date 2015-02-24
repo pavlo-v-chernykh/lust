@@ -28,7 +28,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
 
     pub fn parse(&mut self) -> Result<Expr, ParserError> {
         self.bump();
-        let result = self.parse_sexp();
+        let result = self.parse_expr();
         if result.is_ok() {
             self.bump()
         }
@@ -45,7 +45,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
         }
     }
 
-    fn parse_sexp(&mut self) -> Result<Expr, ParserError> {
+    fn parse_expr(&mut self) -> Result<Expr, ParserError> {
         match self.token {
             Some(Ok(Token::Number(n))) => {
                 Ok(Expr::Number(n))
@@ -78,7 +78,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
             if self.token == Some(Ok(Token::ListEnd)) {
                 return Ok(Expr::List(list))
             }
-            match self.parse_sexp() {
+            match self.parse_expr() {
                 Ok(s) => {
                     list.push(s);
                 },
