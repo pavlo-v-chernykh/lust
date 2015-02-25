@@ -8,8 +8,8 @@ mod token;
 mod lexer;
 mod parser;
 mod ast;
+mod val;
 mod context;
-mod printer;
 
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
