@@ -3,7 +3,6 @@ use std::fmt;
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Number(f64),
-    Bool(bool),
     String(String),
     Symbol(String),
     List(Vec<Expr>),
@@ -14,9 +13,6 @@ impl fmt::Display for Expr {
         match *self {
             Expr::Number(n) => {
                 write!(f, "{}", n)
-            },
-            Expr::Bool(b) => {
-                write!(f, "{}", b)
             },
             Expr::Symbol(ref s) => {
                 write!(f, "{}", s)

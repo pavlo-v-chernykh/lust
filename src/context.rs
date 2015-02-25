@@ -30,9 +30,6 @@ impl Context {
             Expr::Number(n) => {
                 Ok(Val::Number(n))
             },
-            Expr::Bool(b) => {
-                Ok(Val::Bool(b))
-            },
             Expr::Symbol(ref name) => {
                 if let Some(v) = self.env.get(name) {
                     Ok(v.clone())
