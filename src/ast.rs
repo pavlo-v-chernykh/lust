@@ -21,7 +21,7 @@ impl fmt::Display for Expr {
                 write!(f, r#""{}""#, s)
             },
             Expr::List(ref l) => {
-                write!(f, "{}", l)
+                write!(f, "({})", l)
             }
         }
     }
@@ -29,7 +29,7 @@ impl fmt::Display for Expr {
 
 impl fmt::Display for Vec<Expr> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut a = "(".to_string();
+        let mut a = String::new();
         let i_last = self.len() - 1;
         for (i, s) in self.iter().enumerate() {
             if i < i_last {
@@ -38,7 +38,6 @@ impl fmt::Display for Vec<Expr> {
                 a.push_str(&format!("{}", s))
             }
         }
-        a.push_str(")");
         write!(f, "{}", a)
     }
 }

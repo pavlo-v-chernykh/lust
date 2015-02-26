@@ -25,7 +25,7 @@ impl fmt::Display for Val {
                 write!(f, "{}", s)
             },
             Val::List(ref l) => {
-                write!(f, "{}", l)
+                write!(f, "({})", l)
             }
         }
     }
@@ -33,7 +33,7 @@ impl fmt::Display for Val {
 
 impl fmt::Display for Vec<Val> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut a = "(".to_string();
+        let mut a = String::new();
         let i_last = self.len() - 1;
         for (i, s) in self.iter().enumerate() {
             if i < i_last {
@@ -42,7 +42,6 @@ impl fmt::Display for Vec<Val> {
                 a.push_str(&format!("{}", s))
             }
         }
-        a.push_str(")");
         write!(f, "{}", a)
     }
 }
