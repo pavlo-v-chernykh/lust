@@ -10,6 +10,8 @@ enum EvalError{
     IncorrectTypeOfArgument
 }
 
+type EvalResult = Result<Val, EvalError>;
+
 pub struct Context {
     env: HashMap<String, Val>,
 }
@@ -25,7 +27,7 @@ impl Context {
         ctx
     }
 
-    pub fn eval(&mut self, s: &Expr) -> Result<Val, EvalError> {
+    pub fn eval(&mut self, s: &Expr) -> EvalResult {
         match *s {
             Expr::Number(n) => {
                 Ok(Val::Number(n))
@@ -69,7 +71,7 @@ impl Context {
         }
     }
 
-    fn eval_def(&mut self, s: &Expr) -> Result<Val, EvalError> {
+    fn eval_def(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if let Expr::Symbol(ref n) = *l.first().unwrap() {
                 match &n[..] {
@@ -99,7 +101,7 @@ impl Context {
         }
     }
 
-    fn eval_plus(&mut self, s: &Expr) -> Result<Val, EvalError> {
+    fn eval_plus(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if let Expr::Symbol(ref n) = *l.first().unwrap() {
                 match &n[..] {
@@ -133,7 +135,7 @@ impl Context {
         }
     }
 
-    fn eval_minus(&mut self, s: &Expr) -> Result<Val, EvalError> {
+    fn eval_minus(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if let Expr::Symbol(ref n) = *l.first().unwrap() {
                 match &n[..] {
@@ -171,7 +173,7 @@ impl Context {
         }
     }
 
-    fn eval_div(&mut self, s: &Expr) -> Result<Val, EvalError> {
+    fn eval_div(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if let Expr::Symbol(ref n) = *l.first().unwrap() {
                 match &n[..] {
@@ -209,7 +211,7 @@ impl Context {
         }
     }
 
-    fn eval_mul(&mut self, s: &Expr) -> Result<Val, EvalError> {
+    fn eval_mul(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if let Expr::Symbol(ref n) = *l.first().unwrap() {
                 match &n[..] {
