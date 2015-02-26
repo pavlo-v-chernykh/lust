@@ -1,4 +1,5 @@
 use std::fmt;
+use ast::Expr;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Val {
@@ -7,6 +8,10 @@ pub enum Val {
     String(String),
     Symbol(String),
     List(Vec<Val>),
+    Fn {
+        params: Vec<Expr>,
+        body: Vec<Expr>,
+    },
 }
 
 impl fmt::Display for Val {
@@ -26,6 +31,9 @@ impl fmt::Display for Val {
             },
             Val::List(ref l) => {
                 write!(f, "({})", l)
+            },
+            Val::Fn { ref params, ref body } => {
+                write!(f, "(fn ({}) {})", params, body)
             }
         }
     }

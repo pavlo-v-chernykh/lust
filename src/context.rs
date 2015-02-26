@@ -48,6 +48,9 @@ impl Context {
                         "def" => {
                             self.eval_def(s)
                         },
+                        "fn" => {
+                            self.eval_fn(s)
+                        },
                         "+" => {
                             self.eval_plus(s)
                         },
@@ -81,6 +84,36 @@ impl Context {
                                 self.eval(&l[2]).and_then(|v| {
                                     self.env.insert(n.clone(), v.clone());
                                     Ok(v)
+                                })
+                            } else {
+                                Err(EvalError::EvalError)
+                            }
+                        } else {
+                            Err(EvalError::IncorrectNumberOfArguments)
+                        }
+                    },
+                    _ => {
+                        Err(EvalError::IncorrectSpecialForm)
+                    }
+                }
+            } else {
+                Err(EvalError::EvalError)
+            }
+        } else {
+            Err(EvalError::EvalError)
+        }
+    }
+
+    fn eval_fn(&mut self, s: &Expr) -> EvalResult {
+        if let Expr::List(ref l) = *s {
+            if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                match &n[..] {
+                    "fn" => {
+                        if l.len() >= 3 {
+                            if let Expr::List(ref params) = l[1] {
+                                Ok(Val::Fn {
+                                    params: params.iter().map(|e| e.clone()).collect::<Vec<Expr>>(),
+                                    body: l.iter().skip(2).map(|e| e.clone()).collect::<Vec<Expr>>()
                                 })
                             } else {
                                 Err(EvalError::EvalError)
