@@ -64,12 +64,67 @@ impl Context {
                             self.eval_mul(s)
                         },
                         _ => {
+                            self.eval_call(s)
+                        },
+                    }
+                } else {
+                    Err(EvalError::EvalError)
+                }
+            }
+        }
+    }
+
+    fn eval_call(&mut self, s: &Expr) -> EvalResult {
+        match *s {
+            Expr::List(ref l) => {
+                if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                    let fun = match self.env.get(n) {
+                        Some(v) => {
+                            v.clone()
+                        },
+                        _ => {
+                            return Err(EvalError::EvalError)
+                        }
+                    };
+
+                    let mut e_params = vec![];
+                    for e in l.iter().skip(1).map(|e| self.eval(e)) {
+                        match e {
+                            Ok(v) => {
+                                e_params.push(v)
+                            },
+                            err @ Err(_) => {
+                                return err
+                            },
+                        }
+                    }
+
+                    let mut ctx = Context::new();
+
+                    match fun {
+                        Val::Fn { ref params, ref body } => {
+                            for (p, e) in params.iter().zip(e_params.iter()) {
+                                match p {
+                                    &Expr::Symbol(ref name) => {
+                                        ctx.env.insert(name.clone(), e.clone());
+                                    },
+                                    _ => {
+                                        return Err(EvalError::EvalError)
+                                    }
+                                }
+                            }
+                            body.iter().map(|e| ctx.eval(e)).last().unwrap()
+                        },
+                        _ => {
                             Err(EvalError::EvalError)
                         }
                     }
                 } else {
                     Err(EvalError::EvalError)
                 }
+            },
+            _ => {
+                Err(EvalError::EvalError)
             }
         }
     }
@@ -407,6 +462,26 @@ mod tests {
         let actual_result = ctx.eval(&Expr::List(vec![Expr::Symbol("+".to_string()),
                                                       Expr::Symbol("a".to_string()),
                                                       Expr::Symbol("b".to_string())]));
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_define_function_and_call_it() {
+        let mut ctx = Context::new();
+        let fun = Expr::List(vec![Expr::Symbol("fn".to_string()),
+                                  Expr::List(vec![Expr::Symbol("a".to_string()),
+                                                  Expr::Symbol("b".to_string())]),
+                                  Expr::List(vec![Expr::Symbol("+".to_string()),
+                                                  Expr::Symbol("a".to_string()),
+                                                  Expr::Symbol("b".to_string())])]);
+        let def = Expr::List(vec![Expr::Symbol("def".to_string()),
+                                  Expr::Symbol("add".to_string()),
+                                  fun]);
+        ctx.eval(&def).ok().unwrap();
+        let expected_result = Val::Number(3_f64);
+        let actual_result = ctx.eval(&Expr::List(vec![Expr::Symbol("add".to_string()),
+                                                      Expr::Number(1_f64),
+                                                      Expr::Number(2_f64)]));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 }
