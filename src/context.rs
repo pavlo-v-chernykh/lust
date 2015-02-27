@@ -404,69 +404,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eval_nested_plus_special_form() {
-        let mut ctx = Context::new();
-        let actual_input = Expr::List(vec![Expr::Symbol("+".to_string()),
-                                           Expr::List(vec![Expr::Symbol("+".to_string()),
-                                                           Expr::Number(1_f64),
-                                                           Expr::Number(2_f64)]),
-                                           Expr::Number(3_f64)]);
-        let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Number(6_f64);
-        assert_eq!(expected_result, actual_result.ok().unwrap());
-    }
-
-    #[test]
-    fn test_eval_minus_special_form() {
-        let mut ctx = Context::new();
-        let actual_input = Expr::List(vec![Expr::Symbol("-".to_string()),
-                                           Expr::Number(3_f64),
-                                           Expr::Number(2_f64)]);
-        let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Number(1_f64);
-        assert_eq!(expected_result, actual_result.ok().unwrap());
-    }
-
-    #[test]
-    fn test_eval_div_special_form() {
-        let mut ctx = Context::new();
-        let actual_input = Expr::List(vec![Expr::Symbol("/".to_string()),
-                                           Expr::Number(3_f64),
-                                           Expr::Number(2_f64)]);
-        let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Number(1.5);
-        assert_eq!(expected_result, actual_result.ok().unwrap());
-    }
-
-    #[test]
-    fn test_eval_mul_special_form() {
-        let mut ctx = Context::new();
-        let actual_input = Expr::List(vec![Expr::Symbol("*".to_string()),
-                                           Expr::Number(3.5),
-                                           Expr::Number(2_f64)]);
-        let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Number(7_f64);
-        assert_eq!(expected_result, actual_result.ok().unwrap());
-    }
-
-    #[test]
-    fn test_eval_plus_special_form_using_defined_symbols() {
-        let mut ctx = Context::new();
-        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
-                                  Expr::Symbol("a".to_string()),
-                                  Expr::Number(1_f64)])).ok().unwrap();
-        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
-                                  Expr::Symbol("b".to_string()),
-                                  Expr::Number(2_f64)])).ok().unwrap();
-        let expected_result = Val::Number(3_f64);
-        let actual_result = ctx.eval(&Expr::List(vec![Expr::Symbol("+".to_string()),
-                                                      Expr::Symbol("a".to_string()),
-                                                      Expr::Symbol("b".to_string())]));
-        assert_eq!(expected_result, actual_result.ok().unwrap());
-    }
-
-    #[test]
-    fn test_define_function_and_call_it() {
+    fn test_eval_fn_special_form_and_call_define_function() {
         let mut ctx = Context::new();
         let fun = Expr::List(vec![Expr::Symbol("fn".to_string()),
                                   Expr::List(vec![Expr::Symbol("a".to_string()),
@@ -482,6 +420,56 @@ mod tests {
         let actual_result = ctx.eval(&Expr::List(vec![Expr::Symbol("add".to_string()),
                                                       Expr::Number(1_f64),
                                                       Expr::Number(2_f64)]));
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_plus_builtin_fn() {
+        let mut ctx = Context::new();
+        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
+                                  Expr::Symbol("a".to_string()),
+                                  Expr::Number(1_f64)])).ok().unwrap();
+        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
+                                  Expr::Symbol("b".to_string()),
+                                  Expr::Number(2_f64)])).ok().unwrap();
+        let actual_input = Expr::List(vec![Expr::Symbol("+".to_string()),
+                                           Expr::List(vec![Expr::Symbol("+".to_string()),
+                                                           Expr::Symbol("a".to_string()),
+                                                           Expr::Symbol("b".to_string())]),
+                                           Expr::Number(3_f64)]);
+        assert_eq!(Val::Number(6_f64), ctx.eval(&actual_input).ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_minus_builtin_fn() {
+        let mut ctx = Context::new();
+        let actual_input = Expr::List(vec![Expr::Symbol("-".to_string()),
+                                           Expr::Number(3_f64),
+                                           Expr::Number(2_f64)]);
+        let actual_result = ctx.eval(&actual_input);
+        let expected_result = Val::Number(1_f64);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_div_builtin_fn() {
+        let mut ctx = Context::new();
+        let actual_input = Expr::List(vec![Expr::Symbol("/".to_string()),
+                                           Expr::Number(3_f64),
+                                           Expr::Number(2_f64)]);
+        let actual_result = ctx.eval(&actual_input);
+        let expected_result = Val::Number(1.5);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_mul_builtin_fn() {
+        let mut ctx = Context::new();
+        let actual_input = Expr::List(vec![Expr::Symbol("*".to_string()),
+                                           Expr::Number(3.5),
+                                           Expr::Number(2_f64)]);
+        let actual_result = ctx.eval(&actual_input);
+        let expected_result = Val::Number(7_f64);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 }

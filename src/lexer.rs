@@ -132,7 +132,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                         self.read_symbol()
                     }
                 },
-                'a' ... 'z' | 'A' ... 'Z' | '/' | '*' | '%' => {
+                'a' ... 'z' | 'A' ... 'Z' | '/' | '*' | '%' | '>' | '<' | '=' => {
                     self.read_symbol()
                 },
                 '0' ... '9' => {
@@ -395,46 +395,25 @@ mod tests {
     }
 
     #[test]
-    fn test_read_mul_special_form() {
-        let lexer = Lexer::new("(* 1 1)".chars());
-        let expected_result = vec![Ok(Token::ListStart),
-                                   Ok(Token::Symbol("*".to_string())),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::ListEnd)];
-        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
-    }
-
-    #[test]
-    fn test_read_div_special_form() {
-        let lexer = Lexer::new("(/ 1 1)".chars());
-        let expected_result = vec![Ok(Token::ListStart),
-                                   Ok(Token::Symbol("/".to_string())),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::ListEnd)];
-        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
-    }
-
-    #[test]
-    fn test_read_rem_special_form() {
-        let lexer = Lexer::new("(% 1 1)".chars());
-        let expected_result = vec![Ok(Token::ListStart),
-                                   Ok(Token::Symbol("%".to_string())),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::ListEnd)];
-        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
-    }
-
-    #[test]
     fn test_read_list_of_symbols() {
-        let lexer = Lexer::new("(+ a b c)".chars());
+        let lexer = Lexer::new("(+ - / * % > < = a b c z A X Y Z)".chars());
         let expected_result = vec![Ok(Token::ListStart),
                                    Ok(Token::Symbol("+".to_string())),
+                                   Ok(Token::Symbol("-".to_string())),
+                                   Ok(Token::Symbol("/".to_string())),
+                                   Ok(Token::Symbol("*".to_string())),
+                                   Ok(Token::Symbol("%".to_string())),
+                                   Ok(Token::Symbol(">".to_string())),
+                                   Ok(Token::Symbol("<".to_string())),
+                                   Ok(Token::Symbol("=".to_string())),
                                    Ok(Token::Symbol("a".to_string())),
                                    Ok(Token::Symbol("b".to_string())),
                                    Ok(Token::Symbol("c".to_string())),
+                                   Ok(Token::Symbol("z".to_string())),
+                                   Ok(Token::Symbol("A".to_string())),
+                                   Ok(Token::Symbol("X".to_string())),
+                                   Ok(Token::Symbol("Y".to_string())),
+                                   Ok(Token::Symbol("Z".to_string())),
                                    Ok(Token::ListEnd)];
         assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
     }
