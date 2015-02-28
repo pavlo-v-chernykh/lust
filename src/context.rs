@@ -103,17 +103,11 @@ impl Context {
                             if l.len() > 2 {
                                 let mut a = try_number!(self.eval(&l[1]));
                                 for e in l.iter().skip(2) {
-                                    match self.eval(e) {
-                                        Ok(Val::Number(n)) => {
-                                            if a == n {
-                                                a = n
-                                            } else {
-                                                return Ok(Val::Bool(false))
-                                            }
-                                        },
-                                        _ => {
-                                            return Err(EvalError::EvalError)
-                                        }
+                                    let n = try_number!(self.eval(e));
+                                    if a == n {
+                                        a = n
+                                    } else {
+                                        return Ok(Val::Bool(false))
                                     }
                                 }
                                 Ok(Val::Bool(true))
@@ -144,17 +138,11 @@ impl Context {
                             if l.len() > 2 {
                                 let mut a = try_number!(self.eval(&l[1]));
                                 for e in l.iter().skip(2) {
-                                    match self.eval(e) {
-                                        Ok(Val::Number(n)) => {
-                                            if a > n {
-                                                a = n
-                                            } else {
-                                                return Ok(Val::Bool(false))
-                                            }
-                                        },
-                                        _ => {
-                                            return Err(EvalError::EvalError)
-                                        }
+                                    let n = try_number!(self.eval(e));
+                                    if a > n {
+                                        a = n
+                                    } else {
+                                        return Ok(Val::Bool(false))
                                     }
                                 }
                                 Ok(Val::Bool(true))
@@ -185,17 +173,11 @@ impl Context {
                             if l.len() > 2 {
                                 let mut a = try_number!(self.eval(&l[1]));
                                 for e in l.iter().skip(2) {
-                                    match self.eval(e) {
-                                        Ok(Val::Number(n)) => {
-                                            if a < n {
-                                                a = n
-                                            } else {
-                                                return Ok(Val::Bool(false))
-                                            }
-                                        },
-                                        _ => {
-                                            return Err(EvalError::EvalError)
-                                        }
+                                    let n = try_number!(self.eval(e));
+                                    if a < n {
+                                        a = n
+                                    } else {
+                                        return Ok(Val::Bool(false))
                                     }
                                 }
                                 Ok(Val::Bool(true))
