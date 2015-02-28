@@ -2,6 +2,17 @@ use std::collections::HashMap;
 use ast::Expr;
 use val::Val;
 
+macro_rules! try_number {
+    ($e:expr) => (match $e {
+        Ok($crate::val::Val::Number(n)) => {
+            n
+        },
+        _ => {
+            return Err(EvalError::EvalError)
+        }
+    })
+}
+
 #[derive(Debug, PartialEq)]
 enum EvalError{
     EvalError,
@@ -90,15 +101,7 @@ impl Context {
                     match &n[..] {
                         "=" => {
                             if l.len() > 2 {
-                                let mut a;
-                                match self.eval(&l[1]) {
-                                    Ok(Val::Number(n)) => {
-                                        a = n
-                                    },
-                                    _ => {
-                                        return Err(EvalError::EvalError)
-                                    }
-                                }
+                                let mut a = try_number!(self.eval(&l[1]));
                                 for e in l.iter().skip(2) {
                                     match self.eval(e) {
                                         Ok(Val::Number(n)) => {
@@ -139,15 +142,7 @@ impl Context {
                     match &n[..] {
                         ">" => {
                             if l.len() > 2 {
-                                let mut a;
-                                match self.eval(&l[1]) {
-                                    Ok(Val::Number(n)) => {
-                                        a = n
-                                    },
-                                    _ => {
-                                        return Err(EvalError::EvalError)
-                                    }
-                                }
+                                let mut a = try_number!(self.eval(&l[1]));
                                 for e in l.iter().skip(2) {
                                     match self.eval(e) {
                                         Ok(Val::Number(n)) => {
@@ -188,15 +183,7 @@ impl Context {
                     match &n[..] {
                         "<" => {
                             if l.len() > 2 {
-                                let mut a;
-                                match self.eval(&l[1]) {
-                                    Ok(Val::Number(n)) => {
-                                        a = n
-                                    },
-                                    _ => {
-                                        return Err(EvalError::EvalError)
-                                    }
-                                }
+                                let mut a = try_number!(self.eval(&l[1]));
                                 for e in l.iter().skip(2) {
                                     match self.eval(e) {
                                         Ok(Val::Number(n)) => {
