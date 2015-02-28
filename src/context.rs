@@ -54,7 +54,7 @@ impl Context {
                 Ok(Val::String(s.clone()))
             },
             Expr::List(ref l) => {
-                if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                if let Expr::Symbol(ref n) = l[0] {
                     match &n[..] {
                         "def" => {
                             self.eval_def(s)
@@ -97,12 +97,12 @@ impl Context {
     fn eval_eq(&mut self, s: &Expr) -> EvalResult {
         match *s {
             Expr::List(ref l) => {
-                if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                if let Expr::Symbol(ref n) = l[0] {
                     match &n[..] {
                         "=" => {
                             if l.len() > 2 {
                                 let mut a = try_number!(self.eval(&l[1]));
-                                for e in l.iter().skip(2) {
+                                for e in &l[2..] {
                                     let n = try_number!(self.eval(e));
                                     if a == n {
                                         a = n
@@ -132,12 +132,12 @@ impl Context {
     fn eval_gt(&mut self, s: &Expr) -> EvalResult {
         match *s {
             Expr::List(ref l) => {
-                if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                if let Expr::Symbol(ref n) = l[0] {
                     match &n[..] {
                         ">" => {
                             if l.len() > 2 {
                                 let mut a = try_number!(self.eval(&l[1]));
-                                for e in l.iter().skip(2) {
+                                for e in &l[2..] {
                                     let n = try_number!(self.eval(e));
                                     if a > n {
                                         a = n
@@ -167,12 +167,12 @@ impl Context {
     fn eval_lt(&mut self, s: &Expr) -> EvalResult {
         match *s {
             Expr::List(ref l) => {
-                if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                if let Expr::Symbol(ref n) = l[0] {
                     match &n[..] {
                         "<" => {
                             if l.len() > 2 {
                                 let mut a = try_number!(self.eval(&l[1]));
-                                for e in l.iter().skip(2) {
+                                for e in &l[2..] {
                                     let n = try_number!(self.eval(e));
                                     if a < n {
                                         a = n
@@ -202,7 +202,7 @@ impl Context {
     fn eval_call(&mut self, s: &Expr) -> EvalResult {
         match *s {
             Expr::List(ref l) => {
-                if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                if let Expr::Symbol(ref n) = l[0] {
                     let fun = match self.env.get(n) {
                         Some(v) => {
                             v.clone()
@@ -213,15 +213,8 @@ impl Context {
                     };
 
                     let mut e_params = vec![];
-                    for e in l.iter().skip(1).map(|e| self.eval(e)) {
-                        match e {
-                            Ok(v) => {
-                                e_params.push(v)
-                            },
-                            err @ Err(_) => {
-                                return err
-                            },
-                        }
+                    for e in &l[1..] {
+                        e_params.push(try!(self.eval(e)))
                     }
 
                     let mut ctx = Context::new();
@@ -256,7 +249,7 @@ impl Context {
 
     fn eval_def(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
-            if let Expr::Symbol(ref n) = *l.first().unwrap() {
+            if let Expr::Symbol(ref n) = l[0] {
                 match &n[..] {
                     "def" => {
                         if l.len() == 3 {
@@ -286,7 +279,7 @@ impl Context {
 
     fn eval_fn(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
-            if let Expr::Symbol(ref n) = *l.first().unwrap() {
+            if let Expr::Symbol(ref n) = l[0] {
                 match &n[..] {
                     "fn" => {
                         if l.len() >= 3 {
@@ -316,20 +309,13 @@ impl Context {
 
     fn eval_plus(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
-            if let Expr::Symbol(ref n) = *l.first().unwrap() {
+            if let Expr::Symbol(ref n) = l[0] {
                 match &n[..] {
                     "+" => {
                         if l.len() > 1 {
                             let mut a = 0_f64;
-                            for i in l.iter().skip(1) {
-                                match self.eval(i) {
-                                    Ok(Val::Number(n)) => {
-                                        a += n
-                                    },
-                                    _ => {
-                                        return Err(EvalError::IncorrectTypeOfArgument)
-                                    }
-                                }
+                            for i in &l[1..] {
+                                a += try_number!(self.eval(i));
                             }
                             Ok(Val::Number(a))
                         } else {
@@ -350,21 +336,14 @@ impl Context {
 
     fn eval_minus(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
-            if let Expr::Symbol(ref n) = *l.first().unwrap() {
+            if let Expr::Symbol(ref n) = l[0] {
                 match &n[..] {
                     "-" => {
                         if l.len() > 1 {
                             if let Expr::Number(n) = l[1] {
                                 let mut a = n;
-                                for i in l.iter().skip(2) {
-                                    match self.eval(i) {
-                                        Ok(Val::Number(n)) => {
-                                            a -= n
-                                        },
-                                        _ => {
-                                            return Err(EvalError::IncorrectTypeOfArgument)
-                                        }
-                                    }
+                                for i in &l[2..] {
+                                    a -= try_number!(self.eval(i));
                                 }
                                 Ok(Val::Number(a))
                             } else {
@@ -388,21 +367,14 @@ impl Context {
 
     fn eval_div(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
-            if let Expr::Symbol(ref n) = *l.first().unwrap() {
+            if let Expr::Symbol(ref n) = l[0] {
                 match &n[..] {
                     "/" => {
                         if l.len() > 1 {
                             if let Expr::Number(n) = l[1] {
                                 let mut a = n;
-                                for i in l.iter().skip(2) {
-                                    match self.eval(i) {
-                                        Ok(Val::Number(n)) => {
-                                            a /= n
-                                        },
-                                        _ => {
-                                            return Err(EvalError::IncorrectTypeOfArgument)
-                                        }
-                                    }
+                                for i in &l[2..] {
+                                    a /= try_number!(self.eval(i))
                                 }
                                 Ok(Val::Number(a))
                             } else {
@@ -426,20 +398,13 @@ impl Context {
 
     fn eval_mul(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
-            if let Expr::Symbol(ref n) = *l.first().unwrap() {
+            if let Expr::Symbol(ref n) = l[0] {
                 match &n[..] {
                     "*" => {
                         if l.len() > 1 {
                             let mut a = 1_f64;
-                            for i in l.iter().skip(1) {
-                                match self.eval(i) {
-                                    Ok(Val::Number(n)) => {
-                                        a *= n
-                                    },
-                                    _ => {
-                                        return Err(EvalError::IncorrectTypeOfArgument)
-                                    }
-                                }
+                            for i in &l[1..] {
+                                a *= try_number!(self.eval(i));
                             }
                             Ok(Val::Number(a))
                         } else {
@@ -471,7 +436,7 @@ mod tests {
         let num = 10_f64;
         let mut ctx = Context::new();
         let expected_result = Val::Number(num);
-        let actual_result = ctx.eval(&Expr::Number(num));
+        let actual_result = ctx.eval(&e_number!(num));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -480,7 +445,7 @@ mod tests {
         let s = "rust is awesome";
         let mut ctx = Context::new();
         let expected_result = Val::String(s.to_string());
-        let actual_result = ctx.eval(&Expr::String(s.to_string()));
+        let actual_result = ctx.eval(&e_string!(s));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -488,7 +453,7 @@ mod tests {
     fn test_eval_undefined_symbol_to_error() {
         let mut ctx = Context::new();
         let expected_result = EvalError;
-        let actual_result = ctx.eval(&Expr::Symbol("a".to_string()));
+        let actual_result = ctx.eval(&e_symbol!("a"));
         assert_eq!(expected_result, actual_result.err().unwrap());
     }
 
@@ -496,7 +461,7 @@ mod tests {
     fn test_eval_true_to_matching_bool() {
         let mut ctx = Context::new();
         let expected_result = Val::Bool(true);
-        let actual_result = ctx.eval(&Expr::Symbol("true".to_string()));
+        let actual_result = ctx.eval(&e_symbol!("true"));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 

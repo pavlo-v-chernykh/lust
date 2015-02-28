@@ -8,6 +8,7 @@ use context::Context;
 mod token;
 mod lexer;
 mod parser;
+#[macro_use]
 mod ast;
 mod val;
 mod context;

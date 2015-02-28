@@ -1,5 +1,21 @@
 use std::fmt;
 
+macro_rules! e_number {
+    ($n:expr) => ($crate::ast::Expr::Number($n))
+}
+
+macro_rules! e_string {
+    ($n:expr) => ($crate::ast::Expr::String($n.to_string()))
+}
+
+macro_rules! e_symbol {
+    ($n:expr) => ($crate::ast::Expr::Symbol($n.to_string()))
+}
+
+macro_rules! e_list {
+    ($($l:expr),*) => ($crate::ast::Expr::List(vec![$($l),*]))
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Number(f64),
@@ -44,15 +60,13 @@ impl fmt::Display for Vec<Expr> {
 
 #[cfg(test)]
 mod tests {
-    use super::Expr;
-
     #[test]
     fn test_format_list_with_nested_list_and_atoms() {
-        let actual_input = Expr::List(vec![Expr::Symbol("def".to_string()),
-                                           Expr::Symbol("a".to_string()),
-                                           Expr::List(vec![Expr::Symbol("+".to_string()),
-                                                           Expr::Number(1_f64),
-                                                           Expr::Number(2_f64)])]);
+        let actual_input = e_list![e_symbol!("def"),
+                                   e_symbol!("a"),
+                                   e_list![e_symbol!("+"),
+                                           e_number!(1_f64),
+                                           e_number!(2_f64)]];
         let actual_result = format!("{}", actual_input);
         let expected_result = "(def a (+ 1 2))";
         assert_eq!(expected_result, actual_result);
