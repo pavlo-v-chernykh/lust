@@ -63,6 +63,15 @@ impl Context {
                         "*" => {
                             self.eval_mul(s)
                         },
+                        "<" => {
+                            self.eval_lt(s)
+                        },
+                        ">" => {
+                            self.eval_gt(s)
+                        },
+                        "=" => {
+                            self.eval_eq(s)
+                        },
                         _ => {
                             self.eval_call(s)
                         },
@@ -70,6 +79,153 @@ impl Context {
                 } else {
                     Err(EvalError::EvalError)
                 }
+            }
+        }
+    }
+
+    fn eval_eq(&mut self, s: &Expr) -> EvalResult {
+        match *s {
+            Expr::List(ref l) => {
+                if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                    match &n[..] {
+                        "=" => {
+                            if l.len() > 2 {
+                                let mut a;
+                                match l[1] {
+                                    Expr::Number(n) => {
+                                        a = n
+                                    },
+                                    _ => {
+                                        return Err(EvalError::EvalError)
+                                    }
+                                }
+                                for e in l.iter().skip(2) {
+                                    match *e {
+                                        Expr::Number(n) => {
+                                            if a == n {
+                                                a = n
+                                            } else {
+                                                return Ok(Val::Bool(false))
+                                            }
+                                        },
+                                        _ => {
+                                            return Err(EvalError::EvalError)
+                                        }
+                                    }
+                                }
+                                Ok(Val::Bool(true))
+                            } else {
+                                Err(EvalError::EvalError)
+                            }
+                        },
+                        _ => {
+                            Err(EvalError::EvalError)
+                        }
+                    }
+                } else {
+                    Err(EvalError::EvalError)
+                }
+            },
+            _ => {
+                Err(EvalError::EvalError)
+            }
+        }
+    }
+
+    fn eval_gt(&mut self, s: &Expr) -> EvalResult {
+        match *s {
+            Expr::List(ref l) => {
+                if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                    match &n[..] {
+                        ">" => {
+                            if l.len() > 2 {
+                                let mut a;
+                                match l[1] {
+                                    Expr::Number(n) => {
+                                        a = n
+                                    },
+                                    _ => {
+                                        return Err(EvalError::EvalError)
+                                    }
+                                }
+                                for e in l.iter().skip(2) {
+                                    match *e {
+                                        Expr::Number(n) => {
+                                            if a > n {
+                                                a = n
+                                            } else {
+                                                return Ok(Val::Bool(false))
+                                            }
+                                        },
+                                        _ => {
+                                            return Err(EvalError::EvalError)
+                                        }
+                                    }
+                                }
+                                Ok(Val::Bool(true))
+                            } else {
+                                Err(EvalError::EvalError)
+                            }
+                        },
+                        _ => {
+                            Err(EvalError::EvalError)
+                        }
+                    }
+                } else {
+                    Err(EvalError::EvalError)
+                }
+            },
+            _ => {
+                Err(EvalError::EvalError)
+            }
+        }
+    }
+
+    fn eval_lt(&mut self, s: &Expr) -> EvalResult {
+        match *s {
+            Expr::List(ref l) => {
+                if let Expr::Symbol(ref n) = *l.first().unwrap() {
+                    match &n[..] {
+                        "<" => {
+                            if l.len() > 2 {
+                                let mut a;
+                                match l[1] {
+                                    Expr::Number(n) => {
+                                        a = n
+                                    },
+                                    _ => {
+                                        return Err(EvalError::EvalError)
+                                    }
+                                }
+                                for e in l.iter().skip(2) {
+                                    match *e {
+                                        Expr::Number(n) => {
+                                            if a < n {
+                                                a = n
+                                            } else {
+                                                return Ok(Val::Bool(false))
+                                            }
+                                        },
+                                        _ => {
+                                            return Err(EvalError::EvalError)
+                                        }
+                                    }
+                                }
+                                Ok(Val::Bool(true))
+                            } else {
+                                Err(EvalError::EvalError)
+                            }
+                        },
+                        _ => {
+                            Err(EvalError::EvalError)
+                        }
+                    }
+                } else {
+                    Err(EvalError::EvalError)
+                }
+            },
+            _ => {
+                Err(EvalError::EvalError)
             }
         }
     }
@@ -167,8 +323,8 @@ impl Context {
                         if l.len() >= 3 {
                             if let Expr::List(ref params) = l[1] {
                                 Ok(Val::Fn {
-                                    params: params.iter().map(|e| e.clone()).collect::<Vec<Expr>>(),
-                                    body: l.iter().skip(2).map(|e| e.clone()).collect::<Vec<Expr>>()
+                                    params: params.iter().cloned().collect::<Vec<Expr>>(),
+                                    body: l.iter().skip(2).cloned().collect::<Vec<Expr>>()
                                 })
                             } else {
                                 Err(EvalError::EvalError)
@@ -470,6 +626,78 @@ mod tests {
                                            Expr::Number(2_f64)]);
         let actual_result = ctx.eval(&actual_input);
         let expected_result = Val::Number(7_f64);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_lt_builtin_fn_positive_case() {
+        let mut ctx = Context::new();
+        let actual_input = Expr::List(vec![Expr::Symbol("<".to_string()),
+                                           Expr::Number(1_f64),
+                                           Expr::Number(2_f64),
+                                           Expr::Number(3_f64)]);
+        let actual_result = ctx.eval(&actual_input);
+        let expected_result = Val::Bool(true);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_lt_builtin_fn_negative_case() {
+        let mut ctx = Context::new();
+        let actual_input = Expr::List(vec![Expr::Symbol("<".to_string()),
+                                           Expr::Number(3.5),
+                                           Expr::Number(20_f64),
+                                           Expr::Number(1_f64)]);
+        let actual_result = ctx.eval(&actual_input);
+        let expected_result = Val::Bool(false);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_gt_builtin_fn_positive_case() {
+        let mut ctx = Context::new();
+        let actual_input = Expr::List(vec![Expr::Symbol(">".to_string()),
+                                           Expr::Number(3_f64),
+                                           Expr::Number(2_f64),
+                                           Expr::Number(1_f64)]);
+        let actual_result = ctx.eval(&actual_input);
+        let expected_result = Val::Bool(true);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_gt_builtin_fn_negative_case() {
+        let mut ctx = Context::new();
+        let actual_input = Expr::List(vec![Expr::Symbol(">".to_string()),
+                                           Expr::Number(3.5),
+                                           Expr::Number(20_f64),
+                                           Expr::Number(1_f64)]);
+        let actual_result = ctx.eval(&actual_input);
+        let expected_result = Val::Bool(false);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_eq_builtin_fn_positive_case() {
+        let mut ctx = Context::new();
+        let actual_input = Expr::List(vec![Expr::Symbol("=".to_string()),
+                                           Expr::Number(3_f64),
+                                           Expr::Number(3_f64),
+                                           Expr::Number(3_f64)]);
+        let actual_result = ctx.eval(&actual_input);
+        let expected_result = Val::Bool(true);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_eq_builtin_fn_negative_case() {
+        let mut ctx = Context::new();
+        let actual_input = Expr::List(vec![Expr::Symbol("=".to_string()),
+                                           Expr::Number(3.5),
+                                           Expr::Number(20_f64),
+                                           Expr::Number(1_f64)]);
+        let actual_result = ctx.eval(&actual_input);
+        let expected_result = Val::Bool(false);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 }
