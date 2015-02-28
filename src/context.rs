@@ -91,8 +91,8 @@ impl Context {
                         "=" => {
                             if l.len() > 2 {
                                 let mut a;
-                                match l[1] {
-                                    Expr::Number(n) => {
+                                match self.eval(&l[1]) {
+                                    Ok(Val::Number(n)) => {
                                         a = n
                                     },
                                     _ => {
@@ -100,8 +100,8 @@ impl Context {
                                     }
                                 }
                                 for e in l.iter().skip(2) {
-                                    match *e {
-                                        Expr::Number(n) => {
+                                    match self.eval(e) {
+                                        Ok(Val::Number(n)) => {
                                             if a == n {
                                                 a = n
                                             } else {
@@ -140,8 +140,8 @@ impl Context {
                         ">" => {
                             if l.len() > 2 {
                                 let mut a;
-                                match l[1] {
-                                    Expr::Number(n) => {
+                                match self.eval(&l[1]) {
+                                    Ok(Val::Number(n)) => {
                                         a = n
                                     },
                                     _ => {
@@ -149,8 +149,8 @@ impl Context {
                                     }
                                 }
                                 for e in l.iter().skip(2) {
-                                    match *e {
-                                        Expr::Number(n) => {
+                                    match self.eval(e) {
+                                        Ok(Val::Number(n)) => {
                                             if a > n {
                                                 a = n
                                             } else {
@@ -189,8 +189,8 @@ impl Context {
                         "<" => {
                             if l.len() > 2 {
                                 let mut a;
-                                match l[1] {
-                                    Expr::Number(n) => {
+                                match self.eval(&l[1]) {
+                                    Ok(Val::Number(n)) => {
                                         a = n
                                     },
                                     _ => {
@@ -198,8 +198,8 @@ impl Context {
                                     }
                                 }
                                 for e in l.iter().skip(2) {
-                                    match *e {
-                                        Expr::Number(n) => {
+                                    match self.eval(e) {
+                                        Ok(Val::Number(n)) => {
                                             if a < n {
                                                 a = n
                                             } else {
@@ -656,8 +656,11 @@ mod tests {
     #[test]
     fn test_eval_gt_builtin_fn_positive_case() {
         let mut ctx = Context::new();
+        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
+                                  Expr::Symbol("a".to_string()),
+                                  Expr::Number(3_f64)])).ok().unwrap();
         let actual_input = Expr::List(vec![Expr::Symbol(">".to_string()),
-                                           Expr::Number(3_f64),
+                                           Expr::Symbol("a".to_string()),
                                            Expr::Number(2_f64),
                                            Expr::Number(1_f64)]);
         let actual_result = ctx.eval(&actual_input);
@@ -668,9 +671,12 @@ mod tests {
     #[test]
     fn test_eval_gt_builtin_fn_negative_case() {
         let mut ctx = Context::new();
+        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
+                                  Expr::Symbol("a".to_string()),
+                                  Expr::Number(20_f64)])).ok().unwrap();
         let actual_input = Expr::List(vec![Expr::Symbol(">".to_string()),
                                            Expr::Number(3.5),
-                                           Expr::Number(20_f64),
+                                           Expr::Symbol("a".to_string()),
                                            Expr::Number(1_f64)]);
         let actual_result = ctx.eval(&actual_input);
         let expected_result = Val::Bool(false);
@@ -680,8 +686,11 @@ mod tests {
     #[test]
     fn test_eval_eq_builtin_fn_positive_case() {
         let mut ctx = Context::new();
+        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
+                          Expr::Symbol("a".to_string()),
+                          Expr::Number(3_f64)])).ok().unwrap();
         let actual_input = Expr::List(vec![Expr::Symbol("=".to_string()),
-                                           Expr::Number(3_f64),
+                                           Expr::Symbol("a".to_string()),
                                            Expr::Number(3_f64),
                                            Expr::Number(3_f64)]);
         let actual_result = ctx.eval(&actual_input);
@@ -692,10 +701,13 @@ mod tests {
     #[test]
     fn test_eval_eq_builtin_fn_negative_case() {
         let mut ctx = Context::new();
+        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
+                                  Expr::Symbol("a".to_string()),
+                                  Expr::Number(1_f64)])).ok().unwrap();
         let actual_input = Expr::List(vec![Expr::Symbol("=".to_string()),
                                            Expr::Number(3.5),
                                            Expr::Number(20_f64),
-                                           Expr::Number(1_f64)]);
+                                           Expr::Symbol("a".to_string())]);
         let actual_result = ctx.eval(&actual_input);
         let expected_result = Val::Bool(false);
         assert_eq!(expected_result, actual_result.ok().unwrap());
