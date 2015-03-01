@@ -1,6 +1,26 @@
 use std::fmt;
 use ast::Expr;
 
+macro_rules! v_number {
+    ($e:expr) => ($crate::val::Val::Number($e));
+}
+
+macro_rules! v_bool {
+    ($e:expr) => ($crate::val::Val::Bool($e));
+}
+
+macro_rules! v_string {
+    ($e:expr) => ($crate::val::Val::String($e.to_string()));
+}
+
+macro_rules! v_symbol {
+    ($e:expr) => ($crate::val::Val::Symbol($e.to_string()));
+}
+
+macro_rules! v_list {
+    ($($e:expr),*) => ($crate::val::Val::List(vec![$($e),*]));
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Val {
     Number(f64),
@@ -56,15 +76,13 @@ impl fmt::Display for Vec<Val> {
 
 #[cfg(test)]
 mod tests {
-    use super::Val;
-
     #[test]
     fn test_format_list_with_nested_list_and_atoms() {
-        let actual_input = Val::List(vec![Val::Symbol("def".to_string()),
-                                          Val::Symbol("a".to_string()),
-                                          Val::List(vec![Val::Symbol("+".to_string()),
-                                                         Val::Number(1_f64),
-                                                         Val::Number(2_f64)])]);
+        let actual_input = v_list![v_symbol!["def"],
+                                   v_symbol!["a"],
+                                   v_list![v_symbol!["+"],
+                                           v_number![1_f64],
+                                           v_number![2_f64]]];
         let actual_result = format!("{}", actual_input);
         let expected_result = "(def a (+ 1 2))";
         assert_eq!(expected_result, actual_result);

@@ -10,6 +10,7 @@ mod lexer;
 mod parser;
 #[macro_use]
 mod ast;
+#[macro_use]
 mod val;
 mod context;
 
@@ -20,8 +21,7 @@ fn main() {
         print!("-> ");
         match old_io::stdin().read_line() {
             Ok(input) => {
-                let mut parser = Parser::new(input.chars());
-                match parser.parse() {
+                match Parser::new(input.chars()).parse() {
                     Ok(ref expr) => {
                         match ctx.eval(expr) {
                             Ok(ref res) => {

@@ -231,7 +231,11 @@ impl Context {
                                     }
                                 }
                             }
-                            body.iter().map(|e| ctx.eval(e)).last().unwrap()
+                            let mut result = v_list![];
+                            for e in body {
+                                result = try!(ctx.eval(e))
+                            }
+                            Ok(result)
                         },
                         _ => {
                             Err(EvalError::EvalError)
@@ -426,8 +430,6 @@ impl Context {
 
 #[cfg(test)]
 mod tests {
-    use ast::Expr;
-    use val::Val;
     use super::Context;
     use super::EvalError::EvalError;
 
@@ -435,7 +437,7 @@ mod tests {
     fn test_eval_number_to_itself() {
         let num = 10_f64;
         let mut ctx = Context::new();
-        let expected_result = Val::Number(num);
+        let expected_result = v_number!(num);
         let actual_result = ctx.eval(&e_number!(num));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -444,7 +446,7 @@ mod tests {
     fn test_eval_string_to_itself() {
         let s = "rust is awesome";
         let mut ctx = Context::new();
-        let expected_result = Val::String(s.to_string());
+        let expected_result = v_string!(s);
         let actual_result = ctx.eval(&e_string!(s));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -460,7 +462,7 @@ mod tests {
     #[test]
     fn test_eval_true_to_matching_bool() {
         let mut ctx = Context::new();
-        let expected_result = Val::Bool(true);
+        let expected_result = v_bool!(true);
         let actual_result = ctx.eval(&e_symbol!("true"));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -468,16 +470,16 @@ mod tests {
     #[test]
     fn test_eval_false_to_matching_bool() {
         let mut ctx = Context::new();
-        let expected_result = Val::Bool(false);
-        let actual_result = ctx.eval(&Expr::Symbol("false".to_string()));
+        let expected_result = v_bool!(false);
+        let actual_result = ctx.eval(&e_symbol!("false"));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_nil_to_empty_list() {
         let mut ctx = Context::new();
-        let expected_result = Val::List(vec![]);
-        let actual_result = ctx.eval(&Expr::Symbol("nil".to_string()));
+        let expected_result = v_list![];
+        let actual_result = ctx.eval(&e_symbol!("nil"));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -485,10 +487,8 @@ mod tests {
     fn test_eval_def_special_form() {
         let num = 1_f64;
         let mut ctx = Context::new();
-        let expected_result = Val::Number(num);
-        let actual_input = Expr::List(vec![Expr::Symbol("def".to_string()),
-                                           Expr::Symbol("a".to_string()),
-                                           Expr::Number(num)]);
+        let expected_result = v_number!(num);
+        let actual_input = e_list![e_symbol!("def"), e_symbol!("a"), e_number!(num)];
         let actual_result = ctx.eval(&actual_input);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -496,154 +496,128 @@ mod tests {
     #[test]
     fn test_eval_fn_special_form_and_call_define_function() {
         let mut ctx = Context::new();
-        let fun = Expr::List(vec![Expr::Symbol("fn".to_string()),
-                                  Expr::List(vec![Expr::Symbol("a".to_string()),
-                                                  Expr::Symbol("b".to_string())]),
-                                  Expr::List(vec![Expr::Symbol("+".to_string()),
-                                                  Expr::Symbol("a".to_string()),
-                                                  Expr::Symbol("b".to_string())])]);
-        let def = Expr::List(vec![Expr::Symbol("def".to_string()),
-                                  Expr::Symbol("add".to_string()),
-                                  fun]);
-        ctx.eval(&def).ok().unwrap();
-        let expected_result = Val::Number(3_f64);
-        let actual_result = ctx.eval(&Expr::List(vec![Expr::Symbol("add".to_string()),
-                                                      Expr::Number(1_f64),
-                                                      Expr::Number(2_f64)]));
+        let fun = e_list![e_symbol!("fn"),
+                          e_list![e_symbol!("a"), e_symbol!("b")],
+                          e_list![e_symbol!("+"), e_symbol!("a"), e_symbol!("b")]];
+        ctx.eval(&e_list![e_symbol!("def"), e_symbol!("add"), fun]).ok().unwrap();
+        let expected_result = v_number!(3_f64);
+        let actual_result = ctx.eval(&e_list![e_symbol!("add"),
+                                              e_number!(1_f64),
+                                              e_number!(2_f64)]);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_plus_builtin_fn() {
         let mut ctx = Context::new();
-        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
-                                  Expr::Symbol("a".to_string()),
-                                  Expr::Number(1_f64)])).ok().unwrap();
-        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
-                                  Expr::Symbol("b".to_string()),
-                                  Expr::Number(2_f64)])).ok().unwrap();
-        let actual_input = Expr::List(vec![Expr::Symbol("+".to_string()),
-                                           Expr::List(vec![Expr::Symbol("+".to_string()),
-                                                           Expr::Symbol("a".to_string()),
-                                                           Expr::Symbol("b".to_string())]),
-                                           Expr::Number(3_f64)]);
-        assert_eq!(Val::Number(6_f64), ctx.eval(&actual_input).ok().unwrap());
+        ctx.eval(&e_list![e_symbol!("def"), e_symbol!("a"), e_number!(1_f64)]).ok().unwrap();
+        ctx.eval(&e_list![e_symbol!("def"), e_symbol!("b"), e_number!(2_f64)]).ok().unwrap();
+        let actual_input = e_list![e_symbol!("+"),
+                                   e_list![e_symbol!("+"), e_symbol!("a"), e_symbol!("b")],
+                                   e_number!(3_f64)];
+        assert_eq!(v_number!(6_f64), ctx.eval(&actual_input).ok().unwrap());
     }
 
     #[test]
     fn test_eval_minus_builtin_fn() {
         let mut ctx = Context::new();
-        let actual_input = Expr::List(vec![Expr::Symbol("-".to_string()),
-                                           Expr::Number(3_f64),
-                                           Expr::Number(2_f64)]);
+        let actual_input = e_list![e_symbol!("-"), e_number!(3_f64), e_number!(2_f64)];
         let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Number(1_f64);
+        let expected_result = v_number!(1_f64);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_div_builtin_fn() {
         let mut ctx = Context::new();
-        let actual_input = Expr::List(vec![Expr::Symbol("/".to_string()),
-                                           Expr::Number(3_f64),
-                                           Expr::Number(2_f64)]);
+        let actual_input = e_list![e_symbol!("/"), e_number!(3_f64), e_number!(2_f64)];
         let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Number(1.5);
+        let expected_result = v_number!(1.5);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_mul_builtin_fn() {
         let mut ctx = Context::new();
-        let actual_input = Expr::List(vec![Expr::Symbol("*".to_string()),
-                                           Expr::Number(3.5),
-                                           Expr::Number(2_f64)]);
+        let actual_input = e_list![e_symbol!("*"), e_number!(3.5), e_number!(2_f64)];
         let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Number(7_f64);
+        let expected_result = v_number!(7_f64);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_lt_builtin_fn_positive_case() {
         let mut ctx = Context::new();
-        let actual_input = Expr::List(vec![Expr::Symbol("<".to_string()),
-                                           Expr::Number(1_f64),
-                                           Expr::Number(2_f64),
-                                           Expr::Number(3_f64)]);
+        let actual_input = e_list![e_symbol!("<"),
+                                   e_number!(1_f64),
+                                   e_number!(2_f64),
+                                   e_number!(3_f64)];
         let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Bool(true);
+        let expected_result = v_bool!(true);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_lt_builtin_fn_negative_case() {
         let mut ctx = Context::new();
-        let actual_input = Expr::List(vec![Expr::Symbol("<".to_string()),
-                                           Expr::Number(3.5),
-                                           Expr::Number(20_f64),
-                                           Expr::Number(1_f64)]);
+        let actual_input = e_list![e_symbol!("<"),
+                                   e_number!(3.5),
+                                   e_number!(20_f64),
+                                   e_number!(1_f64)];
         let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Bool(false);
+        let expected_result = v_bool!(false);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_gt_builtin_fn_positive_case() {
         let mut ctx = Context::new();
-        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
-                                  Expr::Symbol("a".to_string()),
-                                  Expr::Number(3_f64)])).ok().unwrap();
-        let actual_input = Expr::List(vec![Expr::Symbol(">".to_string()),
-                                           Expr::Symbol("a".to_string()),
-                                           Expr::Number(2_f64),
-                                           Expr::Number(1_f64)]);
+        ctx.eval(&e_list![e_symbol!("def"), e_symbol!("a"), e_number!(3_f64)]).ok().unwrap();
+        let actual_input = e_list![e_symbol!(">"),
+                                   e_symbol!("a"),
+                                   e_number!(2_f64),
+                                   e_number!(1_f64)];
         let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Bool(true);
+        let expected_result = v_bool!(true);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_gt_builtin_fn_negative_case() {
         let mut ctx = Context::new();
-        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
-                                  Expr::Symbol("a".to_string()),
-                                  Expr::Number(20_f64)])).ok().unwrap();
-        let actual_input = Expr::List(vec![Expr::Symbol(">".to_string()),
-                                           Expr::Number(3.5),
-                                           Expr::Symbol("a".to_string()),
-                                           Expr::Number(1_f64)]);
+        ctx.eval(&e_list![e_symbol!("def"), e_symbol!("a"), e_number!(20_f64)]).ok().unwrap();
+        let actual_input = e_list![e_symbol!(">"),
+                                   e_number!(3.5),
+                                   e_symbol!("a"),
+                                   e_number!(1_f64)];
         let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Bool(false);
+        let expected_result = v_bool!(false);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_eq_builtin_fn_positive_case() {
         let mut ctx = Context::new();
-        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
-                          Expr::Symbol("a".to_string()),
-                          Expr::Number(3_f64)])).ok().unwrap();
-        let actual_input = Expr::List(vec![Expr::Symbol("=".to_string()),
-                                           Expr::Symbol("a".to_string()),
-                                           Expr::Number(3_f64),
-                                           Expr::Number(3_f64)]);
+        ctx.eval(&e_list![e_symbol!("def"), e_symbol!("a"), e_number!(3_f64)]).ok().unwrap();
+        let actual_input = e_list![e_symbol!("="),
+                                   e_symbol!("a"),
+                                   e_number!(3_f64),
+                                   e_number!(3_f64)];
         let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Bool(true);
+        let expected_result = v_bool!(true);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
     fn test_eval_eq_builtin_fn_negative_case() {
         let mut ctx = Context::new();
-        ctx.eval(&Expr::List(vec![Expr::Symbol("def".to_string()),
-                                  Expr::Symbol("a".to_string()),
-                                  Expr::Number(1_f64)])).ok().unwrap();
-        let actual_input = Expr::List(vec![Expr::Symbol("=".to_string()),
-                                           Expr::Number(3.5),
-                                           Expr::Number(20_f64),
-                                           Expr::Symbol("a".to_string())]);
+        ctx.eval(&e_list![e_symbol!["def"], e_symbol!["a"], e_number![1_f64]]).ok().unwrap();
+        let actual_input = e_list![e_symbol!["="],
+                                   e_number![3.5],
+                                   e_number![20_f64],
+                                   e_symbol!["a"]];
         let actual_result = ctx.eval(&actual_input);
-        let expected_result = Val::Bool(false);
+        let expected_result = v_bool![false];
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 }
