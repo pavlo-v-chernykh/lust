@@ -286,51 +286,50 @@ impl<I: Iterator<Item=char>> Lexer<I> {
 
 #[cfg(test)]
 mod tests {
-    use token::Token;
     use super::{Lexer, LexerResult, LexerError, LexerErrorCode};
 
     #[test]
     fn test_read_nil() {
-        let sym_name = "nil".to_string();
+        let sym_name = "nil";
         let mut lexer = Lexer::new(sym_name.chars());
-        assert_eq!(Some(Ok(Token::Symbol(sym_name.clone()))), lexer.next());
+        assert_eq!(Some(Ok(t_symbol!(sym_name))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
     #[test]
     fn test_read_integer_as_float() {
         let mut lexer = Lexer::new("64".chars());
-        assert_eq!(Some(Ok(Token::Number(64_f64))), lexer.next());
+        assert_eq!(Some(Ok(t_number!(64_f64))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
     #[test]
     fn test_read_float() {
         let mut lexer = Lexer::new("64.5".chars());
-        assert_eq!(Some(Ok(Token::Number(64.5))), lexer.next());
+        assert_eq!(Some(Ok(t_number!(64.5))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
     #[test]
     fn test_read_string() {
-        let s = "rust is beautiful".to_string();
+        let s = "rust is beautiful";
         let actual_input = format!(r#""{}""#, s);
         let mut lexer = Lexer::new(actual_input.chars());
-        assert_eq!(Some(Ok(Token::String(s))), lexer.next());
+        assert_eq!(Some(Ok(t_string!(s))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
     #[test]
     fn test_read_symbol() {
-        let sym_name = "my-symbol".to_string();
+        let sym_name = "my-symbol";
         let mut lexer = Lexer::new(sym_name.chars());
-        assert_eq!(Some(Ok(Token::Symbol(sym_name.clone()))), lexer.next());
+        assert_eq!(Some(Ok(t_symbol!(sym_name))), lexer.next());
         assert_eq!(None, lexer.next());
     }
 
     #[test]
     fn test_read_incorrect_symbol_starting_with_digit() {
-        let sym_name = "6-my-incorrect-symbol".to_string();
+        let sym_name = "6-my-incorrect-symbol";
         let mut lexer = Lexer::new(sym_name.chars());
         let expected_result = Some(Err(LexerError {
             code: LexerErrorCode::InvalidSyntax,
@@ -344,7 +343,7 @@ mod tests {
     #[test]
     fn test_read_explicitly_positive_number() {
         let mut lexer = Lexer::new("+1".chars());
-        let expected_result = Some(Ok(Token::Number(1_f64)));
+        let expected_result = Some(Ok(t_number!(1_f64)));
         assert_eq!(expected_result, lexer.next());
         assert_eq!(None, lexer.next());
     }
@@ -352,7 +351,7 @@ mod tests {
     #[test]
     fn test_read_explicitly_negative_number() {
         let mut lexer = Lexer::new("-1".chars());
-        let expected_result = Some(Ok(Token::Number(-1_f64)));
+        let expected_result = Some(Ok(t_number!(-1_f64)));
         assert_eq!(expected_result, lexer.next());
         assert_eq!(None, lexer.next());
     }
@@ -360,61 +359,61 @@ mod tests {
     #[test]
     fn test_read_dense_expression() {
         let lexer = Lexer::new("(def a 1)".chars());
-        let expected_result = vec![Ok(Token::ListStart),
-                                   Ok(Token::Symbol("def".to_string())),
-                                   Ok(Token::Symbol("a".to_string())),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::ListEnd)];
+        let expected_result = vec![Ok(t_list_start![]),
+                                   Ok(t_symbol!("def")),
+                                   Ok(t_symbol!("a")),
+                                   Ok(t_number!(1_f64)),
+                                   Ok(t_list_end![])];
         assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
     }
 
     #[test]
     fn test_read_sparse_expression() {
         let lexer = Lexer::new(" ( \n def a\n1)   \n".chars());
-        let expected_result = vec![Ok(Token::ListStart),
-                                   Ok(Token::Symbol("def".to_string())),
-                                   Ok(Token::Symbol("a".to_string())),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::ListEnd)];
+        let expected_result = vec![Ok(t_list_start![]),
+                                   Ok(t_symbol!("def")),
+                                   Ok(t_symbol!("a")),
+                                   Ok(t_number!(1_f64)),
+                                   Ok(t_list_end![])];
         assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
     }
 
     #[test]
     fn test_read_nested_list_expressions() {
         let lexer = Lexer::new("(def a (+ 1 1))".chars());
-        let expected_result = vec![Ok(Token::ListStart),
-                                   Ok(Token::Symbol("def".to_string())),
-                                   Ok(Token::Symbol("a".to_string())),
-                                   Ok(Token::ListStart),
-                                   Ok(Token::Symbol("+".to_string())),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::Number(1_f64)),
-                                   Ok(Token::ListEnd),
-                                   Ok(Token::ListEnd)];
+        let expected_result = vec![Ok(t_list_start![]),
+                                   Ok(t_symbol!("def")),
+                                   Ok(t_symbol!("a")),
+                                   Ok(t_list_start![]),
+                                   Ok(t_symbol!("+")),
+                                   Ok(t_number!(1_f64)),
+                                   Ok(t_number!(1_f64)),
+                                   Ok(t_list_end![]),
+                                   Ok(t_list_end![])];
         assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
     }
 
     #[test]
     fn test_read_list_of_symbols() {
         let lexer = Lexer::new("(+ - / * % > < = a b c z A X Y Z)".chars());
-        let expected_result = vec![Ok(Token::ListStart),
-                                   Ok(Token::Symbol("+".to_string())),
-                                   Ok(Token::Symbol("-".to_string())),
-                                   Ok(Token::Symbol("/".to_string())),
-                                   Ok(Token::Symbol("*".to_string())),
-                                   Ok(Token::Symbol("%".to_string())),
-                                   Ok(Token::Symbol(">".to_string())),
-                                   Ok(Token::Symbol("<".to_string())),
-                                   Ok(Token::Symbol("=".to_string())),
-                                   Ok(Token::Symbol("a".to_string())),
-                                   Ok(Token::Symbol("b".to_string())),
-                                   Ok(Token::Symbol("c".to_string())),
-                                   Ok(Token::Symbol("z".to_string())),
-                                   Ok(Token::Symbol("A".to_string())),
-                                   Ok(Token::Symbol("X".to_string())),
-                                   Ok(Token::Symbol("Y".to_string())),
-                                   Ok(Token::Symbol("Z".to_string())),
-                                   Ok(Token::ListEnd)];
+        let expected_result = vec![Ok(t_list_start![]),
+                                   Ok(t_symbol!("+")),
+                                   Ok(t_symbol!("-")),
+                                   Ok(t_symbol!("/")),
+                                   Ok(t_symbol!("*")),
+                                   Ok(t_symbol!("%")),
+                                   Ok(t_symbol!(">")),
+                                   Ok(t_symbol!("<")),
+                                   Ok(t_symbol!("=")),
+                                   Ok(t_symbol!("a")),
+                                   Ok(t_symbol!("b")),
+                                   Ok(t_symbol!("c")),
+                                   Ok(t_symbol!("z")),
+                                   Ok(t_symbol!("A")),
+                                   Ok(t_symbol!("X")),
+                                   Ok(t_symbol!("Y")),
+                                   Ok(t_symbol!("Z")),
+                                   Ok(t_list_end![])];
         assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
     }
 }

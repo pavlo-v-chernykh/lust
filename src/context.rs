@@ -32,9 +32,9 @@ impl Context {
         let mut ctx = Context {
             env: HashMap::new(),
         };
-        ctx.env.insert("nil".to_string(), Val::List(vec![]));
-        ctx.env.insert("true".to_string(), Val::Bool(true));
-        ctx.env.insert("false".to_string(), Val::Bool(false));
+        ctx.env.insert("nil".to_string(), v_list![]);
+        ctx.env.insert("true".to_string(), v_bool!(true));
+        ctx.env.insert("false".to_string(), v_bool!(false));
         ctx
     }
 

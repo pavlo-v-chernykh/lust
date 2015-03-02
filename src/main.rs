@@ -5,13 +5,14 @@ use std::old_io;
 use parser::Parser;
 use context::Context;
 
+#[macro_use]
 mod token;
-mod lexer;
-mod parser;
 #[macro_use]
 mod ast;
 #[macro_use]
 mod val;
+mod lexer;
+mod parser;
 mod context;
 
 #[cfg_attr(test, allow(dead_code))]
