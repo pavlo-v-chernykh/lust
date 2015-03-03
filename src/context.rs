@@ -2,17 +2,6 @@ use std::collections::HashMap;
 use ast::Expr;
 use val::Val;
 
-macro_rules! try_number {
-    ($e:expr) => (match $e {
-        Ok($crate::val::Val::Number(n)) => {
-            n
-        },
-        _ => {
-            return Err(EvalError(EvalErrorCode::UnknownError))
-        }
-    })
-}
-
 #[derive(Debug, PartialEq)]
 enum EvalErrorCode {
     UnknownError
@@ -144,7 +133,11 @@ impl Context {
             if l.len() >= 3 {
                 let mut a = 0_f64;
                 for i in &l[1..] {
-                    a += try_number!(self.eval(i));
+                    if let Ok(Val::Number(n)) = self.eval(i) {
+                        a += n;
+                    } else {
+                        return self.error(EvalErrorCode::UnknownError)
+                    }
                 }
                 Ok(Val::Number(a))
             } else {
@@ -161,7 +154,11 @@ impl Context {
                 if let Expr::Number(n) = l[1] {
                     let mut a = n;
                     for i in &l[2..] {
-                        a -= try_number!(self.eval(i));
+                        if let Ok(Val::Number(n)) = self.eval(i) {
+                            a -= n
+                        } else {
+                            return self.error(EvalErrorCode::UnknownError)
+                        }
                     }
                     Ok(Val::Number(a))
                 } else {
@@ -180,7 +177,11 @@ impl Context {
             if l.len() >= 3 {
                 let mut a = 1_f64;
                 for i in &l[1..] {
-                    a *= try_number!(self.eval(i));
+                    if let Ok(Val::Number(n)) = self.eval(i) {
+                        a *= n
+                    } else {
+                        return self.error(EvalErrorCode::UnknownError)
+                    }
                 }
                 Ok(Val::Number(a))
             } else {
@@ -197,7 +198,11 @@ impl Context {
                 if let Expr::Number(n) = l[1] {
                     let mut a = n;
                     for i in &l[2..] {
-                        a /= try_number!(self.eval(i))
+                        if let Ok(Val::Number(n)) = self.eval(i) {
+                            a /= n
+                        } else {
+                            return self.error(EvalErrorCode::UnknownError)
+                        }
                     }
                     Ok(Val::Number(a))
                 } else {
@@ -214,16 +219,23 @@ impl Context {
     fn eval_lt(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if l.len() >= 3 {
-                let mut a = try_number!(self.eval(&l[1]));
-                for e in &l[2..] {
-                    let n = try_number!(self.eval(e));
-                    if a < n {
-                        a = n
-                    } else {
-                        return Ok(Val::Bool(false))
+                if let Ok(Val::Number(n)) = self.eval(&l[1]) {
+                    let mut a = n;
+                    for i in &l[2..] {
+                        if let Ok(Val::Number(n)) = self.eval(i) {
+                            if a < n {
+                                a = n
+                            } else {
+                                return Ok(Val::Bool(false))
+                            }
+                        } else {
+                            return self.error(EvalErrorCode::UnknownError)
+                        }
                     }
+                    Ok(Val::Bool(true))
+                } else {
+                    return self.error(EvalErrorCode::UnknownError)
                 }
-                Ok(Val::Bool(true))
             } else {
                 self.error(EvalErrorCode::UnknownError)
             }
@@ -235,16 +247,23 @@ impl Context {
     fn eval_gt(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if l.len() >= 3 {
-                let mut a = try_number!(self.eval(&l[1]));
-                for e in &l[2..] {
-                    let n = try_number!(self.eval(e));
-                    if a > n {
-                        a = n
-                    } else {
-                        return Ok(Val::Bool(false))
+                if let Ok(Val::Number(n)) = self.eval(&l[1]) {
+                    let mut a = n;
+                    for i in &l[2..] {
+                        if let Ok(Val::Number(n)) = self.eval(i) {
+                            if a > n {
+                                a = n
+                            } else {
+                                return Ok(Val::Bool(false))
+                            }
+                        } else {
+                            return self.error(EvalErrorCode::UnknownError)
+                        }
                     }
+                    Ok(Val::Bool(true))
+                } else {
+                    return self.error(EvalErrorCode::UnknownError)
                 }
-                Ok(Val::Bool(true))
             } else {
                 self.error(EvalErrorCode::UnknownError)
             }
@@ -256,16 +275,23 @@ impl Context {
     fn eval_eq(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if l.len() >= 3 {
-                let mut a = try_number!(self.eval(&l[1]));
-                for e in &l[2..] {
-                    let n = try_number!(self.eval(e));
-                    if a == n {
-                        a = n
-                    } else {
-                        return Ok(Val::Bool(false))
+                if let Ok(Val::Number(n)) = self.eval(&l[1]) {
+                    let mut a = n;
+                    for i in &l[2..] {
+                        if let Ok(Val::Number(n)) = self.eval(i) {
+                            if a == n {
+                                a = n
+                            } else {
+                                return Ok(Val::Bool(false))
+                            }
+                        } else {
+                            return self.error(EvalErrorCode::UnknownError)
+                        }
                     }
+                    Ok(Val::Bool(true))
+                } else {
+                    return self.error(EvalErrorCode::UnknownError)
                 }
-                Ok(Val::Bool(true))
             } else {
                 self.error(EvalErrorCode::UnknownError)
             }
@@ -278,15 +304,20 @@ impl Context {
         if let Expr::List(ref l) = *s {
             if let Expr::Symbol(ref n) = l[0] {
                 if let Val::Fn { ref params, ref body } = try!(self.get(n)) {
-                    let mut v_params = vec![];
+
+                    let mut args = vec![];
                     for e in &l[1..] {
-                        v_params.push(try!(self.eval(e)))
+                        args.push(try!(self.eval(e)))
+                    }
+
+                    if args.len() != params.len() {
+                        return self.error(EvalErrorCode::UnknownError)
                     }
 
                     let mut ctx = Context::new();
-                    for (p, e) in params.iter().zip(v_params.iter()) {
+                    for (p, a) in params.iter().zip(args.iter()) {
                         if let Expr::Symbol(ref s) = *p {
-                            ctx.insert(s.clone(), e.clone());
+                            ctx.insert(s.clone(), a.clone());
                         } else {
                             return self.error(EvalErrorCode::UnknownError)
                         }
@@ -379,7 +410,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eval_fn_special_form_and_call_define_function() {
+    fn test_eval_fn_special_form_and_call_defined_function() {
         let mut ctx = Context::new();
         let fun = e_list![e_symbol!("fn"),
                           e_list![e_symbol!("a"), e_symbol!("b")],
@@ -390,6 +421,25 @@ mod tests {
                                               e_number!(1_f64),
                                               e_number!(2_f64)]);
         assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_fn_and_get_error_when_call_defined_function_with_incorrect_number_of_args() {
+        let mut ctx = Context::new();
+        let fun = e_list![e_symbol!("fn"),
+                          e_list![e_symbol!("a"), e_symbol!("b")],
+                          e_list![e_symbol!("+"), e_symbol!("a"), e_symbol!("b")]];
+        ctx.eval(&e_list![e_symbol!("def"), e_symbol!("add"), fun]).ok().unwrap();
+        let expected_result = EvalError(UnknownError);
+        let mut actual_result = ctx.eval(&e_list![e_symbol!("add"),
+                                              e_number!(1_f64)]);
+        assert_eq!(expected_result, actual_result.err().unwrap());
+        actual_result = ctx.eval(&e_list![e_symbol!("add"),
+                                          e_number!(1_f64),
+                                          e_number!(1_f64),
+                                          e_number!(1_f64),
+                                          e_number!(1_f64)]);
+        assert_eq!(expected_result, actual_result.err().unwrap());
     }
 
     #[test]
