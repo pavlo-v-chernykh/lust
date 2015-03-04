@@ -1,21 +1,5 @@
 use std::fmt;
 
-macro_rules! e_number {
-    ($n:expr) => ($crate::ast::Expr::Number($n))
-}
-
-macro_rules! e_string {
-    ($n:expr) => ($crate::ast::Expr::String($n.to_string()))
-}
-
-macro_rules! e_symbol {
-    ($n:expr) => ($crate::ast::Expr::Symbol($n.to_string()))
-}
-
-macro_rules! e_list {
-    ($($l:expr),*) => ($crate::ast::Expr::List(vec![$($l),*]))
-}
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Number(f64),

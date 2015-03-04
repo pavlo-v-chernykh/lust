@@ -1,6 +1,10 @@
+#[macro_use]
+mod macros;
+mod val;
+
 use std::collections::HashMap;
-use ast::Expr;
-use val::Val;
+use parser::Expr;
+pub use self::val::Val;
 
 #[derive(Debug, PartialEq)]
 enum EvalErrorCode {
@@ -151,7 +155,7 @@ impl Context {
     fn eval_minus(&mut self, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if l.len() >= 3 {
-                if let Expr::Number(n) = l[1] {
+                if let Ok(Val::Number(n)) = self.eval(&l[1]) {
                     let mut a = n;
                     for i in &l[2..] {
                         if let Ok(Val::Number(n)) = self.eval(i) {
@@ -324,7 +328,7 @@ impl Context {
                     }
                     let mut result = v_list![];
                     for e in body {
-                        result = try!(ctx.eval(e))
+                        result = try!(ctx.eval(e));
                     }
                     Ok(result)
                 } else {
@@ -414,10 +418,11 @@ mod tests {
         let mut ctx = Context::new();
         let fun = e_list![e_symbol!("fn"),
                           e_list![e_symbol!("a"), e_symbol!("b")],
-                          e_list![e_symbol!("+"), e_symbol!("a"), e_symbol!("b")]];
-        ctx.eval(&e_list![e_symbol!("def"), e_symbol!("add"), fun]).ok().unwrap();
-        let expected_result = v_number!(3_f64);
-        let actual_result = ctx.eval(&e_list![e_symbol!("add"),
+                          e_list![e_symbol!("+"), e_symbol!("a"), e_symbol!("b")],
+                          e_list![e_symbol!("-"), e_symbol!("a"), e_symbol!("b")]];
+        ctx.eval(&e_list![e_symbol!("def"), e_symbol!("add-skip-and-sub"), fun]).ok().unwrap();
+        let expected_result = v_number!(-1_f64);
+        let actual_result = ctx.eval(&e_list![e_symbol!("add-skip-and-sub"),
                                               e_number!(1_f64),
                                               e_number!(2_f64)]);
         assert_eq!(expected_result, actual_result.ok().unwrap());

@@ -1,19 +1,16 @@
 #![feature(core)]
 #![feature(unicode)]
 #![feature(old_io)]
+#[macro_use]
+mod lexer;
+#[macro_use]
+mod parser;
+#[macro_use]
+mod interpreter;
+
 use std::old_io;
 use parser::Parser;
-use context::Context;
-
-#[macro_use]
-mod token;
-#[macro_use]
-mod ast;
-#[macro_use]
-mod val;
-mod lexer;
-mod parser;
-mod context;
+use interpreter::Context;
 
 #[cfg_attr(test, allow(dead_code))]
 fn main() {

@@ -1,13 +1,12 @@
-use ast::Expr;
-use token::Token;
-use lexer::{Lexer, LexerResult, LexerError};
+#[macro_use]
+mod macros;
+mod ast;
+mod error;
 
-#[derive(Debug, PartialEq)]
-enum ParserError {
-    UnexpectedToken,
-    EOFWhileParsingExpression,
-    LexerError(LexerError),
-}
+use self::error::ParserError;
+use lexer::{Token, Lexer, LexerResult};
+
+pub use self::ast::Expr;
 
 pub struct Parser<I: Iterator> {
     lexer: Lexer<I>,
@@ -47,19 +46,19 @@ impl<I: Iterator<Item=char>> Parser<I> {
 
     fn parse_expr(&mut self) -> Result<Expr, ParserError> {
         match self.token {
-            Some(Ok(Token::Number(n))) => {
-                Ok(Expr::Number(n))
+            Some(Ok(Token::Number { val, .. })) => {
+                Ok(Expr::Number(val))
             },
-            Some(Ok(Token::String(ref s))) => {
-                Ok(Expr::String(s.clone()))
+            Some(Ok(Token::String { ref val, .. })) => {
+                Ok(Expr::String(val.clone()))
             },
-            Some(Ok(Token::Symbol(ref s))) => {
-                Ok(Expr::Symbol(s.clone()))
+            Some(Ok(Token::Symbol { ref val, .. })) => {
+                Ok(Expr::Symbol(val.clone()))
             },
-            Some(Ok(Token::ListStart)) => {
+            Some(Ok(Token::ListStart { .. })) => {
                 self.parse_list()
             },
-            Some(Ok(Token::ListEnd)) => {
+            Some(Ok(Token::ListEnd { .. })) => {
                 Err(ParserError::UnexpectedToken)
             },
             Some(Err(e)) => {
@@ -75,17 +74,10 @@ impl<I: Iterator<Item=char>> Parser<I> {
         let mut list = Vec::new();
         loop {
             self.bump();
-            if self.token == Some(Ok(Token::ListEnd)) {
+            if let Some(Ok(Token::ListEnd { .. })) = self.token {
                 return Ok(Expr::List(list))
             }
-            match self.parse_expr() {
-                Ok(s) => {
-                    list.push(s);
-                },
-                e @ Err(_) => {
-                    return e
-                }
-            }
+            list.push(try!(self.parse_expr()))
         }
     }
 }

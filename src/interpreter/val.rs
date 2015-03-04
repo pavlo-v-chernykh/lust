@@ -1,25 +1,5 @@
 use std::fmt;
-use ast::Expr;
-
-macro_rules! v_number {
-    ($e:expr) => ($crate::val::Val::Number($e));
-}
-
-macro_rules! v_bool {
-    ($e:expr) => ($crate::val::Val::Bool($e));
-}
-
-macro_rules! v_string {
-    ($e:expr) => ($crate::val::Val::String($e.to_string()));
-}
-
-macro_rules! v_symbol {
-    ($e:expr) => ($crate::val::Val::Symbol($e.to_string()));
-}
-
-macro_rules! v_list {
-    ($($e:expr),*) => ($crate::val::Val::List(vec![$($e),*]));
-}
+use parser::Expr;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Val {
