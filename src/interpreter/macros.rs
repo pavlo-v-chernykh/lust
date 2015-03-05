@@ -17,3 +17,14 @@ macro_rules! v_symbol {
 macro_rules! v_list {
     ($($e:expr),*) => ($crate::interpreter::Val::List(vec![$($e),*]));
 }
+
+macro_rules! try_unwrap {
+    ($e:expr, $r:expr) => (match $e {
+        Some(v) => {
+            v
+        },
+        _ => {
+            return $r
+        }
+    });
+}

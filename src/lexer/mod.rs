@@ -150,7 +150,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                 }
             }
         } else {
-            self.error(LexerErrorCode::EOFWhileReadingToken)
+            self.error(LexerErrorCode::UnexpectedEndOfInput)
         }
     }
 

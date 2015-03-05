@@ -6,7 +6,7 @@ use self::LexerErrorCode::*;
 pub enum LexerErrorCode {
     InvalidSyntax,
     TrailingCharacters,
-    EOFWhileReadingToken,
+    UnexpectedEndOfInput,
 }
 
 #[derive(Debug, PartialEq, Copy)]
@@ -41,8 +41,8 @@ impl error::Error for LexerError {
             TrailingCharacters => {
                 "Trailing characters"
             },
-            EOFWhileReadingToken => {
-                "Unexpected end of file"
+            UnexpectedEndOfInput => {
+                "Unexpected end of input"
             }
         }
     }
@@ -63,7 +63,7 @@ mod tests {
         assert_eq!("Invalid syntax detected at 1:10", format!("{}", err));
         let err = LexerError::new(2, 13, TrailingCharacters);
         assert_eq!("Trailing characters detected at 2:13", format!("{}", err));
-        let err = LexerError::new(10, 1230, EOFWhileReadingToken);
-        assert_eq!("Unexpected end of file detected at 10:1230", format!("{}", err));
+        let err = LexerError::new(10, 1230, UnexpectedEndOfInput);
+        assert_eq!("Unexpected end of input detected at 10:1230", format!("{}", err));
     }
 }

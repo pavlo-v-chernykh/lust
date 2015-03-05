@@ -1,4 +1,6 @@
-#[derive(Debug, PartialEq)]
+use std::fmt;
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Pos {
     line: usize,
     col: usize,
@@ -13,7 +15,13 @@ impl Pos {
     }
 }
 
-#[derive(Debug, PartialEq)]
+impl fmt::Display for Pos {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}:{}", self.line, self.col)
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct Span {
     start: Pos,
     end: Pos,
@@ -28,7 +36,13 @@ impl Span {
     }
 }
 
-#[derive(Debug, PartialEq)]
+impl fmt::Display for Span {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}-{}", self.start, self.end)
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Number {
         span: Span,
@@ -48,4 +62,26 @@ pub enum Token {
     ListEnd {
         span: Span,
     },
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &Token::Number { ref val, ref span } => {
+                write!(f, "'Number {}' at {}", val, span)
+            },
+            &Token::String { ref val, ref span } => {
+                write!(f, r#"'String "{}"' at {}"#, val, span)
+            },
+            &Token::Symbol { ref val, ref span } => {
+                write!(f, "'Symbol {}' at {}", val, span)
+            },
+            &Token::ListStart { ref span } => {
+                write!(f, "'List Start' at {}", span)
+            },
+            &Token::ListEnd { ref span } => {
+                write!(f, "'List End' at {}", span)
+            },
+        }
+    }
 }

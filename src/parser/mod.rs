@@ -35,8 +35,8 @@ impl<I: Iterator<Item=char>> Parser<I> {
             None => {
                 result
             },
-            Some(Ok(_)) => {
-                Err(ParserError::UnexpectedToken)
+            Some(Ok(ref t)) => {
+                Err(ParserError::UnexpectedToken(t.clone()))
             },
             Some(Err(e)) => {
                 Err(ParserError::LexerError(e))
@@ -58,14 +58,14 @@ impl<I: Iterator<Item=char>> Parser<I> {
             Some(Ok(Token::ListStart { .. })) => {
                 self.parse_list()
             },
-            Some(Ok(Token::ListEnd { .. })) => {
-                Err(ParserError::UnexpectedToken)
+            Some(Ok(ref t @ Token::ListEnd { .. })) => {
+                Err(ParserError::UnexpectedToken(t.clone()))
             },
             Some(Err(e)) => {
                 Err(ParserError::LexerError(e))
             },
             None => {
-                Err(ParserError::EOFWhileParsingExpression)
+                Err(ParserError::UnexpectedEndOfInput)
             }
         }
     }

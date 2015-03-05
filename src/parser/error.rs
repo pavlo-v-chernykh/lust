@@ -1,27 +1,37 @@
 use std::{error, fmt};
-use lexer::LexerError;
+use lexer::{Token, LexerError};
 
 #[derive(Debug, PartialEq)]
 pub enum ParserError {
-    UnexpectedToken,
-    EOFWhileParsingExpression,
+    UnexpectedToken(Token),
+    UnexpectedEndOfInput,
     LexerError(LexerError),
 }
 
 impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} detected", error::Error::description(self))
+        match self {
+            &ParserError::UnexpectedToken(ref t) => {
+                write!(f, "{} {} detected", error::Error::description(self), t)
+            },
+            &ParserError::LexerError(ref e) => {
+                write!(f, "{}", e)
+            },
+            _ => {
+                write!(f, "{} detected", error::Error::description(self))
+            },
+        }
     }
 }
 
 impl error::Error for ParserError {
     fn description(&self) -> &str {
         match self {
-            &ParserError::UnexpectedToken => {
+            &ParserError::UnexpectedToken(_) => {
                 "Unexpected token"
             },
-            &ParserError::EOFWhileParsingExpression => {
-                "Unexpected end of file"
+            &ParserError::UnexpectedEndOfInput => {
+                "Unexpected end of input"
             },
             &ParserError::LexerError(ref e) => {
                 e.description()
@@ -38,5 +48,22 @@ impl error::Error for ParserError {
                 None
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use lexer::LexerError;
+    use lexer::LexerErrorCode::InvalidSyntax;
+    use super::ParserError;
+
+    #[test]
+    fn test_descriptions_for_error_codes() {
+        let err = ParserError::UnexpectedToken(t_list_end!(span!(1, 1, 1, 2)));
+        assert_eq!("Unexpected token 'List End' at 1:1-1:2 detected", format!("{}", err));
+        let err = ParserError::UnexpectedEndOfInput;
+        assert_eq!("Unexpected end of input detected", format!("{}", err));
+        let err = ParserError::LexerError(LexerError::new(1, 10, InvalidSyntax));
+        assert_eq!("Invalid syntax detected at 1:10", format!("{}", err));
     }
 }
