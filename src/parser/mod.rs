@@ -1,12 +1,8 @@
-#[macro_use]
-mod macros;
-mod ast;
 mod error;
 
 use self::error::ParserError;
+use expr::Expr;
 use lexer::{Token, Lexer, LexerResult};
-
-pub use self::ast::Expr;
 
 pub struct Parser<I: Iterator> {
     lexer: Lexer<I>,

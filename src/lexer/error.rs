@@ -28,7 +28,7 @@ impl LexerError {
 
 impl fmt::Display for LexerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} detected at {}:{}", error::Error::description(self), self.line, self.col)
+        write!(f, "{} at {}:{}", error::Error::description(self), self.line, self.col)
     }
 }
 
@@ -60,10 +60,10 @@ mod tests {
     #[test]
     fn test_descriptions_for_error_codes() {
         let err = LexerError::new(1, 10, InvalidSyntax);
-        assert_eq!("Invalid syntax detected at 1:10", format!("{}", err));
+        assert_eq!("Invalid syntax at 1:10", format!("{}", err));
         let err = LexerError::new(2, 13, TrailingCharacters);
-        assert_eq!("Trailing characters detected at 2:13", format!("{}", err));
+        assert_eq!("Trailing characters at 2:13", format!("{}", err));
         let err = LexerError::new(10, 1230, UnexpectedEndOfInput);
-        assert_eq!("Unexpected end of input detected at 10:1230", format!("{}", err));
+        assert_eq!("Unexpected end of input at 10:1230", format!("{}", err));
     }
 }

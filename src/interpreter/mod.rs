@@ -1,17 +1,15 @@
 #[macro_use]
 mod macros;
-mod val;
 mod scope;
 mod error;
 
-use parser::Expr;
+use expr::Expr;
 
-pub use self::val::Val;
 pub use self::scope::Scope;
 
 use self::error::{EvalError, EvalErrorCode};
 
-type EvalResult = Result<Val, EvalError>;
+type EvalResult = Result<Expr, EvalError>;
 
 pub struct Context;
 
@@ -21,15 +19,9 @@ impl Context {
     }
 
     pub fn eval(&mut self, scope: &mut Scope, s: &Expr) -> EvalResult {
-        match *s {
-            Expr::Number(n) => {
-                Ok(Val::Number(n))
-            },
+        match self.expand(s) {
             Expr::Symbol(ref name) => {
                 Ok(try_unwrap!(scope.get(name), self.error(EvalErrorCode::UnknownError)).clone())
-            },
-            Expr::String(ref s) => {
-                Ok(Val::String(s.clone()))
             },
             Expr::List(ref l) => {
                 if let Expr::Symbol(ref n) = l[0] {
@@ -68,7 +60,10 @@ impl Context {
                 } else {
                     self.error(EvalErrorCode::UnknownError)
                 }
-            }
+            },
+            e => {
+                Ok(e.clone())
+            },
         }
     }
 
@@ -94,7 +89,7 @@ impl Context {
         if let Expr::List(ref l) = *s {
             if l.len() >= 3 {
                 if let Expr::List(ref params) = l[1] {
-                    Ok(Val::Fn {
+                    Ok(Expr::Fn {
                         params: params.iter().cloned().collect::<Vec<Expr>>(),
                         body: l.iter().skip(2).cloned().collect::<Vec<Expr>>()
                     })
@@ -114,13 +109,13 @@ impl Context {
             if l.len() >= 3 {
                 let mut a = 0_f64;
                 for i in &l[1..] {
-                    if let Ok(Val::Number(n)) = self.eval(scope, i) {
+                    if let Ok(Expr::Number(n)) = self.eval(scope, i) {
                         a += n;
                     } else {
                         return self.error(EvalErrorCode::UnknownError)
                     }
                 }
-                Ok(Val::Number(a))
+                Ok(Expr::Number(a))
             } else {
                 self.error(EvalErrorCode::UnknownError)
             }
@@ -132,16 +127,16 @@ impl Context {
     fn eval_minus(&mut self, scope: &mut Scope, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if l.len() >= 3 {
-                if let Ok(Val::Number(n)) = self.eval(scope, &l[1]) {
+                if let Ok(Expr::Number(n)) = self.eval(scope, &l[1]) {
                     let mut a = n;
                     for i in &l[2..] {
-                        if let Ok(Val::Number(n)) = self.eval(scope, i) {
+                        if let Ok(Expr::Number(n)) = self.eval(scope, i) {
                             a -= n
                         } else {
                             return self.error(EvalErrorCode::UnknownError)
                         }
                     }
-                    Ok(Val::Number(a))
+                    Ok(Expr::Number(a))
                 } else {
                     self.error(EvalErrorCode::UnknownError)
                 }
@@ -158,13 +153,13 @@ impl Context {
             if l.len() >= 3 {
                 let mut a = 1_f64;
                 for i in &l[1..] {
-                    if let Ok(Val::Number(n)) = self.eval(scope, i) {
+                    if let Ok(Expr::Number(n)) = self.eval(scope, i) {
                         a *= n
                     } else {
                         return self.error(EvalErrorCode::UnknownError)
                     }
                 }
-                Ok(Val::Number(a))
+                Ok(Expr::Number(a))
             } else {
                 self.error(EvalErrorCode::UnknownError)
             }
@@ -179,13 +174,13 @@ impl Context {
                 if let Expr::Number(n) = l[1] {
                     let mut a = n;
                     for i in &l[2..] {
-                        if let Ok(Val::Number(n)) = self.eval(scope, i) {
+                        if let Ok(Expr::Number(n)) = self.eval(scope, i) {
                             a /= n
                         } else {
                             return self.error(EvalErrorCode::UnknownError)
                         }
                     }
-                    Ok(Val::Number(a))
+                    Ok(Expr::Number(a))
                 } else {
                     self.error(EvalErrorCode::UnknownError)
                 }
@@ -200,20 +195,20 @@ impl Context {
     fn eval_lt(&mut self, scope: &mut Scope, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if l.len() >= 3 {
-                if let Ok(Val::Number(n)) = self.eval(scope, &l[1]) {
+                if let Ok(Expr::Number(n)) = self.eval(scope, &l[1]) {
                     let mut a = n;
                     for i in &l[2..] {
-                        if let Ok(Val::Number(n)) = self.eval(scope, i) {
+                        if let Ok(Expr::Number(n)) = self.eval(scope, i) {
                             if a < n {
                                 a = n
                             } else {
-                                return Ok(Val::Bool(false))
+                                return Ok(Expr::Bool(false))
                             }
                         } else {
                             return self.error(EvalErrorCode::UnknownError)
                         }
                     }
-                    Ok(Val::Bool(true))
+                    Ok(Expr::Bool(true))
                 } else {
                     return self.error(EvalErrorCode::UnknownError)
                 }
@@ -228,20 +223,20 @@ impl Context {
     fn eval_gt(&mut self, scope: &mut Scope, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if l.len() >= 3 {
-                if let Ok(Val::Number(n)) = self.eval(scope, &l[1]) {
+                if let Ok(Expr::Number(n)) = self.eval(scope, &l[1]) {
                     let mut a = n;
                     for i in &l[2..] {
-                        if let Ok(Val::Number(n)) = self.eval(scope, i) {
+                        if let Ok(Expr::Number(n)) = self.eval(scope, i) {
                             if a > n {
                                 a = n
                             } else {
-                                return Ok(Val::Bool(false))
+                                return Ok(Expr::Bool(false))
                             }
                         } else {
                             return self.error(EvalErrorCode::UnknownError)
                         }
                     }
-                    Ok(Val::Bool(true))
+                    Ok(Expr::Bool(true))
                 } else {
                     return self.error(EvalErrorCode::UnknownError)
                 }
@@ -256,20 +251,20 @@ impl Context {
     fn eval_eq(&mut self, scope: &mut Scope, s: &Expr) -> EvalResult {
         if let Expr::List(ref l) = *s {
             if l.len() >= 3 {
-                if let Ok(Val::Number(n)) = self.eval(scope, &l[1]) {
+                if let Ok(Expr::Number(n)) = self.eval(scope, &l[1]) {
                     let mut a = n;
                     for i in &l[2..] {
-                        if let Ok(Val::Number(n)) = self.eval(scope, i) {
+                        if let Ok(Expr::Number(n)) = self.eval(scope, i) {
                             if a == n {
                                 a = n
                             } else {
-                                return Ok(Val::Bool(false))
+                                return Ok(Expr::Bool(false))
                             }
                         } else {
                             return self.error(EvalErrorCode::UnknownError)
                         }
                     }
-                    Ok(Val::Bool(true))
+                    Ok(Expr::Bool(true))
                 } else {
                     return self.error(EvalErrorCode::UnknownError)
                 }
@@ -285,7 +280,7 @@ impl Context {
         if let Expr::List(ref l) = *s {
             if let Expr::Symbol(ref n) = l[0] {
                 match try_unwrap!(scope.get(n), self.error(EvalErrorCode::UnknownError)).clone() {
-                    Val::Fn { ref params, ref body } => {
+                    Expr::Fn { ref params, ref body } => {
                         let mut args = vec![];
                         for e in &l[1..] {
                             args.push(try!(self.eval(scope, e)))
@@ -303,7 +298,7 @@ impl Context {
                                 return self.error(EvalErrorCode::UnknownError)
                             }
                         }
-                        let mut result = v_list![];
+                        let mut result = e_list![];
                         for e in body {
                             result = try!(self.eval(fn_scope, e));
                         }
@@ -319,6 +314,10 @@ impl Context {
         } else {
             self.error(EvalErrorCode::UnknownError)
         }
+    }
+
+    fn expand(&self, s: &Expr) -> Expr {
+        s.clone()
     }
 
     fn error(&self, ec: EvalErrorCode) -> EvalResult {
@@ -337,7 +336,7 @@ mod tests {
         let num = 10_f64;
         let ref mut ctx = Context::new();
         let ref mut scope = Scope::new();
-        let expected_result = v_number!(num);
+        let expected_result = e_number!(num);
         let actual_result = ctx.eval(scope, &e_number!(num));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -347,7 +346,7 @@ mod tests {
         let s = "rust is awesome";
         let ref mut ctx = Context::new();
         let ref mut scope = Scope::new();
-        let expected_result = v_string!(s);
+        let expected_result = e_string!(s);
         let actual_result = ctx.eval(scope, &e_string!(s));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -365,7 +364,7 @@ mod tests {
     fn test_eval_true_to_matching_bool() {
         let ref mut ctx = Context::new();
         let ref mut scope = Scope::new_std();
-        let expected_result = v_bool!(true);
+        let expected_result = e_bool!(true);
         let actual_result = ctx.eval(scope, &e_symbol!("true"));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -374,7 +373,7 @@ mod tests {
     fn test_eval_false_to_matching_bool() {
         let ref mut ctx = Context::new();
         let ref mut scope = Scope::new_std();
-        let expected_result = v_bool!(false);
+        let expected_result = e_bool!(false);
         let actual_result = ctx.eval(scope, &e_symbol!("false"));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -383,7 +382,7 @@ mod tests {
     fn test_eval_nil_to_empty_list() {
         let ref mut ctx = Context::new();
         let ref mut scope = Scope::new_std();
-        let expected_result = v_list![];
+        let expected_result = e_list![];
         let actual_result = ctx.eval(scope, &e_symbol!("nil"));
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
@@ -393,7 +392,7 @@ mod tests {
         let num = 1_f64;
         let ref mut ctx = Context::new();
         let ref mut scope = Scope::new();
-        let expected_result = v_number!(num);
+        let expected_result = e_number!(num);
         let actual_input = &e_list![e_symbol!("def"), e_symbol!("a"), e_number!(num)];
         let actual_result = ctx.eval(scope, actual_input);
         assert_eq!(expected_result, actual_result.ok().unwrap());
@@ -409,7 +408,7 @@ mod tests {
                           e_list![e_symbol!("-"), e_symbol!("a"), e_symbol!("b")]];
         let expr = &e_list![e_symbol!("def"), e_symbol!("add-skip-and-sub"), fun];
         ctx.eval(scope, expr).ok().unwrap();
-        let expected_result = v_number!(-1_f64);
+        let expected_result = e_number!(-1_f64);
         let actual_result = ctx.eval(scope, &e_list![e_symbol!("add-skip-and-sub"),
                                                      e_number!(1_f64),
                                                      e_number!(2_f64)]);
@@ -448,7 +447,7 @@ mod tests {
         let actual_input = &e_list![e_symbol!("+"),
                                     e_list![e_symbol!("+"), e_symbol!("a"), e_symbol!("b")],
                                     e_number!(3_f64)];
-        assert_eq!(v_number!(6_f64), ctx.eval(scope, actual_input).ok().unwrap());
+        assert_eq!(e_number!(6_f64), ctx.eval(scope, actual_input).ok().unwrap());
     }
 
     #[test]
@@ -457,17 +456,17 @@ mod tests {
         let ref mut scope = Scope::new();
         let actual_input = &e_list![e_symbol!("-"), e_number!(3_f64), e_number!(2_f64)];
         let actual_result = ctx.eval(scope, actual_input);
-        let expected_result = v_number!(1_f64);
+        let expected_result = e_number!(1_f64);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
     #[test]
-    fn test_eval_div_builtin_fn() {
+    fn test_eval_die_builtin_fn() {
         let ref mut ctx = Context::new();
         let ref mut scope = Scope::new();
         let actual_input = &e_list![e_symbol!("/"), e_number!(3_f64), e_number!(2_f64)];
         let actual_result = ctx.eval(scope, actual_input);
-        let expected_result = v_number!(1.5);
+        let expected_result = e_number!(1.5);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -477,7 +476,7 @@ mod tests {
         let ref mut scope = Scope::new();
         let actual_input = &e_list![e_symbol!("*"), e_number!(3.5), e_number!(2_f64)];
         let actual_result = ctx.eval(scope, actual_input);
-        let expected_result = v_number!(7_f64);
+        let expected_result = e_number!(7_f64);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -490,7 +489,7 @@ mod tests {
                                     e_number!(2_f64),
                                     e_number!(3_f64)];
         let actual_result = ctx.eval(scope, actual_input);
-        let expected_result = v_bool!(true);
+        let expected_result = e_bool!(true);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -503,7 +502,7 @@ mod tests {
                                     e_number!(20_f64),
                                     e_number!(1_f64)];
         let actual_result = ctx.eval(scope, actual_input);
-        let expected_result = v_bool!(false);
+        let expected_result = e_bool!(false);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -518,7 +517,7 @@ mod tests {
                                     e_number!(2_f64),
                                     e_number!(1_f64)];
         let actual_result = ctx.eval(scope, actual_input);
-        let expected_result = v_bool!(true);
+        let expected_result = e_bool!(true);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -533,7 +532,7 @@ mod tests {
                                     e_symbol!("a"),
                                     e_number!(1_f64)];
         let actual_result = ctx.eval(scope, actual_input);
-        let expected_result = v_bool!(false);
+        let expected_result = e_bool!(false);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -548,7 +547,7 @@ mod tests {
                                     e_number!(3_f64),
                                     e_number!(3_f64)];
         let actual_result = ctx.eval(scope, actual_input);
-        let expected_result = v_bool!(true);
+        let expected_result = e_bool!(true);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
@@ -563,7 +562,7 @@ mod tests {
                                     e_number![20_f64],
                                     e_symbol!["a"]];
         let actual_result = ctx.eval(scope, actual_input);
-        let expected_result = v_bool![false];
+        let expected_result = e_bool![false];
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 }

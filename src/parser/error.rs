@@ -12,13 +12,13 @@ impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &ParserError::UnexpectedToken(ref t) => {
-                write!(f, "{} {} detected", error::Error::description(self), t)
+                write!(f, "{} {}", error::Error::description(self), t)
             },
             &ParserError::LexerError(ref e) => {
                 write!(f, "{}", e)
             },
             _ => {
-                write!(f, "{} detected", error::Error::description(self))
+                write!(f, "{}", error::Error::description(self))
             },
         }
     }
@@ -60,10 +60,10 @@ mod tests {
     #[test]
     fn test_descriptions_for_error_codes() {
         let err = ParserError::UnexpectedToken(t_list_end!(span!(1, 1, 1, 2)));
-        assert_eq!("Unexpected token 'List End' at 1:1-1:2 detected", format!("{}", err));
+        assert_eq!("Unexpected token 'List End' at 1:1-1:2", format!("{}", err));
         let err = ParserError::UnexpectedEndOfInput;
-        assert_eq!("Unexpected end of input detected", format!("{}", err));
+        assert_eq!("Unexpected end of input", format!("{}", err));
         let err = ParserError::LexerError(LexerError::new(1, 10, InvalidSyntax));
-        assert_eq!("Invalid syntax detected at 1:10", format!("{}", err));
+        assert_eq!("Invalid syntax at 1:10", format!("{}", err));
     }
 }

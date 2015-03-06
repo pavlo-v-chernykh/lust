@@ -4,6 +4,8 @@
 #[macro_use]
 mod lexer;
 #[macro_use]
+mod expr;
+#[macro_use]
 mod parser;
 #[macro_use]
 mod interpreter;
@@ -14,8 +16,8 @@ use interpreter::{Context, Scope};
 
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
-    let ctx = &mut Context::new();
-    let root_scope = &mut Scope::new_std();
+    let ref mut ctx = Context::new();
+    let ref mut root_scope = Scope::new_std();
     loop {
         print!("-> ");
         match old_io::stdin().read_line() {
@@ -27,17 +29,17 @@ fn main() {
                                 println!("{}", res);
                             },
                             Err(e) => {
-                                println!("{:?}", e);
+                                println!("Whoops, error detected.\n{}.\nPlease, try again...", e);
                             }
                         }
                     },
                     Err(e) => {
-                        println!("{}", e);
+                        println!("Whoops, error detected.\n{}.\nPlease, try again...", e);
                     }
                 }
             },
             Err(e) => {
-                println!("{}", e);
+                println!("Whoops, error detected.\n{}.\nPlease, try again...", e);
                 break
             }
         }

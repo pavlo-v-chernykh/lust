@@ -1,27 +1,41 @@
+#[macro_use]
+mod macros;
+
 use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Number(f64),
+    Bool(bool),
     String(String),
     Symbol(String),
     List(Vec<Expr>),
+    Fn {
+        params: Vec<Expr>,
+        body: Vec<Expr>,
+    },
 }
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Expr::Number(n) => {
+        match self {
+            &Expr::Number(n) => {
                 write!(f, "{}", n)
             },
-            Expr::Symbol(ref s) => {
+            &Expr::Bool(b) => {
+                write!(f, "{}", b)
+            },
+            &Expr::Symbol(ref s) => {
                 write!(f, "{}", s)
             },
-            Expr::String(ref s) => {
+            &Expr::String(ref s) => {
                 write!(f, r#""{}""#, s)
             },
-            Expr::List(ref l) => {
+            &Expr::List(ref l) => {
                 write!(f, "({})", l)
+            },
+            &Expr::Fn { ref params, ref body } => {
+                write!(f, "(fn ({}) {})", params, body)
             }
         }
     }
