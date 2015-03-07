@@ -17,3 +17,24 @@ macro_rules! e_symbol {
 macro_rules! e_list {
     ($($e:expr),*) => ($crate::expr::Expr::List(vec![$($e),*]))
 }
+
+macro_rules! e_def {
+    ($sym:expr, $e:expr) => ($crate::expr::Expr::Def {
+        sym: $sym.to_string(),
+        expr: Box::new($e),
+    })
+}
+
+macro_rules! e_fn {
+    ([$($params:expr),*], [$($e:expr),*]) => ($crate::expr::Expr::Fn {
+        params: vec![$($params),*],
+        body: vec![$($e),*],
+    })
+}
+
+macro_rules! e_call {
+    ($fn_name:expr, $($arg:expr), *) => ($crate::expr::Expr::Call {
+        fn_name: $fn_name.to_string(),
+        args: vec![$($arg),*]
+    })
+}
