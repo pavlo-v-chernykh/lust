@@ -1,11 +1,11 @@
 use std::{error, fmt};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy)]
 pub enum EvalErrorCode {
     UnknownError
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy)]
 pub struct EvalError(EvalErrorCode);
 
 impl EvalError {

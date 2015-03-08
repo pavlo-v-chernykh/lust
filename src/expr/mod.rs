@@ -4,7 +4,7 @@ mod error;
 
 use std::fmt;
 use scope::Scope;
-use self::error::{EvalError, EvalErrorCode};
+pub use self::error::{EvalError, EvalErrorCode};
 
 type EvalResult = Result<Expr, EvalError>;
 
@@ -19,14 +19,18 @@ pub enum Expr {
         params: Vec<Expr>,
         body: Vec<Expr>,
     },
+    Macro {
+        params: Vec<Expr>,
+        body: Vec<Expr>,
+    },
     Def {
         sym: String,
         expr: Box<Expr>,
     },
     Call {
-        fn_name: String,
+        name: String,
         args: Vec<Expr>,
-    }
+    },
 }
 
 impl Expr {
@@ -62,8 +66,8 @@ impl Expr {
     }
 
     fn eval_call(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref fn_name, .. } = self {
-            match &fn_name[..] {
+        if let &Expr::Call { ref name, .. } = self {
+            match &name[..] {
                 "+" => {
                     self.eval_call_builtin_plus(scope)
                 },
@@ -259,8 +263,8 @@ impl Expr {
     }
 
     fn eval_call_custom(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref fn_name, ref args } = self {
-            let func = match scope.get(fn_name) {
+        if let &Expr::Call { ref name, ref args } = self {
+            let func = match scope.get(name) {
                 Some(e) => {
                     e.clone()
                 },
@@ -268,33 +272,57 @@ impl Expr {
                     return Expr::error(EvalErrorCode::UnknownError)
                 }
             };
-            if let Expr::Fn { ref params, ref body } = func {
-                if args.len() != params.len() {
-                    return Expr::error(EvalErrorCode::UnknownError)
-                }
-
-                let mut e_args = vec![];
-                for e in args {
-                    e_args.push(try!(e.eval(scope)))
-                }
-
-                let ref mut fn_scope = Scope::new_chained(&scope);
-                for (p, a) in params.iter().zip(e_args.iter()) {
-                    if let Expr::Symbol(ref s) = *p {
-                        fn_scope.insert(s.clone(), a.clone());
-                    } else {
+            match func {
+                Expr::Fn { ref params, ref body } => {
+                    if args.len() != params.len() {
                         return Expr::error(EvalErrorCode::UnknownError)
                     }
-                }
 
-                let mut result = e_list![];
-                for e in body {
-                    result = try!(e.eval(fn_scope));
-                }
+                    let mut e_args = vec![];
+                    for a in args {
+                        e_args.push(try!(a.eval(scope)))
+                    }
 
-                Ok(result)
-            } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                    let ref mut fn_scope = Scope::new_chained(&scope);
+                    for (p, a) in params.iter().zip(e_args.iter()) {
+                        if let Expr::Symbol(ref s) = *p {
+                            fn_scope.insert(s.clone(), a.clone());
+                        } else {
+                            return Expr::error(EvalErrorCode::UnknownError)
+                        }
+                    }
+
+                    let mut result = e_list![];
+                    for e in body {
+                        result = try!(e.eval(fn_scope));
+                    }
+
+                    Ok(result)
+                },
+                Expr::Macro { ref params, ref body } => {
+                    if args.len() != params.len() {
+                        return Expr::error(EvalErrorCode::UnknownError)
+                    }
+
+                    let ref mut fn_scope = Scope::new_chained(&scope);
+                    for (p, a) in params.iter().zip(args.iter()) {
+                        if let Expr::Symbol(ref s) = *p {
+                            fn_scope.insert(s.clone(), a.clone());
+                        } else {
+                            return Expr::error(EvalErrorCode::UnknownError)
+                        }
+                    }
+
+                    let mut result = e_list![];
+                    for e in body {
+                        result = try!(e.eval(fn_scope));
+                    }
+
+                    Ok(result)
+                },
+                _ => {
+                    Expr::error(EvalErrorCode::UnknownError)
+                }
             }
         } else {
             Expr::error(EvalErrorCode::UnknownError)
@@ -331,8 +359,11 @@ impl fmt::Display for Expr {
             &Expr::Fn { ref params, ref body } => {
                 write!(f, "(fn ({}) {})", params, body)
             },
-            &Expr::Call { ref fn_name, ref args } => {
-                write!(f, "({} {})", fn_name, args)
+            &Expr::Macro { ref params, ref body } => {
+                write!(f, "(macro ({}) {})", params, body)
+            },
+            &Expr::Call { ref name, ref args } => {
+                write!(f, "({} {})", name, args)
             },
         }
     }

@@ -17,7 +17,7 @@ pub enum Node {
 type ExpandResult = Result<Expr, ExpandError>;
 
 impl Node {
-    pub fn expand(&self, scope: &Scope) -> ExpandResult {
+    pub fn expand(&self, scope: &mut Scope) -> ExpandResult {
         match self {
             &Node::Number(n) => {
                 Ok(Expr::Number(n))
@@ -37,8 +37,18 @@ impl Node {
                         "fn" => {
                             self.expand_fn(scope)
                         },
+                        "macro" => {
+                            self.expand_macro(scope)
+                        },
                         _ => {
-                            self.expand_call(scope)
+                            match scope.get(n) {
+                                Some(&Expr::Macro { .. }) => {
+                                    self.expand_call_macro(scope)
+                                },
+                                _ => {
+                                    self.expand_call_fn(scope)
+                                }
+                            }
                         }
                     }
                 } else {
@@ -48,7 +58,7 @@ impl Node {
         }
     }
 
-    fn expand_def(&self, scope: &Scope) -> ExpandResult {
+    fn expand_def(&self, scope: &mut Scope) -> ExpandResult {
         if let &Node::List(ref l) = self {
             if l.len() == 3 {
                 if let Node::Symbol(ref n) = l[1] {
@@ -67,7 +77,7 @@ impl Node {
         }
     }
 
-    fn expand_fn(&self, scope: &Scope) -> ExpandResult {
+    fn expand_fn(&self, scope: &mut Scope) -> ExpandResult {
         if let &Node::List(ref l) = self {
             if l.len() >= 3 {
                 if let Node::List(ref params) = l[1] {
@@ -94,17 +104,64 @@ impl Node {
         }
     }
 
-    fn expand_call(&self, scope: &Scope) -> ExpandResult {
+    fn expand_macro(&self, scope: &mut Scope) -> ExpandResult {
         if let &Node::List(ref l) = self {
-            if let Node::Symbol(ref fn_name) = l[0] {
+            if l.len() >= 3 {
+                if let Node::List(ref params) = l[1] {
+                    let mut macro_params = vec![];
+                    for p in params {
+                        macro_params.push(try!(p.expand(scope)))
+                    }
+                    let mut macro_body = vec![];
+                    for be in &l[2..] {
+                        macro_body.push(try!(be.expand(scope)))
+                    }
+                    Ok(Expr::Macro {
+                        params: macro_params,
+                        body: macro_body,
+                    })
+                } else {
+                    Node::error(ExpandErrorCode::UnknownError)
+                }
+            } else {
+                Node::error(ExpandErrorCode::UnknownError)
+            }
+        } else {
+            Node::error(ExpandErrorCode::UnknownError)
+        }
+    }
+
+    fn expand_call_fn(&self, scope: &mut Scope) -> ExpandResult {
+        if let &Node::List(ref l) = self {
+            if let Node::Symbol(ref name) = l[0] {
                 let mut args = vec![];
                 for a in &l[1..] {
                     args.push(try!(a.expand(scope)))
                 }
                 Ok(Expr::Call {
-                    fn_name: fn_name.clone(),
+                    name: name.clone(),
                     args: args
                 })
+            } else {
+                Node::error(ExpandErrorCode::UnknownError)
+            }
+        } else {
+            Node::error(ExpandErrorCode::UnknownError)
+        }
+    }
+
+    fn expand_call_macro(&self, scope: &mut Scope) -> ExpandResult {
+        if let &Node::List(ref l) = self {
+            if let Node::Symbol(ref name) = l[0] {
+                let mut args = vec![];
+                for a in &l[1..] {
+                    args.push(try!(a.expand(scope)))
+                }
+                let call = Expr::Call {
+                    name: name.clone(),
+                    args: args
+                };
+                Ok(try!(call.eval(scope)))
             } else {
                 Node::error(ExpandErrorCode::UnknownError)
             }
@@ -124,28 +181,28 @@ mod tests {
 
     #[test]
     fn test_expand_number() {
-        let ref scope = Scope::new_std();
+        let ref mut scope = Scope::new_std();
         let num = 1_f64;
         assert_eq!(e_number!(num), n_number!(num).expand(scope).ok().unwrap());
     }
 
     #[test]
     fn test_expand_string() {
-        let ref scope = Scope::new_std();
+        let ref mut scope = Scope::new_std();
         let s = "rust is wonderful";
         assert_eq!(e_string!(s), n_string!(s).expand(scope).ok().unwrap());
     }
 
     #[test]
     fn test_expand_symbol() {
-        let ref scope = Scope::new_std();
+        let ref mut scope = Scope::new_std();
         let s = "+";
         assert_eq!(e_symbol!(s), n_symbol!(s).expand(scope).ok().unwrap());
     }
 
     #[test]
     fn test_expand_fn() {
-        let ref scope = Scope::new_std();
+        let ref mut scope = Scope::new_std();
         let e = e_fn!([e_symbol!("a")],
                       [e_call!["+", e_symbol!("a"), e_number!(1_f64)]]);
         let n = n_list![n_symbol!("fn"),
@@ -155,16 +212,27 @@ mod tests {
     }
 
     #[test]
+    fn test_expand_macro() {
+        let ref mut scope = Scope::new_std();
+        let e = e_macro!([e_symbol!("a")],
+                         [e_call!["+", e_symbol!("a"), e_number!(1_f64)]]);
+        let n = n_list![n_symbol!("macro"),
+                        n_list![n_symbol!("a")],
+                        n_list![n_symbol!("+"), n_symbol!("a"), n_number!(1_f64)]];
+        assert_eq!(e, n.expand(scope).ok().unwrap());
+    }
+
+    #[test]
     fn test_expand_def() {
-        let ref scope = Scope::new_std();
+        let ref mut scope = Scope::new_std();
         let e = e_def!["a", e_number![1_f64]];
         let n = n_list![n_symbol!["def"], n_symbol!["a"], n_number![1_f64]];
         assert_eq!(e, n.expand(scope).ok().unwrap());
     }
 
     #[test]
-    fn test_expand_call() {
-        let ref scope = Scope::new_std();
+    fn test_expand_call_fn() {
+        let ref mut scope = Scope::new_std();
         let e = e_call!["+", e_symbol!["a"], e_number![1_f64]];
         let n = n_list![n_symbol!["+"], n_symbol!["a"], n_number![1_f64]];
         assert_eq!(e, n.expand(scope).ok().unwrap());

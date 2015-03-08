@@ -32,9 +32,16 @@ macro_rules! e_fn {
     })
 }
 
+macro_rules! e_macro {
+    ([$($params:expr),*], [$($e:expr),*]) => ($crate::expr::Expr::Macro {
+        params: vec![$($params),*],
+        body: vec![$($e),*],
+    })
+}
+
 macro_rules! e_call {
-    ($fn_name:expr, $($arg:expr), *) => ($crate::expr::Expr::Call {
-        fn_name: $fn_name.to_string(),
+    ($name:expr, $($arg:expr), *) => ($crate::expr::Expr::Call {
+        name: $name.to_string(),
         args: vec![$($arg),*]
     })
 }

@@ -6,8 +6,7 @@ mod error;
 use std::iter::Peekable;
 
 pub use self::token::{Token, Span};
-pub use self::error::LexerError;
-pub use self::error::LexerErrorCode;
+pub use self::error::{LexerError, LexerErrorCode};
 
 pub type LexerResult = Result<Token, LexerError>;
 

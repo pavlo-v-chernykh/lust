@@ -1,11 +1,13 @@
 use std::{error, fmt};
+use expr::EvalError;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy)]
 pub enum ExpandErrorCode {
-    UnknownError
+    UnknownError,
+    EvalError(EvalError)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy)]
 pub struct ExpandError(ExpandErrorCode);
 
 impl ExpandError {
@@ -26,22 +28,50 @@ impl error::Error for ExpandError {
             &ExpandError(ExpandErrorCode::UnknownError) => {
                 "Unknown expanstion error"
             },
+            &ExpandError(ExpandErrorCode::EvalError(ref e)) => {
+                e.description()
+            }
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
-        None
+        match self {
+            &ExpandError(ExpandErrorCode::EvalError(ref e)) => {
+                Some(e)
+            },
+            _ => {
+                None
+            }
+        }
+    }
+}
+
+impl error::FromError<EvalError> for ExpandError {
+    fn from_error(err: EvalError) -> Self {
+        ExpandError::new(ExpandErrorCode::EvalError(err))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::ExpandError;
-    use super::ExpandErrorCode::*;
+    use std::error::FromError;
+    use super::{ExpandError, ExpandErrorCode};
+    use expr::{EvalError, EvalErrorCode};
 
     #[test]
     fn test_descriptions_for_error_codes() {
-        let err = ExpandError(UnknownError);
+        let err = ExpandError::new(ExpandErrorCode::UnknownError);
         assert_eq!("Unknown expanstion error", format!("{}", err));
+        let eval_error = EvalError::new(EvalErrorCode::UnknownError);
+        let err = ExpandError::new(ExpandErrorCode::EvalError(eval_error));
+        assert_eq!("Unknown evaluation error", format!("{}", err));
+
+    }
+
+    #[test]
+    fn test_expand_error_from_eval_error() {
+        let eval_error = EvalError::new(EvalErrorCode::UnknownError);
+        let expected_result = ExpandError::new(ExpandErrorCode::EvalError(eval_error));
+        assert_eq!(expected_result, FromError::from_error(eval_error));
     }
 }
