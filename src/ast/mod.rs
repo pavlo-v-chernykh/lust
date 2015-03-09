@@ -40,21 +40,32 @@ impl Node {
                         "macro" => {
                             self.expand_macro(scope)
                         },
+                        "quote" => {
+                            self.expand_quote(scope)
+                        },
                         _ => {
-                            match scope.get(n) {
-                                Some(&Expr::Macro { .. }) => {
-                                    self.expand_call_macro(scope)
-                                },
-                                _ => {
-                                    self.expand_call_fn(scope)
-                                }
-                            }
+                            self.expand_call(scope)
                         }
                     }
                 } else {
                     Node::error(ExpandErrorCode::UnknownError)
                 }
             },
+        }
+    }
+
+    fn expand_quoted(&self, scope: &mut Scope) -> ExpandResult {
+        match self {
+            &Node::List(ref l) => {
+                let mut v = vec![];
+                for i in l {
+                    v.push(try!(i.expand_quoted(scope)));
+                }
+                Ok(Expr::List(v))
+            },
+            _ => {
+                self.expand(scope)
+            }
         }
     }
 
@@ -131,16 +142,12 @@ impl Node {
         }
     }
 
-    fn expand_call_fn(&self, scope: &mut Scope) -> ExpandResult {
+    fn expand_quote(&self, scope: &mut Scope) -> ExpandResult {
         if let &Node::List(ref l) = self {
-            if let Node::Symbol(ref name) = l[0] {
-                let mut args = vec![];
-                for a in &l[1..] {
-                    args.push(try!(a.expand(scope)))
-                }
+            if l.len() == 2 {
                 Ok(Expr::Call {
-                    name: name.clone(),
-                    args: args
+                    name: "quote".to_string(),
+                    args: vec![try!(l[1].expand_quoted(scope))],
                 })
             } else {
                 Node::error(ExpandErrorCode::UnknownError)
@@ -150,7 +157,7 @@ impl Node {
         }
     }
 
-    fn expand_call_macro(&self, scope: &mut Scope) -> ExpandResult {
+    fn expand_call(&self, scope: &mut Scope) -> ExpandResult {
         if let &Node::List(ref l) = self {
             if let Node::Symbol(ref name) = l[0] {
                 let mut args = vec![];
@@ -161,7 +168,15 @@ impl Node {
                     name: name.clone(),
                     args: args
                 };
-                Ok(try!(call.eval(scope)))
+                let is_macro = match scope.get(name) {
+                    Some(&Expr::Macro { .. }) => true,
+                    _ => false
+                };
+                if is_macro {
+                    Ok(try!(call.eval(scope)))
+                } else {
+                    Ok(call)
+                }
             } else {
                 Node::error(ExpandErrorCode::UnknownError)
             }
@@ -236,5 +251,27 @@ mod tests {
         let e = e_call!["+", e_symbol!["a"], e_number![1_f64]];
         let n = n_list![n_symbol!["+"], n_symbol!["a"], n_number![1_f64]];
         assert_eq!(e, n.expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn expand_call_macro() {
+        let ref mut scope = Scope::new_std();
+        let m = e_def!["m", e_macro![[e_symbol!["a"], e_symbol!["b"]],
+                                     [e_call!["+", e_symbol!["a"], e_symbol!["b"]]]]];
+        m.eval(scope).ok().unwrap();
+        let e = e_number![3.];
+        let n = n_list![n_symbol!["m"], n_number![1.], n_number![2.]];
+        assert_eq!(e, n.expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_quote() {
+        let ref mut scope = Scope::new_std();
+        let n = n_list![n_symbol!["quote"], n_symbol!["a"]];
+        assert_eq!(e_call!["quote", e_symbol!["a"]], n.expand(scope).ok().unwrap());
+        let n = n_list![n_symbol!["quote"],
+                        n_list![n_symbol!["+"], n_symbol!["a"], n_symbol!["b"]]];
+        assert_eq!(e_call!["quote", e_list![e_symbol!["+"], e_symbol!["a"], e_symbol!["b"]]],
+                   n.expand(scope).ok().unwrap());
     }
 }

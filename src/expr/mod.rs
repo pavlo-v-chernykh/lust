@@ -89,6 +89,9 @@ impl Expr {
                 "=" => {
                     self.eval_call_builtin_eq(scope)
                 },
+                "quote" => {
+                    self.eval_call_builtin_quote(scope)
+                },
                 _ => {
                     self.eval_call_custom(scope)
                 },
@@ -262,6 +265,18 @@ impl Expr {
         }
     }
 
+    fn eval_call_builtin_quote(&self, scope: &mut Scope) -> EvalResult {
+        if let &Expr::Call { ref args, .. } = self {
+            if args.len() == 1 {
+                Ok(args[0].clone())
+            } else {
+                Expr::error(EvalErrorCode::UnknownError)
+            }
+        } else {
+            Expr::error(EvalErrorCode::UnknownError)
+        }
+    }
+
     fn eval_call_custom(&self, scope: &mut Scope) -> EvalResult {
         if let &Expr::Call { ref name, ref args } = self {
             let func = match scope.get(name) {
@@ -273,7 +288,8 @@ impl Expr {
                 }
             };
             match func {
-                Expr::Fn { ref params, ref body } => {
+                Expr::Fn { ref params, ref body } |
+                Expr::Macro { ref params, ref body } => {
                     if args.len() != params.len() {
                         return Expr::error(EvalErrorCode::UnknownError)
                     }
@@ -285,27 +301,6 @@ impl Expr {
 
                     let ref mut fn_scope = Scope::new_chained(&scope);
                     for (p, a) in params.iter().zip(e_args.iter()) {
-                        if let Expr::Symbol(ref s) = *p {
-                            fn_scope.insert(s.clone(), a.clone());
-                        } else {
-                            return Expr::error(EvalErrorCode::UnknownError)
-                        }
-                    }
-
-                    let mut result = e_list![];
-                    for e in body {
-                        result = try!(e.eval(fn_scope));
-                    }
-
-                    Ok(result)
-                },
-                Expr::Macro { ref params, ref body } => {
-                    if args.len() != params.len() {
-                        return Expr::error(EvalErrorCode::UnknownError)
-                    }
-
-                    let ref mut fn_scope = Scope::new_chained(&scope);
-                    for (p, a) in params.iter().zip(args.iter()) {
                         if let Expr::Symbol(ref s) = *p {
                             fn_scope.insert(s.clone(), a.clone());
                         } else {
@@ -465,6 +460,19 @@ mod tests {
     }
 
     #[test]
+    fn test_eval_macro_special_form_and_call_defined_macro() {
+        let ref mut scope = Scope::new();
+        let expr = &e_def!["add",
+                           e_macro![[e_symbol!("a"), e_symbol!("b")],
+                                    [e_call!["+", e_symbol!("a"), e_symbol!("b")]]]];
+        expr.eval(scope).ok().unwrap();
+        let expected_result = e_number!(3.);
+        let actual_input = e_call!["add", e_number!(1_f64), e_number!(2_f64)];
+        let actual_result = actual_input.eval(scope);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
     fn test_eval_fn_and_get_error_when_call_defined_function_with_incorrect_number_of_args() {
         let ref mut scope = Scope::new();
         let actual_input = e_def!["add",
@@ -561,6 +569,14 @@ mod tests {
         let actual_result = actual_input.eval(scope);
         let expected_result = e_bool!(false);
         assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_quote_builtin_fn() {
+        let ref mut scope = Scope::new();
+        let expr = &e_call!["quote", e_list![e_symbol!["+"], e_symbol!["true"], e_number![1.]]];
+        let expected_result = e_list![e_symbol!["+"], e_symbol!["true"], e_number![1.]];
+        assert_eq!(expected_result, expr.eval(scope).ok().unwrap());
     }
 
     #[test]
