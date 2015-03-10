@@ -55,6 +55,17 @@ impl Expr {
         }
     }
 
+    pub fn eval_quoted(&self, scope: &mut Scope) -> EvalResult {
+        match self {
+            &Expr::Call { .. } => {
+                self.eval_call(scope)
+            }
+            e => {
+                Ok(e.clone())
+            },
+        }
+    }
+
     fn eval_def(&self, scope: &mut Scope) -> EvalResult {
         if let &Expr::Def { ref sym, ref expr } = self {
             let e = try!(expr.eval(scope));
@@ -91,6 +102,9 @@ impl Expr {
                 },
                 "quote" => {
                     self.eval_call_builtin_quote(scope)
+                },
+                "unquote" => {
+                    self.eval_call_builtin_unquote(scope)
                 },
                 _ => {
                     self.eval_call_custom(scope)
@@ -268,7 +282,19 @@ impl Expr {
     fn eval_call_builtin_quote(&self, scope: &mut Scope) -> EvalResult {
         if let &Expr::Call { ref args, .. } = self {
             if args.len() == 1 {
-                Ok(args[0].clone())
+                args[0].eval_quoted(scope)
+            } else {
+                Expr::error(EvalErrorCode::UnknownError)
+            }
+        } else {
+            Expr::error(EvalErrorCode::UnknownError)
+        }
+    }
+
+    fn eval_call_builtin_unquote(&self, scope: &mut Scope) -> EvalResult {
+        if let &Expr::Call { ref args, .. } = self {
+            if args.len() == 1 {
+                args[0].eval(scope)
             } else {
                 Expr::error(EvalErrorCode::UnknownError)
             }

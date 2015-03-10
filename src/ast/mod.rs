@@ -43,6 +43,9 @@ impl Node {
                         "quote" => {
                             self.expand_quote(scope)
                         },
+                        "unquote" => {
+                            self.expand_unquote(scope)
+                        },
                         _ => {
                             self.expand_call(scope)
                         }
@@ -57,11 +60,15 @@ impl Node {
     fn expand_quoted(&self, scope: &mut Scope) -> ExpandResult {
         match self {
             &Node::List(ref l) => {
-                let mut v = vec![];
-                for i in l {
-                    v.push(try!(i.expand_quoted(scope)));
+                if l.len() > 0 && Node::Symbol("unquote".to_string()) == l[0] {
+                    self.expand_unquote(scope)
+                } else {
+                    let mut v = vec![];
+                    for i in l {
+                        v.push(try!(i.expand_quoted(scope)));
+                    }
+                    Ok(Expr::List(v))
                 }
-                Ok(Expr::List(v))
             },
             _ => {
                 self.expand(scope)
@@ -148,6 +155,21 @@ impl Node {
                 Ok(Expr::Call {
                     name: "quote".to_string(),
                     args: vec![try!(l[1].expand_quoted(scope))],
+                })
+            } else {
+                Node::error(ExpandErrorCode::UnknownError)
+            }
+        } else {
+            Node::error(ExpandErrorCode::UnknownError)
+        }
+    }
+
+    fn expand_unquote(&self, scope: &mut Scope) -> ExpandResult {
+        if let &Node::List(ref l) = self {
+            if l.len() == 2 {
+                Ok(Expr::Call {
+                    name: "unquote".to_string(),
+                    args: vec![try!(l[1].expand(scope))],
                 })
             } else {
                 Node::error(ExpandErrorCode::UnknownError)
