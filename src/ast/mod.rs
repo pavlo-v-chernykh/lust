@@ -296,4 +296,14 @@ mod tests {
         assert_eq!(e_call!["quote", e_list![e_symbol!["+"], e_symbol!["a"], e_symbol!["b"]]],
                    n.expand(scope).ok().unwrap());
     }
+
+    #[test]
+    fn test_expand_unquote() {
+        let ref mut scope = Scope::new_std();
+        let n = n_list![n_symbol!["quote"], n_list![n_symbol!["a"],
+                                                    n_list![n_symbol!["unquote"], n_symbol!["b"]]]];
+        let expected_result = e_call!["quote", e_list![e_symbol!["a"],
+                                               e_call!["unquote", e_symbol!["b"]]]];
+        assert_eq!(expected_result, n.expand(scope).ok().unwrap());
+    }
 }
