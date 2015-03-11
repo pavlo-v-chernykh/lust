@@ -57,11 +57,18 @@ impl Expr {
 
     pub fn eval_quoted(&self, scope: &mut Scope) -> EvalResult {
         match self {
-            &Expr::Call { .. } => {
-                self.eval_call(scope)
-            }
-            e => {
-                Ok(e.clone())
+            &Expr::Symbol(_) => {
+                Ok(self.clone())
+            },
+            &Expr::List(ref l) => {
+                let mut v = vec![];
+                for e in l {
+                    v.push(try!(e.eval_quoted(scope)))
+                }
+                Ok(Expr::List(v))
+            },
+            _ => {
+                self.eval(scope)
             },
         }
     }
@@ -602,6 +609,16 @@ mod tests {
         let ref mut scope = Scope::new();
         let expr = &e_call!["quote", e_list![e_symbol!["+"], e_symbol!["true"], e_number![1.]]];
         let expected_result = e_list![e_symbol!["+"], e_symbol!["true"], e_number![1.]];
+        assert_eq!(expected_result, expr.eval(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_unquote_builtin_fn() {
+        let ref mut scope = Scope::new();
+        scope.insert("a".to_string(), e_number![3.]);
+        let expr = e_call!["quote", e_list![e_symbol!["+"],
+                                            e_call!["unquote", e_symbol!["a"]], e_number![1.]]];
+        let expected_result = e_list![e_symbol!["+"], e_number![3.], e_number![1.]];
         assert_eq!(expected_result, expr.eval(scope).ok().unwrap());
     }
 
