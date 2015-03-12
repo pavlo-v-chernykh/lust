@@ -624,6 +624,7 @@ mod tests {
     use super::error::EvalError;
     use super::error::EvalErrorCode::UnknownError;
 
+    #[test]
     fn test_expand_number() {
         let ref mut scope = Scope::new_std();
         let num = 1_f64;
