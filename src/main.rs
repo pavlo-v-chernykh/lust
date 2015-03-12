@@ -1,12 +1,9 @@
 #![feature(core)]
-#![feature(unicode)]
 #![feature(old_io)]
 #[macro_use]
 mod lexer;
 #[macro_use]
 mod expr;
-#[macro_use]
-mod ast;
 #[macro_use]
 mod parser;
 mod scope;
@@ -23,8 +20,8 @@ fn main() {
         match old_io::stdin().read_line() {
             Ok(input) => {
                 match Parser::new(input.chars()).parse() {
-                    Ok(ref node) => {
-                        match node.expand(root_scope) {
+                    Ok(ref expr) => {
+                        match expr.expand(root_scope) {
                             Ok(ref expr) => {
                                 match expr.eval(root_scope) {
                                     Ok(ref res) => {

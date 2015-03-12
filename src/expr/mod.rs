@@ -6,7 +6,7 @@ use std::fmt;
 use scope::Scope;
 pub use self::error::{EvalError, EvalErrorCode};
 
-type EvalResult = Result<Expr, EvalError>;
+pub type EvalResult = Result<Expr, EvalError>;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
@@ -321,8 +321,7 @@ impl Expr {
                 }
             };
             match func {
-                Expr::Fn { ref params, ref body } |
-                Expr::Macro { ref params, ref body } => {
+                Expr::Fn { ref params, ref body } => {
                     if args.len() != params.len() {
                         return Expr::error(EvalErrorCode::UnknownError)
                     }
@@ -347,10 +346,216 @@ impl Expr {
                     }
 
                     Ok(result)
+
+                },
+                Expr::Macro { ref params, ref body } => {
+                    if args.len() != params.len() {
+                        return Expr::error(EvalErrorCode::UnknownError)
+                    }
+
+                    let ref mut fn_scope = Scope::new_chained(&scope);
+                    for (p, a) in params.iter().zip(args.iter()) {
+                        if let Expr::Symbol(ref s) = *p {
+                            fn_scope.insert(s.clone(), a.clone());
+                        } else {
+                            return Expr::error(EvalErrorCode::UnknownError)
+                        }
+                    }
+
+                    let mut result = e_list![];
+                    for e in body {
+                        result = try!(e.eval(fn_scope));
+                    }
+
+                    Ok(try!(result.expand(fn_scope)))
                 },
                 _ => {
                     Expr::error(EvalErrorCode::UnknownError)
                 }
+            }
+        } else {
+            Expr::error(EvalErrorCode::UnknownError)
+        }
+    }
+
+    pub fn expand(&self, scope: &mut Scope) -> EvalResult {
+        match self {
+            &Expr::List(ref l) => {
+                if let Expr::Symbol(ref n) = l[0] {
+                    match &n[..] {
+                        "def" => {
+                            self.expand_def(scope)
+                        },
+                        "fn" => {
+                            self.expand_fn(scope)
+                        },
+                        "macro" => {
+                            self.expand_macro(scope)
+                        },
+                        "quote" => {
+                            self.expand_quote(scope)
+                        },
+                        "unquote" => {
+                            self.expand_unquote(scope)
+                        },
+                        _ => {
+                            self.expand_call(scope)
+                        }
+                    }
+                } else {
+                    Expr::error(EvalErrorCode::UnknownError)
+                }
+            },
+            e => {
+                Ok(e.clone())
+            },
+        }
+    }
+
+    fn expand_quoted(&self, scope: &mut Scope) -> EvalResult {
+        match self {
+            &Expr::List(ref l) => {
+                if l.len() > 0 && Expr::Symbol("unquote".to_string()) == l[0] {
+                    self.expand_unquote(scope)
+                } else {
+                    let mut v = vec![];
+                    for i in l {
+                        v.push(try!(i.expand_quoted(scope)));
+                    }
+                    Ok(Expr::List(v))
+                }
+            },
+            _ => {
+                self.expand(scope)
+            }
+        }
+    }
+
+    fn expand_def(&self, scope: &mut Scope) -> EvalResult {
+        if let &Expr::List(ref l) = self {
+            if l.len() == 3 {
+                if let Expr::Symbol(ref n) = l[1] {
+                    Ok(Expr::Def {
+                        sym: n.clone(),
+                        expr: Box::new(try!(l[2].expand(scope))),
+                    })
+                } else {
+                    Expr::error(EvalErrorCode::UnknownError)
+                }
+            } else {
+                Expr::error(EvalErrorCode::UnknownError)
+            }
+        } else {
+            Expr::error(EvalErrorCode::UnknownError)
+        }
+    }
+
+    fn expand_fn(&self, scope: &mut Scope) -> EvalResult {
+        if let &Expr::List(ref l) = self {
+            if l.len() >= 3 {
+                if let Expr::List(ref params) = l[1] {
+                    let mut fn_params = vec![];
+                    for p in params {
+                        fn_params.push(try!(p.expand(scope)))
+                    }
+                    let mut fn_body = vec![];
+                    for be in &l[2..] {
+                        fn_body.push(try!(be.expand(scope)))
+                    }
+                    Ok(Expr::Fn {
+                        params: fn_params,
+                        body: fn_body,
+                    })
+                } else {
+                    Expr::error(EvalErrorCode::UnknownError)
+                }
+            } else {
+                Expr::error(EvalErrorCode::UnknownError)
+            }
+        } else {
+            Expr::error(EvalErrorCode::UnknownError)
+        }
+    }
+
+    fn expand_macro(&self, scope: &mut Scope) -> EvalResult {
+        if let &Expr::List(ref l) = self {
+            if l.len() >= 3 {
+                if let Expr::List(ref params) = l[1] {
+                    let mut macro_params = vec![];
+                    for p in params {
+                        macro_params.push(try!(p.expand(scope)))
+                    }
+                    let mut macro_body = vec![];
+                    for be in &l[2..] {
+                        macro_body.push(try!(be.expand(scope)))
+                    }
+                    Ok(Expr::Macro {
+                        params: macro_params,
+                        body: macro_body,
+                    })
+                } else {
+                    Expr::error(EvalErrorCode::UnknownError)
+                }
+            } else {
+                Expr::error(EvalErrorCode::UnknownError)
+            }
+        } else {
+            Expr::error(EvalErrorCode::UnknownError)
+        }
+    }
+
+    fn expand_quote(&self, scope: &mut Scope) -> EvalResult {
+        if let &Expr::List(ref l) = self {
+            if l.len() == 2 {
+                Ok(Expr::Call {
+                    name: "quote".to_string(),
+                    args: vec![try!(l[1].expand_quoted(scope))],
+                })
+            } else {
+                Expr::error(EvalErrorCode::UnknownError)
+            }
+        } else {
+            Expr::error(EvalErrorCode::UnknownError)
+        }
+    }
+
+    fn expand_unquote(&self, scope: &mut Scope) -> EvalResult {
+        if let &Expr::List(ref l) = self {
+            if l.len() == 2 {
+                Ok(Expr::Call {
+                    name: "unquote".to_string(),
+                    args: vec![try!(l[1].expand(scope))],
+                })
+            } else {
+                Expr::error(EvalErrorCode::UnknownError)
+            }
+        } else {
+            Expr::error(EvalErrorCode::UnknownError)
+        }
+    }
+
+    fn expand_call(&self, scope: &mut Scope) -> EvalResult {
+        if let &Expr::List(ref l) = self {
+            if let Expr::Symbol(ref name) = l[0] {
+                let mut args = vec![];
+                for a in &l[1..] {
+                    args.push(try!(a.expand(scope)))
+                }
+                let call = Expr::Call {
+                    name: name.clone(),
+                    args: args
+                };
+                let is_macro = match scope.get(name) {
+                    Some(&Expr::Macro { .. }) => true,
+                    _ => false
+                };
+                if is_macro {
+                    Ok(try!(call.eval(scope)))
+                } else {
+                    Ok(call)
+                }
+            } else {
+                Expr::error(EvalErrorCode::UnknownError)
             }
         } else {
             Expr::error(EvalErrorCode::UnknownError)
@@ -395,6 +600,7 @@ impl fmt::Display for Expr {
             },
         }
     }
+
 }
 
 impl fmt::Display for Vec<Expr> {
@@ -417,6 +623,96 @@ mod tests {
     use scope::Scope;
     use super::error::EvalError;
     use super::error::EvalErrorCode::UnknownError;
+
+    fn test_expand_number() {
+        let ref mut scope = Scope::new_std();
+        let num = 1_f64;
+        assert_eq!(e_number!(num), e_number!(num).expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_string() {
+        let ref mut scope = Scope::new_std();
+        let s = "rust is wonderful";
+        assert_eq!(e_string!(s), e_string!(s).expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_symbol() {
+        let ref mut scope = Scope::new_std();
+        let s = "+";
+        assert_eq!(e_symbol!(s), e_symbol!(s).expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_fn() {
+        let ref mut scope = Scope::new_std();
+        let e = e_fn!([e_symbol!("a")],
+                      [e_call!["+", e_symbol!("a"), e_number!(1_f64)]]);
+        let n = e_list![e_symbol!("fn"),
+                        e_list![e_symbol!("a")],
+                        e_list![e_symbol!("+"), e_symbol!("a"), e_number!(1_f64)]];
+        assert_eq!(e, n.expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_macro() {
+        let ref mut scope = Scope::new_std();
+        let e = e_macro!([e_symbol!("a")],
+                         [e_call!["+", e_symbol!("a"), e_number!(1_f64)]]);
+        let n = e_list![e_symbol!("macro"),
+                        e_list![e_symbol!("a")],
+                        e_list![e_symbol!("+"), e_symbol!("a"), e_number!(1_f64)]];
+        assert_eq!(e, n.expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_def() {
+        let ref mut scope = Scope::new_std();
+        let e = e_def!["a", e_number![1_f64]];
+        let n = e_list![e_symbol!["def"], e_symbol!["a"], e_number![1_f64]];
+        assert_eq!(e, n.expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_call_fn() {
+        let ref mut scope = Scope::new_std();
+        let e = e_call!["+", e_symbol!["a"], e_number![1_f64]];
+        let n = e_list![e_symbol!["+"], e_symbol!["a"], e_number![1_f64]];
+        assert_eq!(e, n.expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn expand_call_macro() {
+        let ref mut scope = Scope::new_std();
+        let m = e_def!["m", e_macro![[e_symbol!["a"], e_symbol!["b"]],
+                                     [e_call!["+", e_symbol!["a"], e_symbol!["b"]]]]];
+        m.eval(scope).ok().unwrap();
+        let e = e_number![3.];
+        let n = e_list![e_symbol!["m"], e_number![1.], e_number![2.]];
+        assert_eq!(e, n.expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_quote() {
+        let ref mut scope = Scope::new_std();
+        let n = e_list![e_symbol!["quote"], e_symbol!["a"]];
+        assert_eq!(e_call!["quote", e_symbol!["a"]], n.expand(scope).ok().unwrap());
+        let n = e_list![e_symbol!["quote"],
+                        e_list![e_symbol!["+"], e_symbol!["a"], e_symbol!["b"]]];
+        assert_eq!(e_call!["quote", e_list![e_symbol!["+"], e_symbol!["a"], e_symbol!["b"]]],
+                   n.expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_unquote() {
+        let ref mut scope = Scope::new_std();
+        let n = e_list![e_symbol!["quote"], e_list![e_symbol!["a"],
+                                                    e_list![e_symbol!["unquote"], e_symbol!["b"]]]];
+        let expected_result = e_call!["quote", e_list![e_symbol!["a"],
+                                               e_call!["unquote", e_symbol!["b"]]]];
+        assert_eq!(expected_result, n.expand(scope).ok().unwrap());
+    }
 
     #[test]
     fn test_eval_number_to_itself() {

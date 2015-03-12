@@ -1,10 +1,10 @@
 mod error;
 
 use self::error::ParserError;
-use ast::Node;
+use expr::Expr;
 use lexer::{Token, Lexer, LexerResult};
 
-type ParserResult = Result<Node, ParserError>;
+pub type ParserResult = Result<Expr, ParserError>;
 
 pub struct Parser<I: Iterator> {
     lexer: Lexer<I>,
@@ -45,13 +45,13 @@ impl<I: Iterator<Item=char>> Parser<I> {
     fn parse_expr(&mut self) -> ParserResult {
         match self.token {
             Some(Ok(Token::Number { val, .. })) => {
-                Ok(Node::Number(val))
+                Ok(Expr::Number(val))
             },
             Some(Ok(Token::String { ref val, .. })) => {
-                Ok(Node::String(val.clone()))
+                Ok(Expr::String(val.clone()))
             },
             Some(Ok(Token::Symbol { ref val, .. })) => {
-                Ok(Node::Symbol(val.clone()))
+                Ok(Expr::Symbol(val.clone()))
             },
             Some(Ok(Token::ListStart { .. })) => {
                 self.parse_list()
@@ -73,7 +73,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
         loop {
             self.bump();
             if let Some(Ok(Token::ListEnd { .. })) = self.token {
-                return Ok(Node::List(list))
+                return Ok(Expr::List(list))
             }
             list.push(try!(self.parse_expr()))
         }
@@ -86,9 +86,9 @@ mod tests {
 
     #[test]
     fn test_parse_list_expression() {
-        let expected_result = n_list![n_symbol!("def"),
-                                      n_symbol!("a"),
-                                      n_number!(1_f64)];
+        let expected_result = e_list![e_symbol!("def"),
+                                      e_symbol!("a"),
+                                      e_number!(1_f64)];
         let mut parser = Parser::new("(def a 1)".chars());
         let actual_result = parser.parse().ok().unwrap();
         assert_eq!(expected_result, actual_result);
@@ -96,11 +96,11 @@ mod tests {
 
     #[test]
     fn test_parse_nested_list_expressions() {
-        let expected_result =  n_list![n_symbol!("def"),
-                                       n_symbol!("a"),
-                                       n_list![n_symbol!("+"),
-                                               n_number!(1_f64),
-                                               n_number!(2_f64)]];
+        let expected_result =  e_list![e_symbol!("def"),
+                                       e_symbol!("a"),
+                                       e_list![e_symbol!("+"),
+                                               e_number!(1_f64),
+                                               e_number!(2_f64)]];
         let mut parser = Parser::new("(def a (+ 1 2))".chars());
         let actual_result = parser.parse().ok().unwrap();
         assert_eq!(expected_result, actual_result);

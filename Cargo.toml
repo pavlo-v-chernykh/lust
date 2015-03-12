@@ -3,3 +3,10 @@
 name = "lust"
 version = "0.0.1"
 authors = ["Pavel Chernykh <pavel.v.chernykh@gmail.com>"]
+
+[lib]
+
+name = "lust"
+test = false
+doctest = false
+bench = false
