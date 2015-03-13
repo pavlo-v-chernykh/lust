@@ -56,6 +56,12 @@ impl<I: Iterator<Item=char>> Parser<I> {
             Some(Ok(Token::ListStart { .. })) => {
                 self.parse_list()
             },
+            Some(Ok(Token::Quote { .. })) => {
+                self.parse_quoted()
+            },
+            Some(Ok(Token::Unquote { .. })) => {
+                self.parse_unquoted()
+            },
             Some(Ok(ref t @ Token::ListEnd { .. })) => {
                 Err(ParserError::UnexpectedToken(t.clone()))
             },
@@ -77,6 +83,16 @@ impl<I: Iterator<Item=char>> Parser<I> {
             }
             list.push(try!(self.parse_expr()))
         }
+    }
+
+    fn parse_quoted(&mut self) -> ParserResult {
+        self.bump();
+        Ok(e_list![e_symbol!["quote"], try!(self.parse_expr())])
+    }
+
+    fn parse_unquoted(&mut self) -> ParserResult {
+        self.bump();
+        Ok(e_list![e_symbol!["unquote"], try!(self.parse_expr())])
     }
 }
 

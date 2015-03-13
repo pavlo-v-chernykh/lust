@@ -62,6 +62,12 @@ pub enum Token {
     ListEnd {
         span: Span,
     },
+    Quote {
+        span: Span,
+    },
+    Unquote {
+        span: Span,
+    },
 }
 
 impl fmt::Display for Token {
@@ -81,6 +87,12 @@ impl fmt::Display for Token {
             },
             &Token::ListEnd { ref span } => {
                 write!(f, "'List End' at {}", span)
+            },
+            &Token::Quote { ref span } => {
+                write!(f, "'Quote' at {}", span)
+            },
+            &Token::Unquote { ref span } => {
+                write!(f, "'Unquote' at {}", span)
             },
         }
     }

@@ -14,6 +14,8 @@ pub type LexerResult = Result<Token, LexerError>;
 enum LexerState {
     Start,
     ReadList,
+    ReadQuoted,
+    ReadUnquoted,
     BeforeFinish,
     Finish,
 }
@@ -88,6 +90,12 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                 LexerState::ReadList => {
                     return self.read_at_read_list()
                 },
+                LexerState::ReadQuoted => {
+                    return self.read_at_read_quoted()
+                },
+                LexerState::ReadUnquoted => {
+                    return self.read_at_read_unquoted()
+                },
                 _ => {
                     return self.error(LexerErrorCode::InvalidSyntax)
                 }
@@ -96,10 +104,16 @@ impl<I: Iterator<Item=char>> Lexer<I> {
     }
 
     fn read_at_start(&mut self) -> LexerResult {
-        let evt = self.read_next();
-        self.state = match evt {
+        let token = self.read_next();
+        self.state = match token {
             Ok(Token::ListStart { .. }) => {
                 LexerState::ReadList
+            },
+            Ok(Token::Quote { .. }) => {
+                LexerState::ReadQuoted
+            },
+            Ok(Token::Unquote { .. }) => {
+                LexerState::ReadUnquoted
             },
             Err(_) => {
                 LexerState::Finish
@@ -108,7 +122,60 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                 LexerState::BeforeFinish
             },
         };
-        evt
+        token
+    }
+
+    fn read_at_read_list(&mut self) -> LexerResult {
+        let token = self.read_next();
+        match token {
+            Ok(Token::ListStart { .. }) => {
+                self.lvl += 1;
+            },
+            Ok(Token::ListEnd { .. }) => {
+                if self.lvl > 0 {
+                    self.lvl -= 1;
+                } else {
+                    self.state = LexerState::BeforeFinish
+                }
+            },
+            Err(_) => {
+                self.state = LexerState::Finish
+            },
+            _ => {}
+        };
+        token
+    }
+
+    fn read_at_read_quoted(&mut self) -> LexerResult {
+        let token = self.read_next();
+        match token {
+            Ok(Token::ListStart { .. }) => {
+                self.state = LexerState::ReadList
+            },
+            Err(_) => {
+                self.state = LexerState::Finish
+            },
+            _ => {
+                self.state = LexerState::BeforeFinish
+            },
+        };
+        token
+    }
+
+    fn read_at_read_unquoted(&mut self) -> LexerResult {
+        let token = self.read_next();
+        match token {
+            Ok(Token::ListStart { .. }) => {
+                self.state = LexerState::ReadList
+            },
+            Err(_) => {
+                self.state = LexerState::Finish
+            },
+            _ => {
+                self.state = LexerState::BeforeFinish
+            },
+        };
+        token
     }
 
     fn read_next(&mut self) -> LexerResult {
@@ -143,6 +210,16 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                     let (line, col) = (self.line, self.col);
                     self.bump();
                     Ok(t_list_end!(span!(line, col, self.line, self.col)))
+                },
+                '\'' => {
+                    let (line, col) = (self.line, self.col);
+                    self.bump();
+                    Ok(t_quote![span![line, col, self.line, self.col]])
+                },
+                '~' => {
+                    let (line, col) = (self.line, self.col);
+                    self.bump();
+                    Ok(t_unquote![span![line, col, self.line, self.col]])
                 },
                 _ => {
                     self.error(LexerErrorCode::InvalidSyntax)
@@ -243,32 +320,6 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         Ok(t_string!(res, span!(line, col, self.line, self.col)))
     }
 
-    fn read_at_read_list(&mut self) -> LexerResult {
-        let evt = self.read_next();
-        match evt {
-            Ok(Token::ListStart { .. }) => {
-                self.lvl += 1;
-            },
-            Ok(Token::ListEnd { .. }) => {
-                if self.lvl > 0 {
-                    self.lvl -= 1;
-                } else {
-                    self.state = LexerState::BeforeFinish
-                }
-            },
-            Err(_) => {
-                self.state = LexerState::Finish
-            },
-            _ => {}
-        };
-        evt
-    }
-
-    fn error(&mut self, code: LexerErrorCode) -> LexerResult {
-        self.state = LexerState::Finish;
-        Err(LexerError::new(self.line, self.col, code))
-    }
-
     fn consume_whitespaces(&mut self) {
         while let Some(c) = self.char {
             if c.is_whitespace() {
@@ -277,6 +328,11 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                 break
             }
         }
+    }
+
+    fn error(&mut self, code: LexerErrorCode) -> LexerResult {
+        self.state = LexerState::Finish;
+        Err(LexerError::new(self.line, self.col, code))
     }
 }
 
@@ -413,6 +469,81 @@ mod tests {
                                    Ok(t_symbol!("Y", span!(1, 30, 1, 31))),
                                    Ok(t_symbol!("Z", span!(1, 32, 1, 33))),
                                    Ok(t_list_end!(span!(1, 33, 1, 34)))];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+    }
+
+    #[test]
+    fn test_read_quoted_symbol() {
+        let lexer = Lexer::new("'a".chars());
+        let expected_result = vec![Ok(t_quote![span![1, 1, 1, 2]]),
+                                   Ok(t_symbol!["a", span![1, 2, 1, 3]])];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+    }
+
+    #[test]
+    fn test_read_quoted_number() {
+        let lexer = Lexer::new("'1".chars());
+        let expected_result = vec![Ok(t_quote![span![1, 1, 1, 2]]),
+                                   Ok(t_number![1., span![1, 2, 1, 3]])];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+    }
+
+    #[test]
+    fn test_read_quoted_list() {
+        let lexer = Lexer::new("'()".chars());
+        let expected_result = vec![Ok(t_quote![span![1, 1, 1, 2]]),
+                                   Ok(t_list_start![span![1, 2, 1, 3]]),
+                                   Ok(t_list_end![span![1, 3, 1, 4]])];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+    }
+
+    #[test]
+    fn test_read_quoted_symbol_inside_list() {
+        let lexer = Lexer::new("(+ 1 'a)".chars());
+        let expected_result = vec![Ok(t_list_start![span![1, 1, 1, 2]]),
+                                   Ok(t_symbol!["+", span![1, 2, 1, 3]]),
+                                   Ok(t_number![1., span![1, 4, 1, 5]]),
+                                   Ok(t_quote![span![1, 6, 1, 7]]),
+                                   Ok(t_symbol!["a", span![1, 7, 1, 8]]),
+                                   Ok(t_list_end![span![1, 8, 1, 9]])];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+    }
+
+    #[test]
+    fn test_read_unquoted_symbol() {
+        let lexer = Lexer::new("~a".chars());
+        let expected_result = vec![Ok(t_unquote![span![1, 1, 1, 2]]),
+                                   Ok(t_symbol!["a", span![1, 2, 1, 3]])];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+    }
+
+    #[test]
+    fn test_read_unquoted_number() {
+        let lexer = Lexer::new("~1".chars());
+        let expected_result = vec![Ok(t_unquote![span![1, 1, 1, 2]]),
+                                   Ok(t_number![1., span![1, 2, 1, 3]])];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+    }
+
+    #[test]
+    fn test_read_unquoted_list() {
+        let lexer = Lexer::new("~()".chars());
+        let expected_result = vec![Ok(t_unquote![span![1, 1, 1, 2]]),
+                                   Ok(t_list_start![span![1, 2, 1, 3]]),
+                                   Ok(t_list_end![span![1, 3, 1, 4]])];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+    }
+
+    #[test]
+    fn test_read_unquoted_symbol_inside_list() {
+        let lexer = Lexer::new("'(+ 1 ~a)".chars());
+        let expected_result = vec![Ok(t_quote![span![1, 1, 1, 2]]),
+                                   Ok(t_list_start![span![1, 2, 1, 3]]),
+                                   Ok(t_symbol!["+", span![1, 3, 1, 4]]),
+                                   Ok(t_number![1., span![1, 5, 1, 6]]),
+                                   Ok(t_unquote![span![1, 7, 1, 8]]),
+                                   Ok(t_symbol!["a", span![1, 8, 1, 9]]),
+                                   Ok(t_list_end![span![1, 9, 1, 10]])];
         assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
     }
 }
