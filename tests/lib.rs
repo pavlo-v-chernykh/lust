@@ -7,7 +7,8 @@ use lust::{Parser, Scope};
 fn test_macro_expansion() {
     let ref mut scope = Scope::new_std();
     let input = "(def m (macro (a) '(+ 1 ~a)))";
-    let expr = Parser::new(input.chars()).parse().ok().unwrap()
+    let expr = Parser::new(input.chars())
+        .parse().ok().unwrap()
         .expand(scope).ok().unwrap()
         .eval(scope).ok().unwrap();
     assert_eq!(expr, e_macro![[e_symbol!["a"]],
@@ -17,7 +18,8 @@ fn test_macro_expansion() {
                                                e_call!["unquote",
                                                        e_symbol!["a"]]]]]]);
     let input = "(def f (fn (b) (m b)))";
-    let expr = Parser::new(input.chars()).parse().ok().unwrap()
+    let expr = Parser::new(input.chars())
+        .parse().ok().unwrap()
         .expand(scope).ok().unwrap()
         .eval(scope).ok().unwrap();
     assert_eq!(expr, e_fn![[e_symbol!["b"]],
