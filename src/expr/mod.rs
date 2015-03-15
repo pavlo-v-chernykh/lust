@@ -4,7 +4,8 @@ mod error;
 
 use std::fmt;
 use scope::Scope;
-pub use self::error::{EvalError, EvalErrorCode};
+use self::error::EvalError::*;
+pub use self::error::EvalError;
 
 pub type EvalResult = Result<Expr, EvalError>;
 
@@ -40,7 +41,7 @@ impl Expr {
                 if let Some(e) = scope.get(name) {
                     Ok(e.clone())
                 } else {
-                    Expr::error(EvalErrorCode::UnknownError)
+                    Err(ResolveError(name.clone()))
                 }
             },
             &Expr::Def { .. } => {
@@ -79,7 +80,7 @@ impl Expr {
             scope.insert(sym.clone(), e.clone());
             Ok(e)
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -118,7 +119,7 @@ impl Expr {
                 },
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -129,12 +130,12 @@ impl Expr {
                 if let Ok(Expr::Number(n)) = a.eval(scope) {
                     result += n;
                 } else {
-                    return Expr::error(EvalErrorCode::UnknownError)
+                    return Err(UnknownError)
                 }
             }
             Ok(Expr::Number(result))
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -147,18 +148,18 @@ impl Expr {
                         if let Ok(Expr::Number(n)) = a.eval(scope) {
                             result -= n
                         } else {
-                            return Expr::error(EvalErrorCode::UnknownError)
+                            return Err(UnknownError)
                         }
                     }
                     Ok(Expr::Number(result))
                 } else {
-                    Expr::error(EvalErrorCode::UnknownError)
+                    Err(UnknownError)
                 }
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -169,12 +170,12 @@ impl Expr {
                 if let Ok(Expr::Number(n)) = a.eval(scope) {
                     result *= n
                 } else {
-                    return Expr::error(EvalErrorCode::UnknownError)
+                    return Err(UnknownError)
                 }
             }
             Ok(Expr::Number(result))
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -187,18 +188,18 @@ impl Expr {
                         if let Ok(Expr::Number(n)) = a.eval(scope) {
                             result /= n
                         } else {
-                            return Expr::error(EvalErrorCode::UnknownError)
+                            return Err(UnknownError)
                         }
                     }
                     Ok(Expr::Number(result))
                 } else {
-                    Expr::error(EvalErrorCode::UnknownError)
+                    Err(UnknownError)
                 }
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -215,18 +216,18 @@ impl Expr {
                                 return Ok(Expr::Bool(false))
                             }
                         } else {
-                            return Expr::error(EvalErrorCode::UnknownError)
+                            return Err(UnknownError)
                         }
                     }
                     Ok(Expr::Bool(true))
                 } else {
-                    return Expr::error(EvalErrorCode::UnknownError)
+                    return Err(UnknownError)
                 }
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -243,18 +244,18 @@ impl Expr {
                                 return Ok(Expr::Bool(false))
                             }
                         } else {
-                            return Expr::error(EvalErrorCode::UnknownError)
+                            return Err(UnknownError)
                         }
                     }
                     Ok(Expr::Bool(true))
                 } else {
-                    return Expr::error(EvalErrorCode::UnknownError)
+                    return Err(UnknownError)
                 }
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -271,18 +272,18 @@ impl Expr {
                                 return Ok(Expr::Bool(false))
                             }
                         } else {
-                            return Expr::error(EvalErrorCode::UnknownError)
+                            return Err(UnknownError)
                         }
                     }
                     Ok(Expr::Bool(true))
                 } else {
-                    return Expr::error(EvalErrorCode::UnknownError)
+                    return Err(UnknownError)
                 }
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -291,10 +292,10 @@ impl Expr {
             if args.len() == 1 {
                 args[0].eval_quoted(scope)
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -303,10 +304,10 @@ impl Expr {
             if args.len() == 1 {
                 args[0].eval(scope)
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -317,13 +318,13 @@ impl Expr {
                     e.clone()
                 },
                 _ => {
-                    return Expr::error(EvalErrorCode::UnknownError)
+                    return Err(UnknownError)
                 }
             };
             match func {
                 Expr::Fn { ref params, ref body } => {
                     if args.len() != params.len() {
-                        return Expr::error(EvalErrorCode::UnknownError)
+                        return Err(UnknownError)
                     }
 
                     let mut e_args = vec![];
@@ -336,7 +337,7 @@ impl Expr {
                         if let Expr::Symbol(ref s) = *p {
                             fn_scope.insert(s.clone(), a.clone());
                         } else {
-                            return Expr::error(EvalErrorCode::UnknownError)
+                            return Err(UnknownError)
                         }
                     }
 
@@ -350,7 +351,7 @@ impl Expr {
                 },
                 Expr::Macro { ref params, ref body } => {
                     if args.len() != params.len() {
-                        return Expr::error(EvalErrorCode::UnknownError)
+                        return Err(UnknownError)
                     }
 
                     let ref mut fn_scope = Scope::new_chained(&scope);
@@ -358,7 +359,7 @@ impl Expr {
                         if let Expr::Symbol(ref s) = *p {
                             fn_scope.insert(s.clone(), a.clone());
                         } else {
-                            return Expr::error(EvalErrorCode::UnknownError)
+                            return Err(UnknownError)
                         }
                     }
 
@@ -370,11 +371,11 @@ impl Expr {
                     Ok(try!(result.expand(fn_scope)))
                 },
                 _ => {
-                    Expr::error(EvalErrorCode::UnknownError)
+                    Err(UnknownError)
                 }
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -403,7 +404,7 @@ impl Expr {
                         }
                     }
                 } else {
-                    Expr::error(EvalErrorCode::UnknownError)
+                    Err(UnknownError)
                 }
             },
             e => {
@@ -440,13 +441,13 @@ impl Expr {
                         expr: Box::new(try!(l[2].expand(scope))),
                     })
                 } else {
-                    Expr::error(EvalErrorCode::UnknownError)
+                    Err(UnknownError)
                 }
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -467,13 +468,13 @@ impl Expr {
                         body: fn_body,
                     })
                 } else {
-                    Expr::error(EvalErrorCode::UnknownError)
+                    Err(UnknownError)
                 }
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -494,13 +495,13 @@ impl Expr {
                         body: macro_body,
                     })
                 } else {
-                    Expr::error(EvalErrorCode::UnknownError)
+                    Err(UnknownError)
                 }
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -512,10 +513,10 @@ impl Expr {
                     args: vec![try!(l[1].expand_quoted(scope))],
                 })
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -527,10 +528,10 @@ impl Expr {
                     args: vec![try!(l[1].expand(scope))],
                 })
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
     }
 
@@ -555,15 +556,11 @@ impl Expr {
                     Ok(call)
                 }
             } else {
-                Expr::error(EvalErrorCode::UnknownError)
+                Err(UnknownError)
             }
         } else {
-            Expr::error(EvalErrorCode::UnknownError)
+            Err(UnknownError)
         }
-    }
-
-    fn error(code: EvalErrorCode) -> EvalResult {
-        Err(EvalError::new(code))
     }
 }
 
@@ -621,8 +618,7 @@ impl fmt::Display for Vec<Expr> {
 #[cfg(test)]
 mod tests {
     use scope::Scope;
-    use super::error::EvalError;
-    use super::error::EvalErrorCode::UnknownError;
+    use super::error::EvalError::*;
 
     #[test]
     fn test_expand_number() {
@@ -736,7 +732,7 @@ mod tests {
     #[test]
     fn test_eval_undefined_symbol_to_error() {
         let ref mut scope = Scope::new();
-        let expected_result = EvalError::new(UnknownError);
+        let expected_result = ResolveError("a".to_string());
         let actual_result = e_symbol!("a").eval(scope);
         assert_eq!(expected_result, actual_result.err().unwrap());
     }
@@ -809,7 +805,7 @@ mod tests {
                                   e_fn![[e_symbol!("a"), e_symbol!("b")],
                                         [e_call!["+", e_symbol!("a"), e_symbol!("b")]]]];
         actual_input.eval(scope).ok().unwrap();
-        let expected_result = EvalError::new(UnknownError);
+        let expected_result = UnknownError;
         let expr = &e_call!["add", e_number!(1_f64)];
         let mut actual_result = expr.eval(scope);
         assert_eq!(expected_result, actual_result.err().unwrap());
