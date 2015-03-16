@@ -1,4 +1,4 @@
-use std::{error, fmt};
+use std::fmt;
 
 use self::LexerErrorCode::*;
 
@@ -28,27 +28,17 @@ impl LexerError {
 
 impl fmt::Display for LexerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} at {}:{}", error::Error::description(self), self.line, self.col)
-    }
-}
-
-impl error::Error for LexerError {
-    fn description(&self) -> &str {
         match self.code {
             InvalidSyntax => {
-                "Invalid syntax"
+                write!(f, "Invalid syntax at {}:{}", self.line, self.col)
             },
             TrailingCharacters => {
-                "Trailing characters"
+                write!(f, "Trailing characters at {}:{}", self.line, self.col)
             },
             UnexpectedEndOfInput => {
-                "Unexpected end of input"
+                write!(f, "Unexpected end of input at {}:{}", self.line, self.col)
             }
         }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        None
     }
 }
 

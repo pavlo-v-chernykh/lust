@@ -1,4 +1,4 @@
-use std::{error, fmt};
+use std::fmt;
 use lexer::{Token, LexerError};
 
 #[derive(Debug, PartialEq)]
@@ -12,41 +12,14 @@ impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &ParserError::UnexpectedToken(ref t) => {
-                write!(f, "{} {}", error::Error::description(self), t)
+                write!(f, "Unexpected token {}", t)
             },
             &ParserError::LexerError(ref e) => {
                 write!(f, "{}", e)
             },
-            _ => {
-                write!(f, "{}", error::Error::description(self))
-            },
-        }
-    }
-}
-
-impl error::Error for ParserError {
-    fn description(&self) -> &str {
-        match self {
-            &ParserError::UnexpectedToken(_) => {
-                "Unexpected token"
-            },
             &ParserError::UnexpectedEndOfInput => {
-                "Unexpected end of input"
+                write!(f, "Unexpected end of input")
             },
-            &ParserError::LexerError(ref e) => {
-                e.description()
-            },
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            &ParserError::LexerError(ref e) => {
-                Some(e)
-            },
-            _ => {
-                None
-            }
         }
     }
 }

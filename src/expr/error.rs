@@ -1,4 +1,4 @@
-use std::{error, fmt};
+use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum EvalError {
@@ -10,29 +10,12 @@ impl fmt::Display for EvalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &EvalError::ResolveError(ref name) => {
-                write!(f, r#"{} "{}" in this context"#, error::Error::description(self), name)
+                write!(f, r#"Unable to resolve symbol "{}" in this context"#, name)
             },
             &EvalError::UnknownError => {
-                write!(f, "{}", error::Error::description(self))
+                write!(f, "Unknown evaluation error")
             },
         }
-    }
-}
-
-impl error::Error for EvalError {
-    fn description(&self) -> &str {
-        match self {
-            &EvalError::ResolveError(_) => {
-                "Unnable to resolve symbol"
-            },
-            &EvalError::UnknownError => {
-                "Unknown evaluation error"
-            },
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        None
     }
 }
 
@@ -45,6 +28,6 @@ mod tests {
         let err = EvalError::UnknownError;
         assert_eq!("Unknown evaluation error", format!("{}", err));
         let err = EvalError::ResolveError("name".to_string());
-        assert_eq!(r#"Unnable to resolve symbol "name" in this context"#, format!("{}", err));
+        assert_eq!(r#"Unable to resolve symbol "name" in this context"#, format!("{}", err));
     }
 }
