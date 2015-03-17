@@ -80,7 +80,7 @@ impl Expr {
             scope.insert(sym.clone(), e.clone());
             Ok(e)
         } else {
-            Err(UnknownError)
+            Err(SpecialFormError("def".to_string()))
         }
     }
 

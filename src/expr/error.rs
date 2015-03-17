@@ -3,6 +3,7 @@ use std::fmt;
 #[derive(Debug, PartialEq)]
 pub enum EvalError {
     ResolveError(String),
+    SpecialFormError(String),
     UnknownError,
 }
 
@@ -11,6 +12,9 @@ impl fmt::Display for EvalError {
         match self {
             &EvalError::ResolveError(ref name) => {
                 write!(f, r#"Unable to resolve symbol "{}" in this context"#, name)
+            },
+            &EvalError::SpecialFormError(ref name) => {
+                write!(f, r#"Illegal use of special form "{}" in this context"#, name)
             },
             &EvalError::UnknownError => {
                 write!(f, "Unknown evaluation error")

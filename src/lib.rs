@@ -1,4 +1,3 @@
-#![feature(core)]
 #[macro_use]
 mod lexer;
 #[macro_use]
