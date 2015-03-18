@@ -80,7 +80,7 @@ impl Expr {
             scope.insert(sym.clone(), e.clone());
             Ok(e)
         } else {
-            Err(SpecialFormError("def".to_string()))
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -119,7 +119,7 @@ impl Expr {
                 },
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -135,7 +135,7 @@ impl Expr {
             }
             Ok(Expr::Number(result))
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -159,7 +159,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -175,7 +175,7 @@ impl Expr {
             }
             Ok(Expr::Number(result))
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -199,7 +199,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -227,7 +227,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -255,7 +255,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -283,7 +283,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -295,7 +295,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -307,7 +307,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -375,14 +375,15 @@ impl Expr {
                 }
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
     pub fn expand(&self, scope: &mut Scope) -> EvalResult {
         match self {
             &Expr::List(ref l) => {
-                if let Expr::Symbol(ref n) = l[0] {
+                let expr = &l[0];
+                if let &Expr::Symbol(ref n) = expr {
                     match &n[..] {
                         "def" => {
                             self.expand_def(scope)
@@ -404,7 +405,7 @@ impl Expr {
                         }
                     }
                 } else {
-                    Err(UnknownError)
+                    Err(DispatchError(expr.clone()))
                 }
             },
             e => {
@@ -447,7 +448,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -474,7 +475,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -501,7 +502,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -516,7 +517,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -531,7 +532,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -559,7 +560,7 @@ impl Expr {
                 Err(UnknownError)
             }
         } else {
-            Err(UnknownError)
+            Err(DispatchError(self.clone()))
         }
     }
 }

@@ -1,9 +1,10 @@
 use std::fmt;
+use super::Expr;
 
 #[derive(Debug, PartialEq)]
 pub enum EvalError {
     ResolveError(String),
-    SpecialFormError(String),
+    DispatchError(Expr),
     UnknownError,
 }
 
@@ -11,10 +12,10 @@ impl fmt::Display for EvalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &EvalError::ResolveError(ref name) => {
-                write!(f, r#"Unable to resolve symbol "{}" in this context"#, name)
+                write!(f, r#"Unable to resolve symbol "{}""#, name)
             },
-            &EvalError::SpecialFormError(ref name) => {
-                write!(f, r#"Illegal use of special form "{}" in this context"#, name)
+            &EvalError::DispatchError(ref expr) => {
+                write!(f, r#"Unable to dispatch expression "{}""#, expr)
             },
             &EvalError::UnknownError => {
                 write!(f, "Unknown evaluation error")
@@ -32,6 +33,11 @@ mod tests {
         let err = EvalError::UnknownError;
         assert_eq!("Unknown evaluation error", format!("{}", err));
         let err = EvalError::ResolveError("name".to_string());
-        assert_eq!(r#"Unable to resolve symbol "name" in this context"#, format!("{}", err));
+        assert_eq!(r#"Unable to resolve symbol "name""#, format!("{}", err));
+        let err = EvalError::DispatchError(e_list![e_symbol!["def"],
+                                                   e_symbol!["a"],
+                                                   e_number![1.]]);
+        assert_eq!(r#"Unable to dispatch expression "(def a 1)""#,
+                   format!("{}", err));
     }
 }
