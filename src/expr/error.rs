@@ -5,6 +5,7 @@ use super::Expr;
 pub enum EvalError {
     ResolveError(String),
     DispatchError(Expr),
+    IncorrectTypeOfArgumentError(Expr),
     UnknownError,
 }
 
@@ -16,6 +17,9 @@ impl fmt::Display for EvalError {
             },
             &EvalError::DispatchError(ref expr) => {
                 write!(f, r#"Unable to dispatch expression "{}""#, expr)
+            },
+            &EvalError::IncorrectTypeOfArgumentError(ref expr) => {
+                write!(f, r#"Incorrect type of argument "{}""#, expr)
             },
             &EvalError::UnknownError => {
                 write!(f, "Unknown evaluation error")
@@ -39,5 +43,7 @@ mod tests {
                                                    e_number![1.]]);
         assert_eq!(r#"Unable to dispatch expression "(def a 1)""#,
                    format!("{}", err));
+        let err = EvalError::IncorrectTypeOfArgumentError(e_symbol!["a"]);
+        assert_eq!(r#"Incorrect type of argument "a""#, format!("{}", err));
     }
 }

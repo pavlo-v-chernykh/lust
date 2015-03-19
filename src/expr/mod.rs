@@ -127,10 +127,10 @@ impl Expr {
         if let &Expr::Call { ref args, .. } = self {
             let mut result = 0_f64;
             for a in args {
-                if let Ok(Expr::Number(n)) = a.eval(scope) {
+                if let Expr::Number(n) = try!(a.eval(scope)) {
                     result += n;
                 } else {
-                    return Err(UnknownError)
+                    return Err(IncorrectTypeOfArgumentError(a.clone()))
                 }
             }
             Ok(Expr::Number(result))
@@ -145,10 +145,10 @@ impl Expr {
                 if let Ok(Expr::Number(n)) = args[0].eval(scope) {
                     let mut result = if args.len() == 1 { -n } else { n };
                     for a in &args[1..] {
-                        if let Ok(Expr::Number(n)) = a.eval(scope) {
+                        if let Expr::Number(n) = try!(a.eval(scope)) {
                             result -= n
                         } else {
-                            return Err(UnknownError)
+                            return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
                     Ok(Expr::Number(result))
@@ -167,10 +167,10 @@ impl Expr {
         if let &Expr::Call { ref args, .. } = self {
             let mut result = 1_f64;
             for a in args {
-                if let Ok(Expr::Number(n)) = a.eval(scope) {
+                if let Expr::Number(n) = try!(a.eval(scope)) {
                     result *= n
                 } else {
-                    return Err(UnknownError)
+                    return Err(IncorrectTypeOfArgumentError(a.clone()))
                 }
             }
             Ok(Expr::Number(result))
@@ -185,10 +185,10 @@ impl Expr {
                 if let Ok(Expr::Number(n)) = args[0].eval(scope) {
                     let mut result = if args.len() == 1 { 1. / n } else { n };
                     for a in &args[1..] {
-                        if let Ok(Expr::Number(n)) = a.eval(scope) {
+                        if let Expr::Number(n) = try!(a.eval(scope)) {
                             result /= n
                         } else {
-                            return Err(UnknownError)
+                            return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
                     Ok(Expr::Number(result))
@@ -209,14 +209,14 @@ impl Expr {
                 if let Ok(Expr::Number(n)) = args[0].eval(scope) {
                     let mut temp = n;
                     for a in &args[1..] {
-                        if let Ok(Expr::Number(n)) = a.eval(scope) {
+                        if let Expr::Number(n) = try!(a.eval(scope)) {
                             if temp < n {
                                 temp = n
                             } else {
                                 return Ok(Expr::Bool(false))
                             }
                         } else {
-                            return Err(UnknownError)
+                            return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
                     Ok(Expr::Bool(true))
@@ -237,14 +237,14 @@ impl Expr {
                 if let Ok(Expr::Number(n)) = args[0].eval(scope) {
                     let mut temp = n;
                     for a in &args[1..] {
-                        if let Ok(Expr::Number(n)) = a.eval(scope) {
+                        if let Expr::Number(n) = try!(a.eval(scope)) {
                             if temp > n {
                                 temp = n
                             } else {
                                 return Ok(Expr::Bool(false))
                             }
                         } else {
-                            return Err(UnknownError)
+                            return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
                     Ok(Expr::Bool(true))
@@ -265,14 +265,14 @@ impl Expr {
                 if let Ok(Expr::Number(n)) = args[0].eval(scope) {
                     let mut temp = n;
                     for a in &args[1..] {
-                        if let Ok(Expr::Number(n)) = a.eval(scope) {
+                        if let Expr::Number(n) = try!(a.eval(scope)) {
                             if temp == n {
                                 temp = n
                             } else {
                                 return Ok(Expr::Bool(false))
                             }
                         } else {
-                            return Err(UnknownError)
+                            return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
                     Ok(Expr::Bool(true))
@@ -334,10 +334,10 @@ impl Expr {
 
                     let ref mut fn_scope = Scope::new_chained(&scope);
                     for (p, a) in params.iter().zip(e_args.iter()) {
-                        if let Expr::Symbol(ref s) = *p {
+                        if let &Expr::Symbol(ref s) = p {
                             fn_scope.insert(s.clone(), a.clone());
                         } else {
-                            return Err(UnknownError)
+                            return Err(IncorrectTypeOfArgumentError(p.clone()))
                         }
                     }
 
@@ -356,10 +356,10 @@ impl Expr {
 
                     let ref mut fn_scope = Scope::new_chained(&scope);
                     for (p, a) in params.iter().zip(args.iter()) {
-                        if let Expr::Symbol(ref s) = *p {
+                        if let &Expr::Symbol(ref s) = p {
                             fn_scope.insert(s.clone(), a.clone());
                         } else {
-                            return Err(UnknownError)
+                            return Err(IncorrectTypeOfArgumentError(p.clone()))
                         }
                     }
 
@@ -442,7 +442,7 @@ impl Expr {
                         expr: Box::new(try!(l[2].expand(scope))),
                     })
                 } else {
-                    Err(UnknownError)
+                    Err(IncorrectTypeOfArgumentError(l[1].clone()))
                 }
             } else {
                 Err(UnknownError)
@@ -469,7 +469,7 @@ impl Expr {
                         body: fn_body,
                     })
                 } else {
-                    Err(UnknownError)
+                    Err(IncorrectTypeOfArgumentError(l[1].clone()))
                 }
             } else {
                 Err(UnknownError)
@@ -496,7 +496,7 @@ impl Expr {
                         body: macro_body,
                     })
                 } else {
-                    Err(UnknownError)
+                    Err(IncorrectTypeOfArgumentError(l[1].clone()))
                 }
             } else {
                 Err(UnknownError)
@@ -557,7 +557,7 @@ impl Expr {
                     Ok(call)
                 }
             } else {
-                Err(UnknownError)
+                Err(IncorrectTypeOfArgumentError(l[0].clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
