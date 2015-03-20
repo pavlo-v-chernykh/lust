@@ -142,7 +142,7 @@ impl Expr {
     fn eval_call_builtin_minus(&self, scope: &mut Scope) -> EvalResult {
         if let &Expr::Call { ref args, .. } = self {
             if args.len() >= 1 {
-                if let Ok(Expr::Number(n)) = args[0].eval(scope) {
+                if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut result = if args.len() == 1 { -n } else { n };
                     for a in &args[1..] {
                         if let Expr::Number(n) = try!(a.eval(scope)) {
@@ -153,7 +153,7 @@ impl Expr {
                     }
                     Ok(Expr::Number(result))
                 } else {
-                    Err(UnknownError)
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
                 Err(UnknownError)
@@ -182,7 +182,7 @@ impl Expr {
     fn eval_call_builtin_div(&self, scope: &mut Scope) -> EvalResult {
         if let &Expr::Call { ref args, .. } = self {
             if args.len() >= 1 {
-                if let Ok(Expr::Number(n)) = args[0].eval(scope) {
+                if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut result = if args.len() == 1 { 1. / n } else { n };
                     for a in &args[1..] {
                         if let Expr::Number(n) = try!(a.eval(scope)) {
@@ -193,7 +193,7 @@ impl Expr {
                     }
                     Ok(Expr::Number(result))
                 } else {
-                    Err(UnknownError)
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
                 Err(UnknownError)
@@ -206,7 +206,7 @@ impl Expr {
     fn eval_call_builtin_lt(&self, scope: &mut Scope) -> EvalResult {
         if let &Expr::Call { ref args, .. } = self {
             if args.len() >= 1 {
-                if let Ok(Expr::Number(n)) = args[0].eval(scope) {
+                if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut temp = n;
                     for a in &args[1..] {
                         if let Expr::Number(n) = try!(a.eval(scope)) {
@@ -221,7 +221,7 @@ impl Expr {
                     }
                     Ok(Expr::Bool(true))
                 } else {
-                    return Err(UnknownError)
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
                 Err(UnknownError)
@@ -234,7 +234,7 @@ impl Expr {
     fn eval_call_builtin_gt(&self, scope: &mut Scope) -> EvalResult {
         if let &Expr::Call { ref args, .. } = self {
             if args.len() >= 1 {
-                if let Ok(Expr::Number(n)) = args[0].eval(scope) {
+                if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut temp = n;
                     for a in &args[1..] {
                         if let Expr::Number(n) = try!(a.eval(scope)) {
@@ -249,7 +249,7 @@ impl Expr {
                     }
                     Ok(Expr::Bool(true))
                 } else {
-                    return Err(UnknownError)
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
                 Err(UnknownError)
@@ -262,7 +262,7 @@ impl Expr {
     fn eval_call_builtin_eq(&self, scope: &mut Scope) -> EvalResult {
         if let &Expr::Call { ref args, .. } = self {
             if args.len() >= 1 {
-                if let Ok(Expr::Number(n)) = args[0].eval(scope) {
+                if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut temp = n;
                     for a in &args[1..] {
                         if let Expr::Number(n) = try!(a.eval(scope)) {
@@ -277,7 +277,7 @@ impl Expr {
                     }
                     Ok(Expr::Bool(true))
                 } else {
-                    return Err(UnknownError)
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
                 Err(UnknownError)
