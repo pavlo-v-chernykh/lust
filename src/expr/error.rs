@@ -6,6 +6,7 @@ pub enum EvalError {
     ResolveError(String),
     DispatchError(Expr),
     IncorrectTypeOfArgumentError(Expr),
+    IncorrectNumberOfArgumentError(Expr),
     UnknownError,
 }
 
@@ -20,6 +21,9 @@ impl fmt::Display for EvalError {
             },
             &EvalError::IncorrectTypeOfArgumentError(ref expr) => {
                 write!(f, r#"Incorrect type of argument "{}""#, expr)
+            },
+            &EvalError::IncorrectNumberOfArgumentError(ref expr) => {
+                write!(f, r#"Incorrect number of arguments {}"#, expr)
             },
             &EvalError::UnknownError => {
                 write!(f, "Unknown evaluation error")
@@ -45,5 +49,7 @@ mod tests {
                    format!("{}", err));
         let err = EvalError::IncorrectTypeOfArgumentError(e_symbol!["a"]);
         assert_eq!(r#"Incorrect type of argument "a""#, format!("{}", err));
+        let err = EvalError::IncorrectNumberOfArgumentError(e_call!["+",]);
+        assert_eq!(r#"Incorrect number of arguments (+)"#, format!("{}", err));
     }
 }

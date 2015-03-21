@@ -196,7 +196,7 @@ impl Expr {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -594,7 +594,13 @@ impl fmt::Display for Expr {
                 write!(f, "(macro ({}) {})", params, body)
             },
             &Expr::Call { ref name, ref args } => {
-                write!(f, "({} {})", name, args)
+                let mut a = format!("({}", name);
+                if args.is_empty() {
+                    a.push_str(")")
+                } else {
+                    a.push_str(&format!(" {})", args))
+                }
+                write!(f, "{}", a)
             },
         }
     }
@@ -604,12 +610,14 @@ impl fmt::Display for Expr {
 impl fmt::Display for Vec<Expr> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut a = String::new();
-        let i_last = self.len() - 1;
-        for (i, s) in self.iter().enumerate() {
-            if i < i_last {
-                a.push_str(&format!("{} ", s))
-            } else {
-                a.push_str(&format!("{}", s))
+        if !self.is_empty() {
+            let last_idx = self.len() - 1;
+            for (i, e) in self.iter().enumerate() {
+                if i < last_idx {
+                    a.push_str(&format!("{} ", e))
+                } else {
+                    a.push_str(&format!("{}", e))
+                }
             }
         }
         write!(f, "{}", a)
@@ -944,5 +952,10 @@ mod tests {
         let actual_result = format!("{}", actual_input);
         let expected_result = "(def a (+ 1 2))";
         assert_eq!(expected_result, actual_result);
+    }
+
+    #[test]
+    fn test_format_call_expr_without_args() {
+        assert_eq!(format!("{}", e_call!["+",]), "(+)");
     }
 }
