@@ -156,7 +156,7 @@ impl Expr {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -196,7 +196,7 @@ impl Expr {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
-                Err(IncorrectNumberOfArgumentError(self.clone()))
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -224,7 +224,7 @@ impl Expr {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -252,7 +252,7 @@ impl Expr {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -280,7 +280,7 @@ impl Expr {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -292,7 +292,7 @@ impl Expr {
             if args.len() == 1 {
                 args[0].eval_quoted(scope)
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -304,7 +304,7 @@ impl Expr {
             if args.len() == 1 {
                 args[0].eval(scope)
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -324,7 +324,7 @@ impl Expr {
             match func {
                 Expr::Fn { ref params, ref body } => {
                     if args.len() != params.len() {
-                        return Err(UnknownError)
+                        return Err(IncorrectNumberOfArgumentsError(self.clone()))
                     }
 
                     let mut e_args = vec![];
@@ -351,7 +351,7 @@ impl Expr {
                 },
                 Expr::Macro { ref params, ref body } => {
                     if args.len() != params.len() {
-                        return Err(UnknownError)
+                        return Err(IncorrectNumberOfArgumentsError(self.clone()))
                     }
 
                     let ref mut fn_scope = Scope::new_chained(&scope);
@@ -445,7 +445,7 @@ impl Expr {
                     Err(IncorrectTypeOfArgumentError(l[1].clone()))
                 }
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -472,7 +472,7 @@ impl Expr {
                     Err(IncorrectTypeOfArgumentError(l[1].clone()))
                 }
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -499,7 +499,7 @@ impl Expr {
                     Err(IncorrectTypeOfArgumentError(l[1].clone()))
                 }
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -514,7 +514,7 @@ impl Expr {
                     args: vec![try!(l[1].expand_quoted(scope))],
                 })
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -529,7 +529,7 @@ impl Expr {
                     args: vec![try!(l[1].expand(scope))],
                 })
             } else {
-                Err(UnknownError)
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
         } else {
             Err(DispatchError(self.clone()))
@@ -814,7 +814,7 @@ mod tests {
                                   e_fn![[e_symbol!("a"), e_symbol!("b")],
                                         [e_call!["+", e_symbol!("a"), e_symbol!("b")]]]];
         actual_input.eval(scope).ok().unwrap();
-        let expected_result = UnknownError;
+        let expected_result = IncorrectNumberOfArgumentsError(e_call!["add", e_number![1_f64]]);
         let expr = &e_call!["add", e_number!(1_f64)];
         let mut actual_result = expr.eval(scope);
         assert_eq!(expected_result, actual_result.err().unwrap());
@@ -823,6 +823,11 @@ mod tests {
                             e_number!(1_f64),
                             e_number!(1_f64),
                             e_number!(1_f64)];
+        let expected_result = IncorrectNumberOfArgumentsError(e_call!["add",
+                                                                      e_number![1_f64],
+                                                                      e_number![1_f64],
+                                                                      e_number![1_f64],
+                                                                      e_number![1_f64]]);
         actual_result = expr.eval(scope);
         assert_eq!(expected_result, actual_result.err().unwrap());
     }
