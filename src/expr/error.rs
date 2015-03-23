@@ -7,7 +7,6 @@ pub enum EvalError {
     DispatchError(Expr),
     IncorrectTypeOfArgumentError(Expr),
     IncorrectNumberOfArgumentsError(Expr),
-    UnknownError,
 }
 
 impl fmt::Display for EvalError {
@@ -25,9 +24,6 @@ impl fmt::Display for EvalError {
             &EvalError::IncorrectNumberOfArgumentsError(ref expr) => {
                 write!(f, r#"Incorrect number of arguments {}"#, expr)
             },
-            &EvalError::UnknownError => {
-                write!(f, "Unknown evaluation error")
-            },
         }
     }
 }
@@ -38,8 +34,6 @@ mod tests {
 
     #[test]
     fn test_descriptions_for_error_codes() {
-        let err = EvalError::UnknownError;
-        assert_eq!("Unknown evaluation error", format!("{}", err));
         let err = EvalError::ResolveError("name".to_string());
         assert_eq!(r#"Unable to resolve symbol "name""#, format!("{}", err));
         let err = EvalError::DispatchError(e_list![e_symbol!["def"],

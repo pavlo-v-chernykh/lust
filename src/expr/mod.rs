@@ -318,7 +318,7 @@ impl Expr {
                     e.clone()
                 },
                 _ => {
-                    return Err(UnknownError)
+                    return Err(ResolveError(name.clone()))
                 }
             };
             match func {
@@ -371,7 +371,7 @@ impl Expr {
                     Ok(try!(result.expand(fn_scope)))
                 },
                 _ => {
-                    Err(UnknownError)
+                    Err(IncorrectTypeOfArgumentError(self.clone()))
                 }
             }
         } else {
