@@ -6,7 +6,7 @@ mod expr;
 mod parser;
 mod scope;
 
-use std::io;
+use std::io::{self, Write};
 use parser::Parser;
 use scope::Scope;
 
@@ -14,8 +14,10 @@ use scope::Scope;
 fn main() {
     let ref mut root_scope = Scope::new_std();
     let ref mut stdin = io::stdin();
+    let ref mut stdout = io::stdout();
     loop {
         print!("-> ");
+        stdout.flush().ok();
         let ref mut buf = String::new();
         match stdin.read_line(buf) {
             Ok(_) => {
