@@ -23,17 +23,9 @@ fn main() {
             Ok(_) => {
                 match Parser::new(buf.chars()).parse() {
                     Ok(ref expr) => {
-                        match expr.expand(root_scope) {
-                            Ok(ref expr) => {
-                                match expr.eval(root_scope) {
-                                    Ok(ref res) => {
-                                        println!("{}", res);
-                                    },
-                                    Err(e) => {
-                                        println!("Whoops, error detected.\n{}.\n\
-                                                  Please, try again...", e);
-                                    }
-                                }
+                        match expr.expand(root_scope).and_then(|e| e.eval(root_scope)) {
+                            Ok(ref res) => {
+                                println!("{}", res);
                             },
                             Err(e) => {
                                 println!("Whoops, error detected.\n{}.\n\
