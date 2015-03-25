@@ -380,38 +380,36 @@ impl Expr {
     }
 
     pub fn expand(&self, scope: &mut Scope) -> EvalResult {
-        match self {
-            &Expr::List(ref l) => {
+        if let Expr::List(ref l) = *self {
+            if l.len() > 0 {
                 let expr = &l[0];
                 if let &Expr::Symbol(ref n) = expr {
                     match &n[..] {
                         "def" => {
-                            self.expand_def(scope)
+                            return self.expand_def(scope)
                         },
                         "fn" => {
-                            self.expand_fn(scope)
+                            return self.expand_fn(scope)
                         },
                         "macro" => {
-                            self.expand_macro(scope)
+                            return self.expand_macro(scope)
                         },
                         "quote" => {
-                            self.expand_quote(scope)
+                            return self.expand_quote(scope)
                         },
                         "unquote" => {
-                            self.expand_unquote(scope)
+                            return self.expand_unquote(scope)
                         },
                         _ => {
-                            self.expand_call(scope)
+                            return self.expand_call(scope)
                         }
                     }
                 } else {
-                    Err(DispatchError(expr.clone()))
+                    return Err(DispatchError(expr.clone()))
                 }
-            },
-            e => {
-                Ok(e.clone())
-            },
+            }
         }
+        Ok(self.clone())
     }
 
     fn expand_quoted(&self, scope: &mut Scope) -> EvalResult {
@@ -648,6 +646,12 @@ mod tests {
         let ref mut scope = Scope::new_std();
         let s = "+";
         assert_eq!(e_symbol!(s), e_symbol!(s).expand(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_expand_empty_list() {
+        let ref mut scope = Scope::new_std();
+        assert_eq!(e_list![], e_list![].expand(scope).ok().unwrap());
     }
 
     #[test]
