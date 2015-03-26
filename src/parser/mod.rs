@@ -11,6 +11,19 @@ pub struct Parser<I: Iterator> {
     token: Option<LexerResult>,
 }
 
+impl<I: Iterator<Item=char>> Iterator for Parser<I> {
+    type Item = ParserResult;
+
+    fn next(&mut self) -> Option<ParserResult> {
+        let result = self.parse();
+        if self.token.is_some() {
+            Some(result)
+        } else {
+            None
+        }
+    }
+}
+
 impl<I: Iterator<Item=char>> Parser<I> {
     pub fn new(src: I) -> Parser<I> {
         Parser {
@@ -25,21 +38,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
 
     pub fn parse(&mut self) -> ParserResult {
         self.bump();
-        let result = self.parse_expr();
-        if result.is_ok() {
-            self.bump()
-        }
-        match self.token {
-            None => {
-                result
-            },
-            Some(Ok(ref t)) => {
-                Err(ParserError::UnexpectedToken(t.clone()))
-            },
-            Some(Err(e)) => {
-                Err(ParserError::LexerError(e))
-            },
-        }
+        self.parse_expr()
     }
 
     fn parse_expr(&mut self) -> ParserResult {

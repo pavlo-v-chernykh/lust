@@ -2,7 +2,13 @@
 
 name = "lust"
 version = "0.0.1"
-authors = ["Pavel Chernykh <pavel.v.chernykh@gmail.com>"]
+description = "LISP interpreter implemented in Rust"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/pavel-v-chernykh/lust"
+authors = [
+    "Pavel Chernykh <pavel.v.chernykh@gmail.com>"
+]
 
 [lib]
 
@@ -10,3 +16,8 @@ name = "lust"
 test = false
 doctest = false
 bench = false
+
+[dependencies]
+
+docopt = "*"
+rustc-serialize = "*"
