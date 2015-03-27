@@ -54,3 +54,8 @@ macro_rules! e_call {
         args: vec![$($arg),*]
     })
 }
+
+#[macro_export]
+macro_rules! eval {
+    ($e:expr, $s:expr) => ($e.expand($s).and_then(|e| e.eval($s)));
+}
