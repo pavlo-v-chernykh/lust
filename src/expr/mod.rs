@@ -36,32 +36,32 @@ pub enum Expr {
 
 impl Expr {
     pub fn eval(&self, scope: &mut Scope) -> EvalResult {
-        match self {
-            &Expr::Symbol(ref name) => {
+        match *self {
+            Expr::Symbol(ref name) => {
                 if let Some(e) = scope.get(name) {
                     Ok(e.clone())
                 } else {
                     Err(ResolveError(name.clone()))
                 }
             },
-            &Expr::Def { .. } => {
+            Expr::Def { .. } => {
                 self.eval_def(scope)
             },
-            &Expr::Call { .. } => {
+            Expr::Call { .. } => {
                 self.eval_call(scope)
             }
-            e => {
+            ref e => {
                 Ok(e.clone())
             },
         }
     }
 
     pub fn eval_quoted(&self, scope: &mut Scope) -> EvalResult {
-        match self {
-            &Expr::Symbol(_) => {
+        match *self {
+            Expr::Symbol(_) => {
                 Ok(self.clone())
             },
-            &Expr::List(ref l) => {
+            Expr::List(ref l) => {
                 let mut v = vec![];
                 for e in l {
                     v.push(try!(e.eval_quoted(scope)))
@@ -75,7 +75,7 @@ impl Expr {
     }
 
     fn eval_def(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Def { ref sym, ref expr } = self {
+        if let Expr::Def { ref sym, ref expr } = *self {
             let e = try!(expr.eval(scope));
             scope.insert(sym.clone(), e.clone());
             Ok(e)
@@ -85,7 +85,7 @@ impl Expr {
     }
 
     fn eval_call(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref name, .. } = self {
+        if let Expr::Call { ref name, .. } = *self {
             match &name[..] {
                 "+" => {
                     self.eval_call_builtin_plus(scope)
@@ -124,7 +124,7 @@ impl Expr {
     }
 
     fn eval_call_builtin_plus(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref args, .. } = self {
+        if let Expr::Call { ref args, .. } = *self {
             let mut result = 0_f64;
             for a in args {
                 if let Expr::Number(n) = try!(a.eval(scope)) {
@@ -140,7 +140,7 @@ impl Expr {
     }
 
     fn eval_call_builtin_minus(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref args, .. } = self {
+        if let Expr::Call { ref args, .. } = *self {
             if args.len() >= 1 {
                 if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut result = if args.len() == 1 { -n } else { n };
@@ -164,7 +164,7 @@ impl Expr {
     }
 
     fn eval_call_builtin_mul(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref args, .. } = self {
+        if let Expr::Call { ref args, .. } = *self {
             let mut result = 1_f64;
             for a in args {
                 if let Expr::Number(n) = try!(a.eval(scope)) {
@@ -180,7 +180,7 @@ impl Expr {
     }
 
     fn eval_call_builtin_div(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref args, .. } = self {
+        if let Expr::Call { ref args, .. } = *self {
             if args.len() >= 1 {
                 if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut result = if args.len() == 1 { 1. / n } else { n };
@@ -204,7 +204,7 @@ impl Expr {
     }
 
     fn eval_call_builtin_lt(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref args, .. } = self {
+        if let Expr::Call { ref args, .. } = *self {
             if args.len() >= 1 {
                 if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut temp = n;
@@ -232,7 +232,7 @@ impl Expr {
     }
 
     fn eval_call_builtin_gt(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref args, .. } = self {
+        if let Expr::Call { ref args, .. } = *self {
             if args.len() >= 1 {
                 if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut temp = n;
@@ -260,7 +260,7 @@ impl Expr {
     }
 
     fn eval_call_builtin_eq(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref args, .. } = self {
+        if let Expr::Call { ref args, .. } = *self {
             if args.len() >= 1 {
                 if let Expr::Number(n) = try!(args[0].eval(scope)) {
                     let mut temp = n;
@@ -288,7 +288,7 @@ impl Expr {
     }
 
     fn eval_call_builtin_quote(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref args, .. } = self {
+        if let Expr::Call { ref args, .. } = *self {
             if args.len() == 1 {
                 args[0].eval_quoted(scope)
             } else {
@@ -300,7 +300,7 @@ impl Expr {
     }
 
     fn eval_call_builtin_unquote(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref args, .. } = self {
+        if let Expr::Call { ref args, .. } = *self {
             if args.len() == 1 {
                 args[0].eval(scope)
             } else {
@@ -312,7 +312,7 @@ impl Expr {
     }
 
     fn eval_call_custom(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::Call { ref name, ref args } = self {
+        if let Expr::Call { ref name, ref args } = *self {
             let func = match scope.get(name) {
                 Some(e) => {
                     e.clone()
@@ -356,7 +356,7 @@ impl Expr {
 
                     let ref mut fn_scope = Scope::new_chained(&scope);
                     for (p, a) in params.iter().zip(args.iter()) {
-                        if let &Expr::Symbol(ref s) = p {
+                        if let Expr::Symbol(ref s) = *p {
                             fn_scope.insert(s.clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
@@ -413,8 +413,8 @@ impl Expr {
     }
 
     fn expand_quoted(&self, scope: &mut Scope) -> EvalResult {
-        match self {
-            &Expr::List(ref l) => {
+        match *self {
+            Expr::List(ref l) => {
                 if l.len() > 0 && Expr::Symbol("unquote".to_string()) == l[0] {
                     self.expand_unquote(scope)
                 } else {
@@ -432,7 +432,7 @@ impl Expr {
     }
 
     fn expand_def(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::List(ref l) = self {
+        if let Expr::List(ref l) = *self {
             if l.len() == 3 {
                 if let Expr::Symbol(ref n) = l[1] {
                     Ok(Expr::Def {
@@ -451,7 +451,7 @@ impl Expr {
     }
 
     fn expand_fn(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::List(ref l) = self {
+        if let Expr::List(ref l) = *self {
             if l.len() >= 3 {
                 if let Expr::List(ref params) = l[1] {
                     let mut fn_params = vec![];
@@ -478,7 +478,7 @@ impl Expr {
     }
 
     fn expand_macro(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::List(ref l) = self {
+        if let Expr::List(ref l) = *self {
             if l.len() >= 3 {
                 if let Expr::List(ref params) = l[1] {
                     let mut macro_params = vec![];
@@ -505,7 +505,7 @@ impl Expr {
     }
 
     fn expand_quote(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::List(ref l) = self {
+        if let Expr::List(ref l) = *self {
             if l.len() == 2 {
                 Ok(Expr::Call {
                     name: "quote".to_string(),
@@ -520,7 +520,7 @@ impl Expr {
     }
 
     fn expand_unquote(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::List(ref l) = self {
+        if let Expr::List(ref l) = *self {
             if l.len() == 2 {
                 Ok(Expr::Call {
                     name: "unquote".to_string(),
@@ -535,7 +535,7 @@ impl Expr {
     }
 
     fn expand_call(&self, scope: &mut Scope) -> EvalResult {
-        if let &Expr::List(ref l) = self {
+        if let Expr::List(ref l) = *self {
             if let Expr::Symbol(ref name) = l[0] {
                 let mut args = vec![];
                 for a in &l[1..] {
@@ -566,32 +566,32 @@ impl Expr {
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Expr::Number(n) => {
+        match *self {
+            Expr::Number(n) => {
                 write!(f, "{}", n)
             },
-            &Expr::Bool(b) => {
+            Expr::Bool(b) => {
                 write!(f, "{}", b)
             },
-            &Expr::Symbol(ref s) => {
+            Expr::Symbol(ref s) => {
                 write!(f, "{}", s)
             },
-            &Expr::String(ref s) => {
+            Expr::String(ref s) => {
                 write!(f, r#""{}""#, s)
             },
-            &Expr::List(ref l) => {
+            Expr::List(ref l) => {
                 write!(f, "({})", l)
             },
-            &Expr::Def { ref sym, ref expr } => {
+            Expr::Def { ref sym, ref expr } => {
                 write!(f, "(def {} {})", sym, expr)
             },
-            &Expr::Fn { ref params, ref body } => {
+            Expr::Fn { ref params, ref body } => {
                 write!(f, "(fn ({}) {})", params, body)
             },
-            &Expr::Macro { ref params, ref body } => {
+            Expr::Macro { ref params, ref body } => {
                 write!(f, "(macro ({}) {})", params, body)
             },
-            &Expr::Call { ref name, ref args } => {
+            Expr::Call { ref name, ref args } => {
                 let mut a = format!("({}", name);
                 if args.is_empty() {
                     a.push_str(")")

@@ -20,7 +20,8 @@ use scope::Scope;
 
 static USAGE: &'static str = "
 Usage:
-    lust [options] [<expr>]
+    lust [options] <expression>
+    lust options [<expression>]
 
 Options:
     -f <file_path>, --file <file_path>          Evaluate expresions from file
@@ -46,7 +47,8 @@ fn main() {
         let path = Path::new(flag_file);
         if path.exists() && path.is_file() {
             if let Ok(file) = File::open(&path) {
-                last_eval_expr = Parser::new(BufReader::new(file).chars().filter_map(|c| c.ok()))
+                let chars = BufReader::new(file).chars().filter_map(|c| c.ok());
+                last_eval_expr = Parser::new(chars)
                     .filter_map(|e| e.ok())
                     .map(|e| e.expand(root_scope).and_then(|e| e.eval(root_scope)).ok().unwrap())
                     .last();
@@ -68,8 +70,8 @@ fn main() {
             let ref mut buf = String::new();
             match stdin.read_line(buf) {
                 Ok(_) => {
-                    match Parser::new(buf.chars()).parse() {
-                        Ok(ref expr) => {
+                    match Parser::new(buf.chars()).next() {
+                        Some(Ok(ref expr)) => {
                             match expr.expand(root_scope).and_then(|e| e.eval(root_scope)) {
                                 Ok(ref res) => {
                                     println!("{}", res);
@@ -80,9 +82,13 @@ fn main() {
                                 }
                             }
                         },
-                        Err(e) => {
+                        Some(Err(e)) => {
                             println!("Whoops, error detected.\n{}.\n\
                                       Please, try again...", e);
+                        },
+                        None => {
+                            println!("Empty input.\n\
+                                      Please, try again...");
                         }
                     }
                 },

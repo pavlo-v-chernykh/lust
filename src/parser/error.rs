@@ -10,14 +10,14 @@ pub enum ParserError {
 
 impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &ParserError::UnexpectedToken(ref t) => {
+        match *self {
+            ParserError::UnexpectedToken(ref t) => {
                 write!(f, "Unexpected token {}", t)
             },
-            &ParserError::LexerError(ref e) => {
+            ParserError::LexerError(ref e) => {
                 write!(f, "{}", e)
             },
-            &ParserError::UnexpectedEndOfInput => {
+            ParserError::UnexpectedEndOfInput => {
                 write!(f, "Unexpected end of input")
             },
         }
@@ -27,7 +27,6 @@ impl fmt::Display for ParserError {
 #[cfg(test)]
 mod tests {
     use lexer::LexerError;
-    use lexer::LexerErrorCode::InvalidSyntax;
     use super::ParserError;
 
     #[test]
@@ -36,7 +35,7 @@ mod tests {
         assert_eq!("Unexpected token 'List End' at 1:1-1:2", format!("{}", err));
         let err = ParserError::UnexpectedEndOfInput;
         assert_eq!("Unexpected end of input", format!("{}", err));
-        let err = ParserError::LexerError(LexerError::new(1, 10, InvalidSyntax));
+        let err = ParserError::LexerError(LexerError::new(1, 10));
         assert_eq!("Invalid syntax at 1:10", format!("{}", err));
     }
 }

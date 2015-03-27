@@ -11,17 +11,17 @@ pub enum EvalError {
 
 impl fmt::Display for EvalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &EvalError::ResolveError(ref name) => {
+        match *self {
+            EvalError::ResolveError(ref name) => {
                 write!(f, r#"Unable to resolve symbol "{}""#, name)
             },
-            &EvalError::DispatchError(ref expr) => {
+            EvalError::DispatchError(ref expr) => {
                 write!(f, r#"Unable to dispatch expression "{}""#, expr)
             },
-            &EvalError::IncorrectTypeOfArgumentError(ref expr) => {
+            EvalError::IncorrectTypeOfArgumentError(ref expr) => {
                 write!(f, r#"Incorrect type of argument "{}""#, expr)
             },
-            &EvalError::IncorrectNumberOfArgumentsError(ref expr) => {
+            EvalError::IncorrectNumberOfArgumentsError(ref expr) => {
                 write!(f, r#"Incorrect number of arguments {}"#, expr)
             },
         }

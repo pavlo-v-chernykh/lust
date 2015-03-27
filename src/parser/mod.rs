@@ -15,12 +15,7 @@ impl<I: Iterator<Item=char>> Iterator for Parser<I> {
     type Item = ParserResult;
 
     fn next(&mut self) -> Option<ParserResult> {
-        let result = self.parse();
-        if self.token.is_some() {
-            Some(result)
-        } else {
-            None
-        }
+        self.parse()
     }
 }
 
@@ -36,9 +31,13 @@ impl<I: Iterator<Item=char>> Parser<I> {
         self.token = self.lexer.next()
     }
 
-    pub fn parse(&mut self) -> ParserResult {
+    fn parse(&mut self) -> Option<ParserResult> {
         self.bump();
-        self.parse_expr()
+        if self.token.is_some() {
+            Some(self.parse_expr())
+        } else {
+            None
+        }
     }
 
     fn parse_expr(&mut self) -> ParserResult {
@@ -105,7 +104,7 @@ mod tests {
                                       e_symbol!("a"),
                                       e_number!(1_f64)];
         let mut parser = Parser::new("(def a 1)".chars());
-        let actual_result = parser.parse().ok().unwrap();
+        let actual_result = parser.next().unwrap().ok().unwrap();
         assert_eq!(expected_result, actual_result);
     }
 
@@ -117,7 +116,7 @@ mod tests {
                                                e_number!(1_f64),
                                                e_number!(2_f64)]];
         let mut parser = Parser::new("(def a (+ 1 2))".chars());
-        let actual_result = parser.parse().ok().unwrap();
+        let actual_result = parser.next().unwrap().ok().unwrap();
         assert_eq!(expected_result, actual_result);
     }
 }

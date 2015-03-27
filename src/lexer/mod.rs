@@ -6,7 +6,7 @@ mod error;
 use std::iter::Peekable;
 
 pub use self::token::{Token, Span};
-pub use self::error::{LexerError, LexerErrorCode};
+pub use self::error::LexerError;
 
 pub type LexerResult = Result<Token, LexerError>;
 
@@ -16,7 +16,6 @@ enum LexerState {
     ReadList,
     ReadQuoted,
     ReadUnquoted,
-    BeforeFinish,
     Finish,
 }
 
@@ -33,26 +32,7 @@ impl<I: Iterator<Item=char>> Iterator for Lexer<I> {
     type Item = LexerResult;
 
     fn next(&mut self) -> Option<LexerResult> {
-        match self.state {
-            LexerState::BeforeFinish => {
-                self.consume_whitespaces();
-                match self.char {
-                    Some(_) => {
-                        Some(self.error(LexerErrorCode::TrailingCharacters))
-                    },
-                    None => {
-                        self.state = LexerState::Finish;
-                        None
-                    }
-                }
-            },
-            LexerState::Finish => {
-                None
-            },
-            _ => {
-                Some(self.read())
-            }
-        }
+        self.read()
     }
 }
 
@@ -80,65 +60,61 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         }
     }
 
-    fn read(&mut self) -> LexerResult {
-        loop {
-            self.consume_whitespaces();
-            match self.state {
-                LexerState::Start => {
-                    return self.read_at_start()
-                },
-                LexerState::ReadList => {
-                    return self.read_at_read_list()
-                },
-                LexerState::ReadQuoted => {
-                    return self.read_at_read_quoted()
-                },
-                LexerState::ReadUnquoted => {
-                    return self.read_at_read_unquoted()
-                },
-                _ => {
-                    return self.error(LexerErrorCode::InvalidSyntax)
-                }
+    fn read(&mut self) -> Option<LexerResult> {
+        self.consume_whitespaces();
+        match self.state {
+            LexerState::Start => {
+                self.read_at_start()
+            },
+            LexerState::ReadList => {
+                self.read_at_read_list()
+            },
+            LexerState::ReadQuoted => {
+                self.read_at_read_quoted()
+            },
+            LexerState::ReadUnquoted => {
+                self.read_at_read_unquoted()
+            },
+            LexerState::Finish => {
+                None
             }
         }
     }
 
-    fn read_at_start(&mut self) -> LexerResult {
+    fn read_at_start(&mut self) -> Option<LexerResult> {
         let token = self.read_next();
-        self.state = match token {
-            Ok(Token::ListStart { .. }) => {
-                LexerState::ReadList
+        match token {
+            Some(Ok(Token::ListStart { .. })) => {
+                self.state = LexerState::ReadList
             },
-            Ok(Token::Quote { .. }) => {
-                LexerState::ReadQuoted
+            Some(Ok(Token::Quote { .. })) => {
+                self.state = LexerState::ReadQuoted
             },
-            Ok(Token::Unquote { .. }) => {
-                LexerState::ReadUnquoted
+            Some(Ok(Token::Unquote { .. })) => {
+                self.state = LexerState::ReadUnquoted
             },
-            Err(_) => {
-                LexerState::Finish
+            Some(Err(_)) => {
+                self.state = LexerState::Finish
             },
-            _ => {
-                LexerState::BeforeFinish
-            },
+            _ => {},
         };
         token
     }
 
-    fn read_at_read_list(&mut self) -> LexerResult {
+    fn read_at_read_list(&mut self) -> Option<LexerResult> {
         let token = self.read_next();
         match token {
-            Ok(Token::ListStart { .. }) => {
+            Some(Ok(Token::ListStart { .. })) => {
                 self.lvl += 1;
             },
-            Ok(Token::ListEnd { .. }) => {
+            Some(Ok(Token::ListEnd { .. })) => {
                 if self.lvl > 0 {
                     self.lvl -= 1;
                 } else {
-                    self.state = LexerState::BeforeFinish
+                    self.state = LexerState::Start
                 }
             },
-            Err(_) => {
+            Some(Err(_)) => {
                 self.state = LexerState::Finish
             },
             _ => {}
@@ -146,39 +122,35 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         token
     }
 
-    fn read_at_read_quoted(&mut self) -> LexerResult {
+    fn read_at_read_quoted(&mut self) -> Option<LexerResult> {
         let token = self.read_next();
         match token {
-            Ok(Token::ListStart { .. }) => {
+            Some(Ok(Token::ListStart { .. })) => {
                 self.state = LexerState::ReadList
             },
-            Err(_) => {
+            Some(Err(_)) => {
                 self.state = LexerState::Finish
             },
-            _ => {
-                self.state = LexerState::BeforeFinish
-            },
+            _ => { },
         };
         token
     }
 
-    fn read_at_read_unquoted(&mut self) -> LexerResult {
+    fn read_at_read_unquoted(&mut self) -> Option<LexerResult> {
         let token = self.read_next();
         match token {
-            Ok(Token::ListStart { .. }) => {
+            Some(Ok(Token::ListStart { .. })) => {
                 self.state = LexerState::ReadList
             },
-            Err(_) => {
+            Some(Err(_)) => {
                 self.state = LexerState::Finish
             },
-            _ => {
-                self.state = LexerState::BeforeFinish
-            },
+            _ => { },
         };
         token
     }
 
-    fn read_next(&mut self) -> LexerResult {
+    fn read_next(&mut self) -> Option<LexerResult> {
         if let Some(c) = self.char {
             match c {
                 '-' | '+' => {
@@ -204,33 +176,33 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                 '(' => {
                     let (line, col) = (self.line, self.col);
                     self.bump();
-                    Ok(t_list_start!(span!(line, col, self.line, self.col)))
+                    Some(Ok(t_list_start!(span!(line, col, self.line, self.col))))
                 },
                 ')' => {
                     let (line, col) = (self.line, self.col);
                     self.bump();
-                    Ok(t_list_end!(span!(line, col, self.line, self.col)))
+                    Some(Ok(t_list_end!(span!(line, col, self.line, self.col))))
                 },
                 '\'' => {
                     let (line, col) = (self.line, self.col);
                     self.bump();
-                    Ok(t_quote![span![line, col, self.line, self.col]])
+                    Some(Ok(t_quote![span![line, col, self.line, self.col]]))
                 },
                 '~' => {
                     let (line, col) = (self.line, self.col);
                     self.bump();
-                    Ok(t_unquote![span![line, col, self.line, self.col]])
+                    Some(Ok(t_unquote![span![line, col, self.line, self.col]]))
                 },
                 _ => {
-                    self.error(LexerErrorCode::InvalidSyntax)
+                    Some(self.error())
                 }
             }
         } else {
-            self.error(LexerErrorCode::UnexpectedEndOfInput)
+            None
         }
     }
 
-    fn read_symbol(&mut self) -> LexerResult {
+    fn read_symbol(&mut self) -> Option<LexerResult> {
         let (line, col) = (self.line, self.col);
         let mut res = String::new();
 
@@ -243,10 +215,10 @@ impl<I: Iterator<Item=char>> Lexer<I> {
             self.bump();
         }
 
-        Ok(t_symbol!(res, span!(line, col, self.line, self.col)))
+        Some(Ok(t_symbol!(res, span!(line, col, self.line, self.col))))
     }
 
-    fn read_number(&mut self) -> LexerResult {
+    fn read_number(&mut self) -> Option<LexerResult> {
         let (line, col) = (self.line, self.col);
 
         let mut neg = false;
@@ -287,7 +259,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                     break
                 },
                 _ => {
-                    return self.error(LexerErrorCode::InvalidSyntax)
+                    return Some(self.error())
                 }
             }
         }
@@ -296,10 +268,10 @@ impl<I: Iterator<Item=char>> Lexer<I> {
             accum *= -1_f64;
         }
 
-        Ok(t_number!(accum, span!(line, col, self.line, self.col)))
+        Some(Ok(t_number!(accum, span!(line, col, self.line, self.col))))
     }
 
-    fn read_string(&mut self) -> LexerResult {
+    fn read_string(&mut self) -> Option<LexerResult> {
         let (line, col) = (self.line, self.col);
 
         let mut res = String::new();
@@ -317,7 +289,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
 
         self.bump();
 
-        Ok(t_string!(res, span!(line, col, self.line, self.col)))
+        Some(Ok(t_string!(res, span!(line, col, self.line, self.col))))
     }
 
     fn consume_whitespaces(&mut self) {
@@ -330,15 +302,15 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         }
     }
 
-    fn error(&mut self, code: LexerErrorCode) -> LexerResult {
+    fn error(&mut self) -> LexerResult {
         self.state = LexerState::Finish;
-        Err(LexerError::new(self.line, self.col, code))
+        Err(LexerError::new(self.line, self.col))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Lexer, LexerResult, LexerError, LexerErrorCode};
+    use super::{Lexer, LexerResult, LexerError};
 
     #[test]
     fn test_read_nil() {
@@ -388,7 +360,7 @@ mod tests {
     fn test_read_incorrect_symbol_starting_with_digit() {
         let sym_name = "6-my-incorrect-symbol";
         let mut lexer = Lexer::new(sym_name.chars());
-        let expected_result = Some(Err(LexerError::new(1, 2, LexerErrorCode::InvalidSyntax)));
+        let expected_result = Some(Err(LexerError::new(1, 2)));
         assert_eq!(expected_result, lexer.next());
         assert_eq!(None, lexer.next());
     }

@@ -72,26 +72,26 @@ pub enum Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Token::Number { ref val, ref span } => {
+        match *self {
+            Token::Number { ref val, ref span } => {
                 write!(f, "'Number {}' at {}", val, span)
             },
-            &Token::String { ref val, ref span } => {
+            Token::String { ref val, ref span } => {
                 write!(f, r#"'String "{}"' at {}"#, val, span)
             },
-            &Token::Symbol { ref val, ref span } => {
+            Token::Symbol { ref val, ref span } => {
                 write!(f, "'Symbol {}' at {}", val, span)
             },
-            &Token::ListStart { ref span } => {
+            Token::ListStart { ref span } => {
                 write!(f, "'List Start' at {}", span)
             },
-            &Token::ListEnd { ref span } => {
+            Token::ListEnd { ref span } => {
                 write!(f, "'List End' at {}", span)
             },
-            &Token::Quote { ref span } => {
+            Token::Quote { ref span } => {
                 write!(f, "'Quote' at {}", span)
             },
-            &Token::Unquote { ref span } => {
+            Token::Unquote { ref span } => {
                 write!(f, "'Unquote' at {}", span)
             },
         }
