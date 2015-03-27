@@ -19,5 +19,5 @@ bench = false
 
 [dependencies]
 
-docopt = "*"
-rustc-serialize = "*"
+docopt = "0.6.52"
+rustc-serialize = "0.3.6"
