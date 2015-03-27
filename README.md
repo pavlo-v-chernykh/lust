@@ -4,10 +4,21 @@ Lisp interpreter implemented in Rust
 
 Finally, it works in some way :)
 
-<img src="https://raw.githubusercontent.com/pavel-v-chernykh/lust/assets/lust-v0.0.1.gif"/>
-
-Currently it is sticked to ```nightly-2015-03-24```.
+Currently it sticked to ```nightly-2015-03-24```.
 Use nice [multirust][multirust] tool to manage your rust's toolchains.
+
+## Usage
+
+```
+Usage:
+	lust [options] [<expr>]
+
+Options:
+
+-f <file_path>, --file <file_path> Evaluate expresions from file
+
+-i, --interactive Run REPL session
+```
 
 ## Disclaimer
 
