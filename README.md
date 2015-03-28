@@ -2,10 +2,8 @@
 
 Lisp interpreter implemented in Rust
 
-Finally, it works in some way :)
-
 Currently it sticked to ```nightly-2015-03-24```.
-Use nice [multirust][multirust] tool to manage your rust's toolchains.
+Use nice [multirust][multirust] tool for managing your Rust toolchains.
 
 ## Usage
 
@@ -17,7 +15,7 @@ Options:
 
 -f <file_path>, --file <file_path> Evaluate expresions from file
 
--i, --interactive Run REPL session
+-i, --interactive                  Run REPL session
 ```
 
 ## Disclaimer

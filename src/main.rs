@@ -52,10 +52,14 @@ fn main() {
                     last_evaled = Some(try_ok!(eval!(try_ok!(parsed_expr), root_scope)));
                 }
             } else {
-                return println!("Specified path is not a file.\nPlease, specify existing file.");
+                return println!("Whoops, error detected.\n\
+                                 Specified path is not a file.\n\
+                                 Please, specify existing file.");
             }
         } else {
-            return println!("File doesn't exist.\nPlease, specify existing file.");
+            return println!("Whoops, error detected.\n\
+                             File doesn't exist.\n\
+                             Please, specify existing file.");
         }
     }
 
