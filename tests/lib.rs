@@ -27,3 +27,14 @@ fn test_macro_expansion() {
                                     e_number![1.],
                                     e_symbol!["b"]]]]);
 }
+
+#[test]
+fn test_features() {
+    let ref mut scope = Scope::new_std();
+    let input = include_str!("./test.ls");
+    for expr in Parser::new(input.chars()) {
+        expr.unwrap_or_else(|e| panic!("{}", e))
+            .expand(scope).unwrap_or_else(|e| panic!("{}", e))
+            .eval(scope).unwrap_or_else(|e| panic!("{}", e));
+    }
+}
