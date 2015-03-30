@@ -108,6 +108,9 @@ impl Expr {
                 "=" => {
                     self.eval_call_builtin_eq(scope)
                 },
+                "if" => {
+                    self.eval_call_builtin_if(scope)
+                },
                 "quote" => {
                     self.eval_call_builtin_quote(scope)
                 },
@@ -278,6 +281,22 @@ impl Expr {
                     Ok(Expr::Bool(true))
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
+                }
+            } else {
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
+            }
+        } else {
+            Err(DispatchError(self.clone()))
+        }
+    }
+
+    fn eval_call_builtin_if(&self, scope: &mut Scope) -> EvalResult {
+        if let Expr::Call { ref args, .. } = *self {
+            if args.len() == 3 {
+                if try!(args[0].eval(scope)).is_truthy() {
+                    args[1].eval(scope)
+                } else {
+                    args[2].eval(scope)
                 }
             } else {
                 Err(IncorrectNumberOfArgumentsError(self.clone()))
@@ -559,6 +578,17 @@ impl Expr {
             }
         } else {
             Err(DispatchError(self.clone()))
+        }
+    }
+
+    fn is_truthy(&self) -> bool {
+        match *self {
+            Expr::Bool(b) => {
+                b
+            }
+            _ => {
+                true
+            },
         }
     }
 }
@@ -954,6 +984,24 @@ mod tests {
         let expected_result = e_bool![false];
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
+
+    #[test]
+    fn test_eval_if_builtin_fn() {
+        let ref mut scope = Scope::new();
+        let ref actual_input = e_call!["if", e_call!["=", e_number![3.], e_number![3.]],
+                                             e_call!["+", e_number![3.], e_number![3.]],
+                                             e_call!["-", e_number![3.], e_number![3.]]];
+        let actual_result = actual_input.eval(scope);
+        let expected_result = e_number![6.];
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+        let ref actual_input = e_call!["if", e_call!["<", e_number![3.], e_number![3.]],
+                                             e_call!["+", e_number![3.], e_number![3.]],
+                                             e_call!["-", e_number![3.], e_number![3.]]];
+        let actual_result = actual_input.eval(scope);
+        let expected_result = e_number![0.];
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
 
     #[test]
     fn test_format_list_with_nested_list_and_atoms() {
