@@ -49,7 +49,7 @@ fn main() {
                 let ref mut buf = String::new();
                 try_ok!(file.read_to_string(buf));
                 for parsed_expr in Parser::new(buf.chars()) {
-                    last_evaled = Some(try_ok!(eval!(try_ok!(parsed_expr), root_scope)));
+                    last_evaled = Some(try_ok!(try_ok!(parsed_expr).eval(root_scope)));
                 }
             } else {
                 return println!("Whoops, error detected.\n\
@@ -65,7 +65,7 @@ fn main() {
 
     if let Some(ref arg_expr) = args.arg_expr {
         for parsed_expr in Parser::new(arg_expr.chars()) {
-            last_evaled = Some(try_ok!(eval!(try_ok!(parsed_expr), root_scope)))
+            last_evaled = Some(try_ok!(try_ok!(parsed_expr).eval(root_scope)))
         }
     }
 
@@ -82,7 +82,7 @@ fn main() {
             for expr in Parser::new(buf.chars()) {
                 match expr {
                     Ok(parsed_expr) => {
-                        match eval!(parsed_expr, root_scope) {
+                        match parsed_expr.eval(root_scope) {
                             Ok(res) => {
                                 println!("{}", res);
                             },

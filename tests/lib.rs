@@ -9,7 +9,6 @@ fn test_macro_expansion() {
     let input = "(def m (macro (a) '(+ 1 ~a)))";
     let expr = Parser::new(input.chars())
         .next().unwrap().ok().unwrap()
-        .expand(scope).ok().unwrap()
         .eval(scope).ok().unwrap();
     assert_eq!(expr, e_macro![[e_symbol!["a"]],
                               [e_call!["quote",
@@ -20,7 +19,6 @@ fn test_macro_expansion() {
     let input = "(def f (fn (b) (m b)))";
     let expr = Parser::new(input.chars())
         .next().unwrap().ok().unwrap()
-        .expand(scope).ok().unwrap()
         .eval(scope).ok().unwrap();
     assert_eq!(expr, e_fn![[e_symbol!["b"]],
                            [e_call!["+",
@@ -34,7 +32,7 @@ fn test_features() {
     let input = include_str!("./test.ls");
     for expr in Parser::new(input.chars()) {
         expr.unwrap_or_else(|e| panic!("{}", e))
-            .expand(scope).unwrap_or_else(|e| panic!("{}", e))
-            .eval(scope).unwrap_or_else(|e| panic!("{}", e));
+            .eval(scope)
+            .unwrap_or_else(|e| panic!("{}", e));
     }
 }

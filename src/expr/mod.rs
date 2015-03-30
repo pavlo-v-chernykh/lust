@@ -36,7 +36,7 @@ pub enum Expr {
 
 impl Expr {
     pub fn eval(&self, scope: &mut Scope) -> EvalResult {
-        match *self {
+        match try!(self.expand(scope)) {
             Expr::Symbol(ref name) => {
                 if let Some(e) = scope.get(name) {
                     Ok(e.clone())
@@ -44,19 +44,19 @@ impl Expr {
                     Err(ResolveError(name.clone()))
                 }
             },
-            Expr::Def { .. } => {
-                self.eval_def(scope)
+            def @ Expr::Def { .. } => {
+                def.eval_def(scope)
             },
-            Expr::Call { .. } => {
-                self.eval_call(scope)
+            call @ Expr::Call { .. } => {
+                call.eval_call(scope)
             }
-            ref e => {
-                Ok(e.clone())
+            other => {
+                Ok(other)
             },
         }
     }
 
-    pub fn eval_quoted(&self, scope: &mut Scope) -> EvalResult {
+    fn eval_quoted(&self, scope: &mut Scope) -> EvalResult {
         match *self {
             Expr::Symbol(_) => {
                 Ok(self.clone())
@@ -398,11 +398,10 @@ impl Expr {
         }
     }
 
-    pub fn expand(&self, scope: &mut Scope) -> EvalResult {
+    fn expand(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
             if l.len() > 0 {
-                let expr = &l[0];
-                if let &Expr::Symbol(ref n) = expr {
+                if let Expr::Symbol(ref n) = l[0] {
                     match &n[..] {
                         "def" => {
                             return self.expand_def(scope)
@@ -424,7 +423,7 @@ impl Expr {
                         }
                     }
                 } else {
-                    return Err(DispatchError(expr.clone()))
+                    return Err(DispatchError(l[0].clone()))
                 }
             }
         }
