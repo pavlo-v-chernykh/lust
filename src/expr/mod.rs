@@ -117,6 +117,9 @@ impl Expr {
                 "unquote" => {
                     self.eval_call_builtin_unquote(scope)
                 },
+                "eval" => {
+                    self.eval_call_builtin_eval(scope)
+                },
                 _ => {
                     self.eval_call_custom(scope)
                 },
@@ -322,6 +325,18 @@ impl Expr {
         if let Expr::Call { ref args, .. } = *self {
             if args.len() == 1 {
                 args[0].eval(scope)
+            } else {
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
+            }
+        } else {
+            Err(DispatchError(self.clone()))
+        }
+    }
+
+    fn eval_call_builtin_eval(&self, scope: &mut Scope) -> EvalResult {
+        if let Expr::Call { ref args, .. } = *self {
+            if args.len() == 1 {
+                args[0].eval(scope).and_then(|e| e.eval(scope))
             } else {
                 Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
@@ -959,6 +974,19 @@ mod tests {
         let expr = e_call!["quote", e_list![e_symbol!["+"],
                                             e_call!["unquote", e_symbol!["a"]], e_number![1.]]];
         let expected_result = e_list![e_symbol!["+"], e_number![3.], e_number![1.]];
+        assert_eq!(expected_result, expr.eval(scope).ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_eval_builtin_fn() {
+        let ref mut scope = Scope::new();
+        let expr = e_call!["eval", e_list![e_symbol!["+"], e_number![1.], e_number![2.]]];
+        let expected_result = e_number![3.];
+        assert_eq!(expected_result, expr.eval(scope).ok().unwrap());
+        let expr = e_call!["eval", e_call!["quote", e_list![e_symbol!["+"],
+                                                            e_number![1.],
+                                                            e_number![2.]]]];
+        let expected_result = e_number![3.];
         assert_eq!(expected_result, expr.eval(scope).ok().unwrap());
     }
 
