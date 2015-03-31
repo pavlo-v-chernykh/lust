@@ -18,6 +18,14 @@ macro_rules! t_list_end {
     ($span:expr) => ($crate::lexer::Token::ListEnd { span: $span });
 }
 
+macro_rules! t_vec_start {
+    ($span:expr) => ($crate::lexer::Token::VecStart { span: $span });
+}
+
+macro_rules! t_vec_end {
+    ($span:expr) => ($crate::lexer::Token::VecEnd { span: $span });
+}
+
 macro_rules! t_quote {
     ($span:expr) => ($crate::lexer::Token::Quote { span: $span });
 }

@@ -62,6 +62,12 @@ pub enum Token {
     ListEnd {
         span: Span,
     },
+    VecStart {
+        span: Span,
+    },
+    VecEnd {
+        span: Span,
+    },
     Quote {
         span: Span,
     },
@@ -87,6 +93,12 @@ impl fmt::Display for Token {
             },
             Token::ListEnd { ref span } => {
                 write!(f, "'List End' at {}", span)
+            },
+            Token::VecStart { ref span } => {
+                write!(f, "'Vec Start' at {}", span)
+            },
+            Token::VecEnd { ref span } => {
+                write!(f, "'Vec End' at {}", span)
             },
             Token::Quote { ref span } => {
                 write!(f, "'Quote' at {}", span)

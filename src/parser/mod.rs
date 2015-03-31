@@ -54,13 +54,17 @@ impl<I: Iterator<Item=char>> Parser<I> {
             Some(Ok(Token::ListStart { .. })) => {
                 self.parse_list()
             },
+            Some(Ok(Token::VecStart { .. })) => {
+                self.parse_vec()
+            },
             Some(Ok(Token::Quote { .. })) => {
                 self.parse_quoted()
             },
             Some(Ok(Token::Unquote { .. })) => {
                 self.parse_unquoted()
             },
-            Some(Ok(ref t @ Token::ListEnd { .. })) => {
+            Some(Ok(ref t @ Token::ListEnd { .. })) |
+            Some(Ok(ref t @ Token::VecEnd { .. })) => {
                 Err(ParserError::UnexpectedToken(t.clone()))
             },
             Some(Err(e)) => {
@@ -80,6 +84,17 @@ impl<I: Iterator<Item=char>> Parser<I> {
                 return Ok(Expr::List(list))
             }
             list.push(try!(self.parse_expr()))
+        }
+    }
+
+    fn parse_vec(&mut self) -> ParserResult {
+        let mut vec = Vec::new();
+        loop {
+            self.bump();
+            if let Some(Ok(Token::VecEnd { .. })) = self.token {
+                return Ok(Expr::Vec(vec))
+            }
+            vec.push(try!(self.parse_expr()))
         }
     }
 

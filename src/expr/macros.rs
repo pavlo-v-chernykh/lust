@@ -24,6 +24,11 @@ macro_rules! e_list {
 }
 
 #[macro_export]
+macro_rules! e_vec {
+    ($($e:expr),*) => ($crate::expr::Expr::Vec(vec![$($e),*]))
+}
+
+#[macro_export]
 macro_rules! e_def {
     ($sym:expr, $e:expr) => ($crate::expr::Expr::Def {
         sym: $sym.to_string(),

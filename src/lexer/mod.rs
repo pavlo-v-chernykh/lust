@@ -10,22 +10,12 @@ pub use self::error::LexerError;
 
 pub type LexerResult = Result<Token, LexerError>;
 
-#[derive(Debug, PartialEq)]
-enum LexerState {
-    Start,
-    ReadList,
-    ReadQuoted,
-    ReadUnquoted,
-    Finish,
-}
-
 pub struct Lexer<I: Iterator> {
     reader: Peekable<I>,
     char: Option<char>,
     line: usize,
     col: usize,
-    state: LexerState,
-    lvl: isize,
+    is_finished: bool,
 }
 
 impl<I: Iterator<Item=char>> Iterator for Lexer<I> {
@@ -43,8 +33,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
             char: None,
             line: 1,
             col: 0,
-            state: LexerState::Start,
-            lvl: 0,
+            is_finished: false,
         };
         l.bump();
         l
@@ -62,92 +51,11 @@ impl<I: Iterator<Item=char>> Lexer<I> {
 
     fn read(&mut self) -> Option<LexerResult> {
         self.consume_whitespaces();
-        match self.state {
-            LexerState::Start => {
-                self.read_at_start()
-            },
-            LexerState::ReadList => {
-                self.read_at_read_list()
-            },
-            LexerState::ReadQuoted => {
-                self.read_at_read_quoted()
-            },
-            LexerState::ReadUnquoted => {
-                self.read_at_read_unquoted()
-            },
-            LexerState::Finish => {
-                None
-            }
+        if self.is_finished {
+            None
+        } else {
+            self.read_next()
         }
-    }
-
-    fn read_at_start(&mut self) -> Option<LexerResult> {
-        let token = self.read_next();
-        match token {
-            Some(Ok(Token::ListStart { .. })) => {
-                self.state = LexerState::ReadList
-            },
-            Some(Ok(Token::Quote { .. })) => {
-                self.state = LexerState::ReadQuoted
-            },
-            Some(Ok(Token::Unquote { .. })) => {
-                self.state = LexerState::ReadUnquoted
-            },
-            Some(Err(_)) => {
-                self.state = LexerState::Finish
-            },
-            _ => {},
-        };
-        token
-    }
-
-    fn read_at_read_list(&mut self) -> Option<LexerResult> {
-        let token = self.read_next();
-        match token {
-            Some(Ok(Token::ListStart { .. })) => {
-                self.lvl += 1;
-            },
-            Some(Ok(Token::ListEnd { .. })) => {
-                if self.lvl > 0 {
-                    self.lvl -= 1;
-                } else {
-                    self.state = LexerState::Start
-                }
-            },
-            Some(Err(_)) => {
-                self.state = LexerState::Finish
-            },
-            _ => {}
-        };
-        token
-    }
-
-    fn read_at_read_quoted(&mut self) -> Option<LexerResult> {
-        let token = self.read_next();
-        match token {
-            Some(Ok(Token::ListStart { .. })) => {
-                self.state = LexerState::ReadList
-            },
-            Some(Err(_)) => {
-                self.state = LexerState::Finish
-            },
-            _ => { },
-        };
-        token
-    }
-
-    fn read_at_read_unquoted(&mut self) -> Option<LexerResult> {
-        let token = self.read_next();
-        match token {
-            Some(Ok(Token::ListStart { .. })) => {
-                self.state = LexerState::ReadList
-            },
-            Some(Err(_)) => {
-                self.state = LexerState::Finish
-            },
-            _ => { },
-        };
-        token
     }
 
     fn read_next(&mut self) -> Option<LexerResult> {
@@ -176,22 +84,32 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                 '(' => {
                     let (line, col) = (self.line, self.col);
                     self.bump();
-                    Some(Ok(t_list_start!(span!(line, col, self.line, self.col))))
+                    Some(Ok(t_list_start!(span!(line, col, line, col + 1))))
                 },
                 ')' => {
                     let (line, col) = (self.line, self.col);
                     self.bump();
-                    Some(Ok(t_list_end!(span!(line, col, self.line, self.col))))
+                    Some(Ok(t_list_end!(span!(line, col, line, col + 1))))
+                },
+                '[' => {
+                    let (line, col) = (self.line, self.col);
+                    self.bump();
+                    Some(Ok(t_vec_start!(span!(line, col, line, col + 1))))
+                },
+                ']' => {
+                    let (line, col) = (self.line, self.col);
+                    self.bump();
+                    Some(Ok(t_vec_end!(span!(line, col, line, col + 1))))
                 },
                 '\'' => {
                     let (line, col) = (self.line, self.col);
                     self.bump();
-                    Some(Ok(t_quote![span![line, col, self.line, self.col]]))
+                    Some(Ok(t_quote![span![line, col, line, col + 1]]))
                 },
                 '~' => {
                     let (line, col) = (self.line, self.col);
                     self.bump();
-                    Some(Ok(t_unquote![span![line, col, self.line, self.col]]))
+                    Some(Ok(t_unquote![span![line, col, line, col + 1]]))
                 },
                 _ => {
                     Some(self.error())
@@ -207,7 +125,9 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         let mut res = String::new();
 
         while let Some(c) = self.char {
-            if c.is_whitespace() || c == ')' {
+            if c == ')' ||
+               c == ']' ||
+               c.is_whitespace() {
                 break
             } else {
                 res.push(c)
@@ -255,7 +175,10 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                         }
                     }
                 },
-                ' ' | '\t' | '\r' | '\n' | ')' => {
+                '(' | ')' | '[' | ']' => {
+                    break
+                },
+                c if c.is_whitespace() => {
                     break
                 },
                 _ => {
@@ -303,7 +226,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
     }
 
     fn error(&mut self) -> LexerResult {
-        self.state = LexerState::Finish;
+        self.is_finished = true;
         Err(LexerError::new(self.line, self.col))
     }
 }
@@ -417,6 +340,23 @@ mod tests {
                                    Ok(t_number!(1_f64, span!(1, 13, 1, 14))),
                                    Ok(t_list_end!(span!(1, 14, 1, 15))),
                                    Ok(t_list_end!(span!(1, 15, 1, 16)))];
+        assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+    }
+
+    #[test]
+    fn test_read_vec_of_expressions() {
+        let lexer = Lexer::new("[a 1 (1 [3]) +]".chars());
+        let expected_result = vec![Ok(t_vec_start!(span!(1, 1, 1, 2))),
+                                   Ok(t_symbol!("a", span!(1, 2, 1,3))),
+                                   Ok(t_number!(1., span!(1, 4, 1, 5))),
+                                   Ok(t_list_start!(span!(1, 6, 1, 7))),
+                                   Ok(t_number!(1., span!(1, 7, 1, 8))),
+                                   Ok(t_vec_start!(span!(1, 9, 1, 10))),
+                                   Ok(t_number!(3., span!(1, 10, 1, 11))),
+                                   Ok(t_vec_end!(span!(1, 11, 1, 12))),
+                                   Ok(t_list_end!(span!(1, 12, 1, 13))),
+                                   Ok(t_symbol!("+", span!(1, 14, 1, 15))),
+                                   Ok(t_vec_end!(span!(1, 15, 1, 16)))];
         assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
     }
 

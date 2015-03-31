@@ -16,6 +16,7 @@ pub enum Expr {
     String(String),
     Symbol(String),
     List(Vec<Expr>),
+    Vec(Vec<Expr>),
     Fn {
         params: Vec<Expr>,
         body: Vec<Expr>,
@@ -625,6 +626,9 @@ impl fmt::Display for Expr {
             },
             Expr::List(ref l) => {
                 write!(f, "({})", l)
+            },
+            Expr::Vec(ref v) => {
+                write!(f, "[{}]", v)
             },
             Expr::Def { ref sym, ref expr } => {
                 write!(f, "(def {} {})", sym, expr)
