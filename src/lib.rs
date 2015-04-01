@@ -1,7 +1,7 @@
 #[macro_use]
 mod lexer;
 #[macro_use]
-pub mod expr;
+pub mod ast;
 #[macro_use]
 mod parser;
 mod scope;

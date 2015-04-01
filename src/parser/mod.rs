@@ -1,7 +1,7 @@
 mod error;
 
 use self::error::ParserError;
-use expr::Expr;
+use ast::Expr;
 use lexer::{Token, Lexer, LexerResult};
 
 pub type ParserResult = Result<Expr, ParserError>;

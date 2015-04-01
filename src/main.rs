@@ -7,7 +7,7 @@ mod macros;
 #[macro_use]
 mod lexer;
 #[macro_use]
-mod expr;
+mod ast;
 #[macro_use]
 mod parser;
 mod scope;

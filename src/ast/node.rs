@@ -1,11 +1,7 @@
-#[macro_use]
-mod macros;
-mod error;
-
 use std::fmt;
 use scope::Scope;
-use self::error::EvalError::*;
-pub use self::error::EvalError;
+use ast::error::EvalError::*;
+pub use ast::error::EvalError;
 
 pub type EvalResult = Result<Expr, EvalError>;
 
@@ -673,7 +669,7 @@ impl fmt::Display for Vec<Expr> {
 #[cfg(test)]
 mod tests {
     use scope::Scope;
-    use super::error::EvalError::*;
+    use ast::error::EvalError::*;
 
     #[test]
     fn test_expand_number() {

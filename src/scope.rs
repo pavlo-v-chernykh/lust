@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use expr::Expr;
+use ast::Expr;
 
 #[derive(Debug)]
 pub struct Scope<'a> {
