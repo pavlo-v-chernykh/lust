@@ -10,13 +10,6 @@ authors = [
     "Pavel Chernykh <pavel.v.chernykh@gmail.com>"
 ]
 
-[lib]
-
-name = "lust"
-test = false
-doctest = false
-bench = false
-
 [dependencies]
 
 docopt = "0.6.52"

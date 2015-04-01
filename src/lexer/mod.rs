@@ -1,8 +1,5 @@
-#[macro_use]
-mod macros;
 mod token;
 mod error;
-
 use std::iter::Peekable;
 
 pub use self::token::{Token, Span};

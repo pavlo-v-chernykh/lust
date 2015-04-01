@@ -1,10 +1,13 @@
 #[macro_use]
+mod local_macros;
 mod lexer;
-#[macro_use]
-pub mod ast;
-#[macro_use]
+mod ast;
 mod parser;
 mod scope;
 
 pub use parser::Parser;
 pub use scope::Scope;
+pub use ast::Expr;
+
+#[macro_use]
+mod export_macros;

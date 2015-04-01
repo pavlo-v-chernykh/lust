@@ -1,23 +1,27 @@
 #![feature(path_ext)]
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate docopt;
-
 #[macro_use]
-mod macros;
-#[macro_use]
-mod lexer;
-#[macro_use]
-mod ast;
-#[macro_use]
-mod parser;
-mod scope;
+extern crate lust;
 
 use std::io::{self, Write, Read};
 use std::path::Path;
 use std::fs::{File, PathExt};
 use docopt::Docopt;
-use parser::Parser;
-use scope::Scope;
+use lust::Parser;
+use lust::Scope;
+
+macro_rules! try_ok {
+    ($e:expr) => (match $e {
+        Ok(res) => {
+            res
+        },
+        Err(err) => {
+            return println!("Whoops, error detected.\n{}.\n\
+                             Please, try again...", err)
+        }
+    })
+}
 
 static USAGE: &'static str = "
 Usage:
