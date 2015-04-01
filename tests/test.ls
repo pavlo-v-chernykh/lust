@@ -6,9 +6,9 @@
 (* b 1 (- 10 a))
 
 (def m
-    (macro (a)
+    (macro [a]
         '(+ 1 ~a)))
-(def f (fn (b) (m b)))
+(def f (fn [b] (m b)))
 
 (= (m 3) 4)
 (= (f 3) 4)

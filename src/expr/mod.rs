@@ -487,7 +487,7 @@ impl Expr {
     fn expand_fn(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
             if l.len() >= 3 {
-                if let Expr::List(ref params) = l[1] {
+                if let Expr::Vec(ref params) = l[1] {
                     let mut fn_params = vec![];
                     for p in params {
                         fn_params.push(try!(p.expand(scope)))
@@ -514,7 +514,7 @@ impl Expr {
     fn expand_macro(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
             if l.len() >= 3 {
-                if let Expr::List(ref params) = l[1] {
+                if let Expr::Vec(ref params) = l[1] {
                     let mut macro_params = vec![];
                     for p in params {
                         macro_params.push(try!(p.expand(scope)))
@@ -708,7 +708,7 @@ mod tests {
         let e = e_fn!([e_symbol!("a")],
                       [e_call!["+", e_symbol!("a"), e_number!(1_f64)]]);
         let n = e_list![e_symbol!("fn"),
-                        e_list![e_symbol!("a")],
+                        e_vec![e_symbol!("a")],
                         e_list![e_symbol!("+"), e_symbol!("a"), e_number!(1_f64)]];
         assert_eq!(e, n.expand(scope).ok().unwrap());
     }
@@ -719,7 +719,7 @@ mod tests {
         let e = e_macro!([e_symbol!("a")],
                          [e_call!["+", e_symbol!("a"), e_number!(1_f64)]]);
         let n = e_list![e_symbol!("macro"),
-                        e_list![e_symbol!("a")],
+                        e_vec![e_symbol!("a")],
                         e_list![e_symbol!("+"), e_symbol!("a"), e_number!(1_f64)]];
         assert_eq!(e, n.expand(scope).ok().unwrap());
     }
