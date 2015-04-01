@@ -82,25 +82,28 @@ fn main() {
             print!("-> ");
             stdout.flush().ok();
             let ref mut buf = String::new();
-            try_ok!(stdin.read_line(buf));
-            for expr in Parser::new(buf.chars()) {
-                match expr {
-                    Ok(parsed_expr) => {
-                        match parsed_expr.eval(root_scope) {
-                            Ok(res) => {
-                                println!("{}", res);
-                            },
-                            Err(err) => {
-                                println!("Whoops, error detected.\n{}.\n\
-                                          Please, try again...", err);
+            if try_ok!(stdin.read_line(buf)) > 0 {
+                for expr in Parser::new(buf.chars()) {
+                    match expr {
+                        Ok(parsed_expr) => {
+                            match parsed_expr.eval(root_scope) {
+                                Ok(res) => {
+                                    println!("{}", res);
+                                },
+                                Err(err) => {
+                                    println!("Whoops, error detected.\n{}.\n\
+                                              Please, try again...", err);
+                                }
                             }
-                        }
-                    },
-                    Err(err) => {
-                        println!("Whoops, error detected.\n{}.\n\
-                                  Please, try again...", err)
-                    },
+                        },
+                        Err(err) => {
+                            println!("Whoops, error detected.\n{}.\n\
+                                      Please, try again...", err)
+                        },
+                    }
                 }
+            } else {
+                return println!("\nHope you enjoyed.\nSee you...");
             }
         }
     } else if let Some(ref expr) = last_evaled {
