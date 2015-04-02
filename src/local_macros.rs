@@ -10,6 +10,10 @@ macro_rules! t_symbol {
     ($val:expr, $span:expr) => (::lexer::Token::Symbol { val: $val.to_string(), span: $span, });
 }
 
+macro_rules! t_keyword {
+    ($val:expr, $span:expr) => (::lexer::Token::Keyword { val: $val.to_string(), span: $span, });
+}
+
 macro_rules! t_list_start {
     ($span:expr) => (::lexer::Token::ListStart { span: $span });
 }
@@ -54,6 +58,10 @@ macro_rules! e_string {
 
 macro_rules! e_symbol {
     ($e:expr) => (::ast::Expr::Symbol($e.to_string()))
+}
+
+macro_rules! e_keyword {
+    ($e:expr) => (::ast::Expr::Keyword($e.to_string()))
 }
 
 macro_rules! e_list {

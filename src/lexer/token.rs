@@ -56,6 +56,10 @@ pub enum Token {
         span: Span,
         val: String,
     },
+    Keyword {
+        span: Span,
+        val: String,
+    },
     ListStart {
         span: Span,
     },
@@ -87,6 +91,9 @@ impl fmt::Display for Token {
             },
             Token::Symbol { ref val, ref span } => {
                 write!(f, "'Symbol {}' at {}", val, span)
+            },
+            Token::Keyword { ref val, ref span } => {
+                write!(f, "'Keyword {}' at {}", val, span)
             },
             Token::ListStart { ref span } => {
                 write!(f, "'List Start' at {}", span)

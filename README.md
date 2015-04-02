@@ -2,7 +2,7 @@
 
 Lisp interpreter implemented in Rust
 
-Currently it sticked to ```nightly-2015-03-24```.
+Currently it is anchored at ```nightly-2015-03-24```.
 Use nice [multirust][multirust] tool for managing your Rust toolchains.
 
 ## Usage

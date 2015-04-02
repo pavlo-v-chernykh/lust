@@ -72,6 +72,9 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                 'a' ... 'z' | 'A' ... 'Z' | '/' | '*' | '%' | '>' | '<' | '=' => {
                     self.read_symbol()
                 },
+                ':' => {
+                    self.read_keyword()
+                },
                 '0' ... '9' => {
                     self.read_number()
                 },
@@ -119,7 +122,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
 
     fn read_symbol(&mut self) -> Option<LexerResult> {
         let (line, col) = (self.line, self.col);
-        let mut res = String::new();
+        let mut symbol = String::new();
 
         while let Some(c) = self.char {
             if c == ')' ||
@@ -127,12 +130,30 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                c.is_whitespace() {
                 break
             } else {
-                res.push(c)
+                symbol.push(c)
             }
             self.bump();
         }
 
-        Some(Ok(t_symbol!(res, span!(line, col, self.line, self.col))))
+        Some(Ok(t_symbol!(symbol, span!(line, col, self.line, self.col))))
+    }
+
+    fn read_keyword(&mut self) -> Option<LexerResult> {
+        let (line, col) = (self.line, self.col);
+        let mut keyword = String::new();
+
+        while let Some(c) = self.char {
+            if c == ')' ||
+               c == ']' ||
+               c.is_whitespace() {
+                break
+            } else {
+                keyword.push(c)
+            }
+            self.bump();
+        }
+
+        Some(Ok(t_keyword!(keyword, span!(line, col, self.line, self.col))))
     }
 
     fn read_number(&mut self) -> Option<LexerResult> {

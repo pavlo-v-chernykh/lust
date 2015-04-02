@@ -11,6 +11,7 @@ pub enum Expr {
     Bool(bool),
     String(String),
     Symbol(String),
+    Keyword(String),
     List(Vec<Expr>),
     Vec(Vec<Expr>),
     Fn {
@@ -617,6 +618,9 @@ impl fmt::Display for Expr {
             Expr::Symbol(ref s) => {
                 write!(f, "{}", s)
             },
+            Expr::Keyword(ref s) => {
+                write!(f, "{}", s)
+            },
             Expr::String(ref s) => {
                 write!(f, r#""{}""#, s)
             },
@@ -693,6 +697,13 @@ mod tests {
     }
 
     #[test]
+    fn test_expand_keyword() {
+        let ref mut scope = Scope::new_std();
+        let s = ":+";
+        assert_eq!(e_keyword!(s), e_keyword!(s).expand(scope).ok().unwrap());
+    }
+
+    #[test]
     fn test_expand_empty_list() {
         let ref mut scope = Scope::new_std();
         assert_eq!(e_list![], e_list![].expand(scope).ok().unwrap());
@@ -737,7 +748,7 @@ mod tests {
     }
 
     #[test]
-    fn expand_call_macro() {
+    fn test_expand_call_macro() {
         let ref mut scope = Scope::new_std();
         let m = e_def!["m", e_macro![[e_symbol!["a"], e_symbol!["b"]],
                                      [e_call!["+", e_symbol!["a"], e_symbol!["b"]]]]];
@@ -774,6 +785,15 @@ mod tests {
         let ref mut scope = Scope::new();
         let expected_result = e_number!(num);
         let actual_result = e_number!(num).eval(scope);
+        assert_eq!(expected_result, actual_result.ok().unwrap());
+    }
+
+    #[test]
+    fn test_eval_keyword_to_itself() {
+        let keyword = ":keyword";
+        let ref mut scope = Scope::new();
+        let expected_result = e_keyword!(keyword);
+        let actual_result = e_keyword!(keyword).eval(scope);
         assert_eq!(expected_result, actual_result.ok().unwrap());
     }
 
