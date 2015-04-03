@@ -72,7 +72,9 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                         self.read_symbol()
                     }
                 },
-                'a' ... 'z' | 'A' ... 'Z' | '/' | '*' | '%' | '>' | '<' | '=' => {
+                'a' ... 'z' | 'A' ... 'Z' |
+                '/' | '*' | '%' | '>' | '<' | '=' |
+                '&' => {
                     self.read_symbol()
                 },
                 ':' => {
