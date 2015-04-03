@@ -223,3 +223,12 @@ fn test_read_unquoted_symbol_inside_list() {
                                Ok(t_list_end![span![1, 9, 1, 10]])];
     assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
 }
+
+#[test]
+fn test_read_unquoted_splicing_list() {
+    let lexer = Lexer::new("~@()".chars());
+    let expected_result = vec![Ok(t_unquote_splicing![span![1, 1, 1, 3]]),
+                               Ok(t_list_start![span![1, 3, 1, 4]]),
+                               Ok(t_list_end![span![1, 4, 1, 5]])];
+    assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+}

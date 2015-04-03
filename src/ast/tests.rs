@@ -106,6 +106,17 @@ fn test_expand_unquote() {
 }
 
 #[test]
+fn test_expand_unquote_splicing() {
+    let ref mut scope = Scope::new_std();
+    let n = e_list![e_symbol!["quote"], e_list![e_symbol!["a"],
+                                                e_list![e_symbol!["unquote-splicing"],
+                                                        e_symbol!["b"]]]];
+    let expected_result = e_call!["quote", e_list![e_symbol!["a"],
+                                           e_call!["unquote-splicing", e_symbol!["b"]]]];
+    assert_eq!(expected_result, n.expand(scope).ok().unwrap());
+}
+
+#[test]
 fn test_eval_number_to_itself() {
     let num = 10_f64;
     let ref mut scope = Scope::new();
@@ -324,6 +335,21 @@ fn test_eval_unquote_builtin_fn() {
 }
 
 #[test]
+fn test_eval_unquote_splicing_builtin_fn() {
+    let ref mut scope = Scope::new();
+    scope.insert("a".to_string(), e_list![e_number![1.], e_number![2.], e_number![3.]]);
+    let expr = e_call!["quote", e_list![e_symbol!["+"],
+                                        e_call!["unquote-splicing", e_symbol!["a"]],
+                                        e_number![1.]]];
+    let expected_result = e_list![e_symbol!["+"],
+                                  e_number![1.],
+                                  e_number![2.],
+                                  e_number![3.],
+                                  e_number![1.]];
+    assert_eq!(expected_result, expr.eval(scope).ok().unwrap());
+}
+
+#[test]
 fn test_eval_eval_builtin_fn() {
     let ref mut scope = Scope::new();
     let expr = e_call!["eval", e_list![e_symbol!["+"], e_number![1.], e_number![2.]]];
@@ -374,7 +400,6 @@ fn test_eval_if_builtin_fn() {
     let expected_result = e_number![0.];
     assert_eq!(expected_result, actual_result.ok().unwrap());
 }
-
 
 #[test]
 fn test_format_list_with_nested_list_and_atoms() {
