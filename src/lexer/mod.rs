@@ -109,7 +109,12 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                 '~' => {
                     let (line, col) = (self.line, self.col);
                     self.bump();
-                    Some(Ok(t_unquote![span![line, col, line, col + 1]]))
+                    if Some('@') == self.char {
+                        self.bump();
+                        Some(Ok(t_unquote_splicing![span![line, col, line, col + 2]]))
+                    } else {
+                        Some(Ok(t_unquote![span![line, col, line, col + 1]]))
+                    }
                 },
                 _ => {
                     Some(self.error())

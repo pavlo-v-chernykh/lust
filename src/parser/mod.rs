@@ -66,6 +66,9 @@ impl<I: Iterator<Item=char>> Parser<I> {
             Some(Ok(Token::Unquote { .. })) => {
                 self.parse_unquoted()
             },
+            Some(Ok(Token::UnquoteSplicing { .. })) => {
+                self.parse_unquoted_splicing()
+            },
             Some(Ok(ref t @ Token::ListEnd { .. })) |
             Some(Ok(ref t @ Token::VecEnd { .. })) => {
                 Err(ParserError::UnexpectedToken(t.clone()))
@@ -109,6 +112,11 @@ impl<I: Iterator<Item=char>> Parser<I> {
     fn parse_unquoted(&mut self) -> ParserResult {
         self.bump();
         Ok(e_list![e_symbol!["unquote"], try!(self.parse_expr())])
+    }
+
+    fn parse_unquoted_splicing(&mut self) -> ParserResult {
+        self.bump();
+        Ok(e_list![e_symbol!["unquote-splicing"], try!(self.parse_expr())])
     }
 }
 

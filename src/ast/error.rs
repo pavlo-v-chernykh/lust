@@ -1,5 +1,5 @@
 use std::fmt;
-use ast::node::Expr;
+use ast::Expr;
 
 #[derive(Debug, PartialEq)]
 pub enum EvalError {
