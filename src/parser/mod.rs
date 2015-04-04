@@ -75,8 +75,8 @@ impl<I: Iterator<Item=char>> Parser<I> {
             Some(Ok(ref t @ Token::VecEnd { .. })) => {
                 Err(ParserError::UnexpectedToken(t.clone()))
             },
-            Some(Err(e)) => {
-                Err(ParserError::LexerError(e))
+            Some(Err(ref e)) => {
+                Err(ParserError::LexerError(e.clone()))
             },
             None => {
                 Err(ParserError::UnexpectedEndOfInput)

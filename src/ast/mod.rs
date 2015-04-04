@@ -40,11 +40,9 @@ impl Expr {
     pub fn eval(&self, scope: &mut Scope) -> EvalResult {
         match try!(self.expand(scope)) {
             Expr::Symbol(ref name) => {
-                if let Some(e) = scope.get(name) {
-                    Ok(e.clone())
-                } else {
-                    Err(ResolveError(name.clone()))
-                }
+                scope.get(name)
+                     .map(|e| Ok(e.clone()))
+                     .unwrap_or_else(|| Err(ResolveError(name.clone())))
             },
             def @ Expr::Def { .. } => {
                 def.eval_def(scope)
@@ -311,7 +309,7 @@ impl Expr {
     fn eval_call_builtin_if(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::Call { ref args, .. } = *self {
             if args.len() == 3 {
-                if try!(args[0].eval(scope)).is_truthy() {
+                if try!(args[0].eval(scope)).as_bool() {
                     args[1].eval(scope)
                 } else {
                     args[2].eval(scope)
@@ -374,14 +372,9 @@ impl Expr {
 
     fn eval_call_custom(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::Call { ref name, ref args } = *self {
-            let func = match scope.get(name) {
-                Some(e) => {
-                    e.clone()
-                },
-                _ => {
-                    return Err(ResolveError(name.clone()))
-                }
-            };
+            let func = try!(scope.get(name)
+                                 .map(|e| Ok(e.clone()))
+                                 .unwrap_or_else(|| Err(ResolveError(name.clone()))));
             match func {
                 Expr::Fn { ref params, ref body } => {
                     if args.len() != params.len() {
@@ -572,10 +565,7 @@ impl Expr {
     fn expand_quote(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
             if l.len() == 2 {
-                Ok(Expr::Call {
-                    name: "quote".to_string(),
-                    args: vec![try!(l[1].expand_quoted(scope))],
-                })
+                Ok(e_call!["quote", try!(l[1].expand_quoted(scope))])
             } else {
                 Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
@@ -587,10 +577,7 @@ impl Expr {
     fn expand_unquote(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
             if l.len() == 2 {
-                Ok(Expr::Call {
-                    name: "unquote".to_string(),
-                    args: vec![try!(l[1].expand(scope))],
-                })
+                Ok(e_call!["unquote", try!(l[1].expand(scope))])
             } else {
                 Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
@@ -602,10 +589,7 @@ impl Expr {
     fn expand_unquote_splicing(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
             if l.len() == 2 {
-                Ok(Expr::Call {
-                    name: "unquote-splicing".to_string(),
-                    args: vec![try!(l[1].expand(scope))],
-                })
+                Ok(e_call!["unquote-splicing", try!(l[1].expand(scope))])
             } else {
                 Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
@@ -642,7 +626,7 @@ impl Expr {
         }
     }
 
-    fn is_truthy(&self) -> bool {
+    fn as_bool(&self) -> bool {
         match *self {
             Expr::Bool(b) => {
                 b
@@ -665,6 +649,20 @@ impl Expr {
     }
 }
 
+fn format_vec(v: &[Expr]) -> String {
+        let mut a = String::new();
+        if !v.is_empty() {
+            let last_idx = v.len() - 1;
+            for (i, e) in v.iter().enumerate() {
+                if i < last_idx {
+                    a.push_str(&format!("{} ", e))
+                } else {
+                    a.push_str(&format!("{}", e))
+                }
+            }
+        }
+        a
+}
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -685,47 +683,29 @@ impl fmt::Display for Expr {
                 write!(f, r#""{}""#, s)
             },
             Expr::List(ref l) => {
-                write!(f, "({})", l)
+                write!(f, "({})", format_vec(l))
             },
             Expr::Vec(ref v) => {
-                write!(f, "[{}]", v)
+                write!(f, "[{}]", format_vec(v))
             },
             Expr::Def { ref sym, ref expr } => {
                 write!(f, "(def {} {})", sym, expr)
             },
             Expr::Fn { ref params, ref body } => {
-                write!(f, "(fn ({}) {})", params, body)
+                write!(f, "(fn [{}] {})", format_vec(params), format_vec(body))
             },
             Expr::Macro { ref params, ref body } => {
-                write!(f, "(macro ({}) {})", params, body)
+                write!(f, "(macro [{}] {})", format_vec(params), format_vec(body))
             },
             Expr::Call { ref name, ref args } => {
                 let mut a = format!("({}", name);
                 if args.is_empty() {
                     a.push_str(")")
                 } else {
-                    a.push_str(&format!(" {})", args))
+                    a.push_str(&format!(" {})", format_vec(args)))
                 }
                 write!(f, "{}", a)
             },
         }
-    }
-
-}
-
-impl fmt::Display for Vec<Expr> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut a = String::new();
-        if !self.is_empty() {
-            let last_idx = self.len() - 1;
-            for (i, e) in self.iter().enumerate() {
-                if i < last_idx {
-                    a.push_str(&format!("{} ", e))
-                } else {
-                    a.push_str(&format!("{}", e))
-                }
-            }
-        }
-        write!(f, "{}", a)
     }
 }

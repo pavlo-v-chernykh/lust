@@ -22,5 +22,5 @@ doctest = false
 
 [dependencies]
 
-docopt = "0.6.52"
-rustc-serialize = "0.3.6"
+docopt = "*"
+rustc-serialize = "*"

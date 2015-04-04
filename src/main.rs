@@ -1,12 +1,11 @@
-#![feature(path_ext)]
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate docopt;
 #[macro_use]
 extern crate lust;
 
 use std::io::{self, Write, Read};
 use std::path::Path;
-use std::fs::{File, PathExt};
+use std::fs::{File, metadata};
 use docopt::Docopt;
 use lust::Parser;
 use lust::Scope;
@@ -39,6 +38,14 @@ struct CliArgs {
     flag_interactive: bool,
 }
 
+fn is_file_exists(path: &Path) -> bool {
+    metadata(path).is_ok()
+}
+
+fn is_file(path: &Path) -> bool {
+    metadata(path).map(|s| s.is_file()).unwrap_or(false)
+}
+
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
     let args = try_ok!(Docopt::new(USAGE).and_then(|d| d.decode::<CliArgs>()));
@@ -47,8 +54,8 @@ fn main() {
 
     if let Some(ref flag_file) = args.flag_file {
         let path = Path::new(flag_file);
-        if path.exists() {
-            if path.is_file() {
+        if is_file_exists(path) {
+            if is_file(path) {
                 let mut file = try_ok!(File::open(&path));
                 let ref mut buf = String::new();
                 try_ok!(file.read_to_string(buf));
