@@ -22,6 +22,14 @@ macro_rules! try_ok {
     })
 }
 
+macro_rules! is_file {
+    ($e:expr) => ($e.map(|s| s.is_file()).unwrap_or(false))
+}
+
+macro_rules! is_file_exists {
+    ($md:expr) => ($md.is_ok())
+}
+
 static USAGE: &'static str = "
 Usage:
     lust [options] [<expr>]
@@ -38,14 +46,6 @@ struct CliArgs {
     flag_interactive: bool,
 }
 
-fn is_file_exists(path: &Path) -> bool {
-    metadata(path).is_ok()
-}
-
-fn is_file(path: &Path) -> bool {
-    metadata(path).map(|s| s.is_file()).unwrap_or(false)
-}
-
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
     let args = try_ok!(Docopt::new(USAGE).and_then(|d| d.decode::<CliArgs>()));
@@ -54,8 +54,9 @@ fn main() {
 
     if let Some(ref flag_file) = args.flag_file {
         let path = Path::new(flag_file);
-        if is_file_exists(path) {
-            if is_file(path) {
+        let md = metadata(path);
+        if is_file_exists!(md) {
+            if is_file!(md) {
                 let mut file = try_ok!(File::open(&path));
                 let ref mut buf = String::new();
                 try_ok!(file.read_to_string(buf));

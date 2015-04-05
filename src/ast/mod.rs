@@ -609,11 +609,7 @@ impl Expr {
                     name: name.clone(),
                     args: args
                 };
-                let is_macro = match scope.get(name) {
-                    Some(&Expr::Macro { .. }) => true,
-                    _ => false
-                };
-                if is_macro {
+                if scope.get(name).map_or(false, |e| e.is_macro()) {
                     Ok(try!(call.eval(scope)))
                 } else {
                     Ok(call)
@@ -634,6 +630,17 @@ impl Expr {
             _ => {
                 true
             },
+        }
+    }
+
+    fn is_macro(&self) -> bool {
+        match *self {
+            Expr::Macro { .. } => {
+                true
+            },
+            _ => {
+                false
+            }
         }
     }
 
