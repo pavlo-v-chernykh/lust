@@ -36,6 +36,16 @@ pub enum Expr {
     },
 }
 
+static mut id: usize = 0;
+
+fn next_id() -> usize {
+    unsafe {
+        let next = id;
+        id += 1;
+        next
+    }
+}
+
 impl Expr {
     pub fn eval(&self, scope: &mut Scope) -> EvalResult {
         match try!(self.expand(scope)) {
@@ -133,6 +143,9 @@ impl Expr {
                 "eval" => {
                     self.eval_call_builtin_eval(scope)
                 },
+                "gensym" => {
+                    self.eval_call_builtin_gensym()
+                }
                 _ => {
                     self.eval_call_custom(scope)
                 },
@@ -362,6 +375,22 @@ impl Expr {
         if let Expr::Call { ref args, .. } = *self {
             if args.len() == 1 {
                 args[0].eval(scope).and_then(|e| e.eval(scope))
+            } else {
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
+            }
+        } else {
+            Err(DispatchError(self.clone()))
+        }
+    }
+
+    fn eval_call_builtin_gensym(&self) -> EvalResult {
+        if let Expr::Call { ref args, .. } = *self {
+            if args.len() == 1 {
+                if let Expr::String(ref s) = args[0] {
+                    Ok(Expr::Symbol(format!("{}{}", s, next_id())))
+                } else {
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
+                }
             } else {
                 Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
