@@ -50,8 +50,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
     }
 
     fn read(&mut self) -> Option<LexerResult> {
-        self.consume_whitespaces();
-        self.consume_comments();
+        self.consume_comments_and_whitespaces();
         if self.is_finished {
             None
         } else {
@@ -262,7 +261,8 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         }
     }
 
-    fn consume_comments(&mut self) {
+    fn consume_comments_and_whitespaces(&mut self) {
+        self.consume_whitespaces();
         while Some(';') == self.char {
             while let Some(c) = self.char {
                 if c == '\n' {
