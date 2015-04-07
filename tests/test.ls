@@ -25,9 +25,9 @@
 (= (m 3) 4)
 (= (f 3) 4)
 
-(def when
-    (macro [test body]
-        '(if ~test ~body nil)))
+(def when                           ;; comments
+    (macro [test body]              ;; comments
+        '(if ~test ~body nil)))     ;; comments
 
 (when (> a 10)
     (+ a b))

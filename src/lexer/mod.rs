@@ -51,6 +51,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
 
     fn read(&mut self) -> Option<LexerResult> {
         self.consume_whitespaces();
+        self.consume_comments();
         if self.is_finished {
             None
         } else {
@@ -135,12 +136,16 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         let mut symbol = String::new();
 
         while let Some(c) = self.char {
-            if c == ')' ||
-               c == ']' ||
-               c.is_whitespace() {
-                break
-            } else {
-                symbol.push(c)
+            match c {
+                '(' | ')' | '[' | ']' | ';' => {
+                    break
+                },
+                c if c.is_whitespace() => {
+                    break
+                },
+                _ => {
+                    symbol.push(c)
+                }
             }
             self.bump();
         }
@@ -153,12 +158,16 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         let mut keyword = String::new();
 
         while let Some(c) = self.char {
-            if c == ')' ||
-               c == ']' ||
-               c.is_whitespace() {
-                break
-            } else {
-                keyword.push(c)
+            match c {
+                '(' | ')' | '[' | ']' | ';' => {
+                    break
+                },
+                c if c.is_whitespace() => {
+                    break
+                },
+                _ => {
+                    keyword.push(c)
+                }
             }
             self.bump();
         }
@@ -203,7 +212,7 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                         }
                     }
                 },
-                '(' | ')' | '[' | ']' => {
+                '(' | ')' | '[' | ']' | ';' => {
                     break
                 },
                 c if c.is_whitespace() => {
@@ -250,6 +259,19 @@ impl<I: Iterator<Item=char>> Lexer<I> {
             } else {
                 break
             }
+        }
+    }
+
+    fn consume_comments(&mut self) {
+        while Some(';') == self.char {
+            while let Some(c) = self.char {
+                if c == '\n' {
+                    break
+                } else {
+                    self.bump()
+                }
+            }
+            self.consume_whitespaces()
         }
     }
 
