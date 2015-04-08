@@ -83,11 +83,14 @@ fn test_read_dense_expression() {
 }
 
 #[test]
-fn test_read_sparse_expression() {
-    let lexer = Lexer::new(" ( \n def a\n1)   \n".chars());
+fn test_read_sparse_expression_with_comments() {
+    let lexer = Lexer::new(" ( ;; comments\n \
+                            def a ;; comments \n\
+                            1) ;; comments \n\
+                            ;; comments   \n".chars());
     let expected_result = vec![Ok(t_list_start!(span!(1, 2, 1, 3))),
                                Ok(t_symbol!("def", span!(2, 3, 2, 6))),
-                               Ok(t_symbol!("a", span!(2, 7, 3, 1))),
+                               Ok(t_symbol!("a", span!(2, 7, 2, 8))),
                                Ok(t_number!(1_f64, span!(3, 2, 3, 3))),
                                Ok(t_list_end!(span!(3, 3, 3, 4)))];
     assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
