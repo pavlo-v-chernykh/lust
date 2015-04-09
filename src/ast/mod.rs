@@ -18,6 +18,10 @@ pub enum Expr {
     Keyword(String),
     List(Vec<Expr>),
     Vec(Vec<Expr>),
+    Let {
+        bindings: Vec<Expr>,
+        body: Vec<Expr>,
+    },
     Fn {
         params: Vec<Expr>,
         body: Vec<Expr>,
@@ -54,14 +58,17 @@ impl Expr {
                      .map(|e| Ok(e.clone()))
                      .unwrap_or_else(|| Err(ResolveError(name.clone())))
             },
-            def @ Expr::Def { .. } => {
-                def.eval_def(scope)
+            def_expr @ Expr::Def { .. } => {
+                def_expr.eval_def(scope)
             },
-            call @ Expr::Call { .. } => {
-                call.eval_call(scope)
-            }
-            other => {
-                Ok(other)
+            call_expr @ Expr::Call { .. } => {
+                call_expr.eval_call(scope)
+            },
+            let_expr @ Expr::Let { .. } => {
+                let_expr.eval_let(scope)
+            },
+            other_expr => {
+                Ok(other_expr)
             },
         }
     }
@@ -99,6 +106,25 @@ impl Expr {
             let e = try!(expr.eval(scope));
             scope.insert(sym.clone(), e.clone());
             Ok(e)
+        } else {
+            Err(DispatchError(self.clone()))
+        }
+    }
+
+    fn eval_let(&self, scope: &mut Scope) -> EvalResult {
+        if let Expr::Let { ref bindings, ref body } = *self {
+            let ref mut let_scope = Scope::new();
+            for c in bindings.chunks(2) {
+                if let (Some(&Expr::Symbol(ref s)), Some(be)) = (c.first(), c.last()) {
+                    let_scope.insert(s.clone(), try!(be.eval(scope)));
+                }
+            }
+            let_scope.link(scope);
+            let mut result = e_list![];
+            for e in body {
+                result = try!(e.eval(let_scope));
+            }
+            Ok(result)
         } else {
             Err(DispatchError(self.clone()))
         }
@@ -145,7 +171,7 @@ impl Expr {
                 },
                 "gensym" => {
                     self.eval_call_builtin_gensym()
-                }
+                },
                 _ => {
                     self.eval_call_custom(scope)
                 },
@@ -485,6 +511,9 @@ impl Expr {
                         "unquote-splicing" => {
                             return self.expand_unquote_splicing(scope)
                         },
+                        "let" => {
+                            return self.expand_let(scope)
+                        },
                         _ => {
                             return self.expand_call(scope)
                         }
@@ -627,6 +656,46 @@ impl Expr {
         }
     }
 
+    fn expand_let(&self, scope: &mut Scope) -> EvalResult {
+        if let Expr::List(ref l) = *self {
+            if l.len() >= 3 {
+                if let Expr::Vec(ref v) = l[1] {
+                    if v.len() % 2 == 0 {
+                        let mut let_bindings = vec![];
+                        for c in v.chunks(2) {
+                            if let Some(s @ &Expr::Symbol(_)) = c.first() {
+                                let_bindings.push(s.clone())
+                            } else {
+                                return Err(IncorrectTypeOfArgumentError(self.clone()))
+                            }
+                            if let Some(ref e) = c.last() {
+                                let_bindings.push(try!(e.expand(scope)))
+                            } else {
+                                return Err(IncorrectTypeOfArgumentError(self.clone()))
+                            }
+                        }
+                        let mut let_body = vec![];
+                        for be in &l[2..] {
+                            let_body.push(try!(be.expand(scope)))
+                        }
+                        Ok(Expr::Let {
+                            bindings: let_bindings,
+                            body: let_body,
+                        })
+                    } else {
+                        Err(IncorrectNumberOfArgumentsError(self.clone()))
+                    }
+                } else {
+                    Err(IncorrectTypeOfArgumentError(self.clone()))
+                }
+            } else {
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
+            }
+        } else {
+            Err(DispatchError(self.clone()))
+        }
+    }
+
     fn expand_call(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
             if let Expr::Symbol(ref name) = l[0] {
@@ -726,6 +795,9 @@ impl fmt::Display for Expr {
             },
             Expr::Def { ref sym, ref expr } => {
                 write!(f, "(def {} {})", sym, expr)
+            },
+            Expr::Let { ref bindings, ref body } => {
+                write!(f, "(let [{}] {})", format_vec(bindings), format_vec(body))
             },
             Expr::Fn { ref params, ref body } => {
                 write!(f, "(fn [{}] {})", format_vec(params), format_vec(body))

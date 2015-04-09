@@ -25,6 +25,9 @@
 (= (m 3) 4)
 (= (f 3) 4)
 
+(let [c (+ a b) d 80]
+    (+ a b c d))
+
 (def when                           ;; comments
     (macro [test body]              ;; comments
         '(if ~test ~body nil)))     ;; comments
