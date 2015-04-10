@@ -117,6 +117,22 @@ fn test_expand_unquote_splicing() {
 }
 
 #[test]
+fn test_expand_let() {
+    let ref mut scope = Scope::new_std();
+    let n = e_list![e_symbol!["let"], e_vec![e_symbol!["a"], e_list![e_symbol!["+"],
+                                                                     e_number![1.],
+                                                                     e_number![2.]],
+                                             e_symbol!["b"], e_list![e_symbol!["+"],
+                                                                     e_symbol!["a"],
+                                                                     e_number![3.]]],
+                                      e_list![e_symbol!["+"], e_symbol!["a"], e_symbol!["b"]]];
+    let expected_result = e_let![[e_symbol!["a"], e_call!["+", e_number![1.], e_number![2.]],
+                                  e_symbol!["b"], e_call!["+", e_symbol!["a"], e_number![3.]]],
+                                 e_call!["+", e_symbol!["a"], e_symbol!["b"]]];
+    assert_eq![expected_result, n.expand(scope).ok().unwrap()];
+}
+
+#[test]
 fn test_eval_number_to_itself() {
     let num = 10_f64;
     let ref mut scope = Scope::new();

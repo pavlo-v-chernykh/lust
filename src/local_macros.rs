@@ -98,8 +98,15 @@ macro_rules! e_macro {
 }
 
 macro_rules! e_call {
-    ($name:expr, $($arg:expr), *) => (::ast::Expr::Call {
+    ($name:expr, $($arg:expr),*) => (::ast::Expr::Call {
         name: $name.to_string(),
-        args: vec![$($arg),*]
+        args: vec![$($arg),*],
+    })
+}
+
+macro_rules! e_let {
+    ([$($s:expr, $e:expr),*], $($body:expr),*) => (::ast::Expr::Let {
+        bindings: vec![$($s, $e),*],
+        body: vec![$($body),*],
     })
 }
