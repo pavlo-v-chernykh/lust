@@ -202,6 +202,15 @@ fn test_eval_def_special_form() {
 }
 
 #[test]
+fn test_eval_let_special_form() {
+    let ref mut scope = Scope::new_std();
+    let let_expr = e_let![[e_symbol!["a"], e_call!["+", e_number![1.], e_number![2.]],
+                           e_symbol!["b"], e_call!["+", e_symbol!["a"], e_number![3.]]],
+                          e_call!["+", e_symbol!["a"], e_symbol!["b"]]];
+    assert_eq!(e_number![9.], let_expr.eval(scope).ok().unwrap());
+}
+
+#[test]
 fn test_eval_fn_special_form_and_call_defined_function() {
     let ref mut scope = Scope::new();
     let expr = &e_def!["add-skip-and-sub",

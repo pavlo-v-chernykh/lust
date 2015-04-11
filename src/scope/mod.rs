@@ -32,10 +32,6 @@ impl<'a> Scope<'a> {
         scope
     }
 
-    pub fn link(&mut self, parent: &'a Scope<'a>) {
-        self.parent = Some(parent)
-    }
-
     pub fn get(&self, s: &String) -> Option<&Expr> {
         let mut scope = self;
         loop {

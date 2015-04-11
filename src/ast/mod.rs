@@ -113,13 +113,13 @@ impl Expr {
 
     fn eval_let(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::Let { ref bindings, ref body } = *self {
-            let ref mut let_scope = Scope::new();
+            let ref mut let_scope = Scope::new_chained(scope);
             for c in bindings.chunks(2) {
                 if let (Some(&Expr::Symbol(ref s)), Some(be)) = (c.first(), c.last()) {
-                    let_scope.insert(s.clone(), try!(be.eval(scope)));
+                    let evaled_be = try!(be.eval(let_scope));
+                    let_scope.insert(s.clone(), evaled_be);
                 }
             }
-            let_scope.link(scope);
             let mut result = e_list![];
             for e in body {
                 result = try!(e.eval(let_scope));
