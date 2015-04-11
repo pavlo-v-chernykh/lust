@@ -251,27 +251,25 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         Some(Ok(t_string!(res, span!(line, col, self.line, self.col))))
     }
 
-    fn consume_whitespaces(&mut self) {
-        while let Some(c) = self.char {
-            if c.is_whitespace() {
-                self.bump()
-            } else {
-                break
-            }
-        }
-    }
-
     fn consume_comments_and_whitespaces(&mut self) {
-        self.consume_whitespaces();
-        while Some(';') == self.char {
-            while let Some(c) = self.char {
-                if c == '\n' {
-                    break
-                } else {
+        while let Some(c) = self.char {
+            match c {
+                ';' => {
+                    while let Some(c) = self.char {
+                        if c == '\n' {
+                            break
+                        } else {
+                            self.bump()
+                        }
+                    }
+                },
+                c if c.is_whitespace() => {
                     self.bump()
+                },
+                _ => {
+                    break
                 }
             }
-            self.consume_whitespaces()
         }
     }
 
