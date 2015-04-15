@@ -1,7 +1,7 @@
 use ::scope::Scope;
 use ::ast::Expr;
 
-struct Namespace<'a> {
+pub struct Namespace<'a> {
     name: String,
     mappings: Scope<'a>,
 }
