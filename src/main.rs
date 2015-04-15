@@ -23,7 +23,7 @@ macro_rules! try_ok {
 }
 
 macro_rules! is_file {
-    ($e:expr) => ($e.map(|s| s.is_file()).unwrap_or(false))
+    ($md:expr) => ($md.map(|s| s.is_file()).unwrap_or(false))
 }
 
 macro_rules! is_file_exists {
