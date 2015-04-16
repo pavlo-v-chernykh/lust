@@ -15,7 +15,10 @@ macro_rules! e_string {
 
 #[macro_export]
 macro_rules! e_symbol {
-    ($name:expr) => ($crate::Expr::Symbol { name: $name.to_string() })
+    ($name:expr) => ($crate::Expr::Symbol {
+        ns: "".to_string(),
+        name: $name.to_string(),
+    })
 }
 
 #[macro_export]

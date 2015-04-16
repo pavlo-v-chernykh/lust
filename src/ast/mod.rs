@@ -15,6 +15,7 @@ pub enum Expr {
     Bool(bool),
     String(String),
     Symbol {
+        ns: String,
         name: String,
     },
     Keyword(String),
@@ -55,7 +56,7 @@ fn next_id() -> usize {
 impl Expr {
     pub fn eval(&self, scope: &mut Scope) -> EvalResult {
         match try!(self.expand(scope)) {
-            Expr::Symbol { ref name } => {
+            Expr::Symbol { ref name, .. } => {
                 scope.get(name)
                      .map(|e| Ok(e.clone()))
                      .unwrap_or_else(|| Err(ResolveError(name.clone())))
@@ -117,7 +118,7 @@ impl Expr {
         if let Expr::Let { ref bindings, ref body } = *self {
             let ref mut let_scope = Scope::new_chained(scope);
             for c in bindings.chunks(2) {
-                if let (Some(&Expr::Symbol { ref name }), Some(be)) = (c.first(), c.last()) {
+                if let (Some(&Expr::Symbol { ref name, .. }), Some(be)) = (c.first(), c.last()) {
                     let evaled_be = try!(be.eval(let_scope));
                     let_scope.insert(name.clone(), evaled_be);
                 }
@@ -445,7 +446,7 @@ impl Expr {
 
                     let ref mut fn_scope = Scope::new_chained(&scope);
                     for (p, a) in params.iter().zip(e_args.iter()) {
-                        if let &Expr::Symbol { ref name } = p {
+                        if let &Expr::Symbol { ref name, .. } = p {
                             fn_scope.insert(name.clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
@@ -467,7 +468,7 @@ impl Expr {
 
                     let ref mut fn_scope = Scope::new_chained(&scope);
                     for (p, a) in params.iter().zip(args.iter()) {
-                        if let Expr::Symbol { ref name } = *p {
+                        if let Expr::Symbol { ref name, .. } = *p {
                             fn_scope.insert(name.clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
@@ -493,7 +494,7 @@ impl Expr {
     fn expand(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
             if l.len() > 0 {
-                if let Expr::Symbol { ref name } = l[0] {
+                if let Expr::Symbol { ref name, .. } = l[0] {
                     match &name[..] {
                         "def" => {
                             return self.expand_def(scope)
@@ -552,7 +553,7 @@ impl Expr {
     fn expand_def(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
             if l.len() == 3 {
-                if let Expr::Symbol { ref name } = l[1] {
+                if let Expr::Symbol { ref name, .. } = l[1] {
                     Ok(Expr::Def {
                         sym: name.clone(),
                         expr: Box::new(try!(l[2].expand(scope))),
@@ -700,7 +701,7 @@ impl Expr {
 
     fn expand_call(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::List(ref l) = *self {
-            if let Expr::Symbol { ref name } = l[0] {
+            if let Expr::Symbol { ref name, .. } = l[0] {
                 let mut args = vec![];
                 for a in &l[1..] {
                     args.push(try!(a.expand(scope)))
@@ -791,7 +792,7 @@ impl fmt::Display for Expr {
             Expr::Bool(b) => {
                 write!(f, "{}", b)
             },
-            Expr::Symbol { ref name } => {
+            Expr::Symbol { ref name, .. } => {
                 write!(f, "{}", name)
             },
             Expr::Keyword(ref s) => {
