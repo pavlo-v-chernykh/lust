@@ -62,9 +62,13 @@ macro_rules! e_string {
 
 macro_rules! e_symbol {
     ($name:expr) => (::ast::Expr::Symbol {
-        ns: "".to_string(),
+        ns: None,
         name: $name.to_string(),
-    })
+    });
+    ($ns:expr, $name:expr) => ($crate::Expr::Symbol {
+        ns: Some($ns.to_string()),
+        name: $name.to_string(),
+    });
 }
 
 macro_rules! e_keyword {
