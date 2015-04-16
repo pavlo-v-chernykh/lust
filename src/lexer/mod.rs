@@ -132,12 +132,17 @@ impl<I: Iterator<Item=char>> Lexer<I> {
 
     fn read_symbol(&mut self) -> Option<LexerResult> {
         let (line, col) = (self.line, self.col);
+        let mut ns = None;
         let mut symbol = String::new();
 
         while let Some(c) = self.char {
             match c {
                 '(' | ')' | '[' | ']' | ';' => {
                     break
+                },
+                '/' if symbol.len() > 0 => {
+                    ns = Some(symbol);
+                    symbol = String::new();
                 },
                 c if c.is_whitespace() => {
                     break
@@ -149,7 +154,12 @@ impl<I: Iterator<Item=char>> Lexer<I> {
             self.bump();
         }
 
-        Some(Ok(t_symbol!(symbol, span!(line, col, self.line, self.col))))
+        let span = span!(line, col, self.line, self.col);
+        if ns.is_some() {
+            Some(Ok(t_symbol!(ns.as_ref().unwrap(), symbol, span)))
+        } else {
+            Some(Ok(t_symbol!(symbol, span)))
+        }
     }
 
     fn read_keyword(&mut self) -> Option<LexerResult> {

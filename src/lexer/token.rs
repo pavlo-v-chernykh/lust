@@ -53,8 +53,9 @@ pub enum Token {
         val: String,
     },
     Symbol {
+        ns: Option<String>,
+        name: String,
         span: Span,
-        val: String,
     },
     Keyword {
         span: Span,
@@ -92,8 +93,12 @@ impl fmt::Display for Token {
             Token::String { ref val, ref span } => {
                 write!(f, r#"'String "{}"' at {}"#, val, span)
             },
-            Token::Symbol { ref val, ref span } => {
-                write!(f, "'Symbol {}' at {}", val, span)
+            Token::Symbol { ref ns, ref name, ref span } => {
+                if ns.is_some() {
+                    write!(f, "'Symbol {}/{}' at {}", ns.as_ref().unwrap(), name, span)
+                } else {
+                    write!(f, "'Symbol {}' at {}", name, span)
+                }
             },
             Token::Keyword { ref val, ref span } => {
                 write!(f, "'Keyword {}' at {}", val, span)

@@ -50,8 +50,8 @@ impl<I: Iterator<Item=char>> Parser<I> {
             Some(Ok(Token::String { ref val, .. })) => {
                 Ok(Expr::String(val.clone()))
             },
-            Some(Ok(Token::Symbol { ref val, .. })) => {
-                Ok(e_symbol!(val.clone()))
+            Some(Ok(Token::Symbol { ref ns, ref name, .. })) => {
+                Ok(Expr::Symbol { ns: ns.clone(), name: name.clone() })
             },
             Some(Ok(Token::Keyword { ref val, .. })) => {
                 Ok(Expr::Keyword(val.clone()))

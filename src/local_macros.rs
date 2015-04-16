@@ -7,7 +7,16 @@ macro_rules! t_string {
 }
 
 macro_rules! t_symbol {
-    ($val:expr, $span:expr) => (::lexer::Token::Symbol { val: $val.to_string(), span: $span, });
+    ($name:expr, $span:expr) => (::lexer::Token::Symbol {
+        ns: None,
+        name: $name.to_string(),
+        span: $span,
+    });
+    ($ns:expr, $name:expr, $span:expr) => (::lexer::Token::Symbol {
+        ns: Some($ns.to_string()),
+        name: $name.to_string(),
+        span: $span,
+    });
 }
 
 macro_rules! t_keyword {

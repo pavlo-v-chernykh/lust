@@ -15,7 +15,7 @@ pub enum Expr {
     Bool(bool),
     String(String),
     Symbol {
-        ns: String,
+        ns: Option<String>,
         name: String,
     },
     Keyword(String),
