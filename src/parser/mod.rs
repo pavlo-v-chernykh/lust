@@ -51,7 +51,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
                 Ok(Expr::String(val.clone()))
             },
             Some(Ok(Token::Symbol { ref val, .. })) => {
-                Ok(Expr::Symbol(val.clone()))
+                Ok(e_symbol!(val.clone()))
             },
             Some(Ok(Token::Keyword { ref val, .. })) => {
                 Ok(Expr::Keyword(val.clone()))

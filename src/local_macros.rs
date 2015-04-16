@@ -61,7 +61,7 @@ macro_rules! e_string {
 }
 
 macro_rules! e_symbol {
-    ($e:expr) => (::ast::Expr::Symbol($e.to_string()))
+    ($name:expr) => (::ast::Expr::Symbol { name: $name.to_string() })
 }
 
 macro_rules! e_keyword {
