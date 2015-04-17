@@ -56,10 +56,8 @@ fn next_id() -> usize {
 impl Expr {
     pub fn eval(&self, scope: &mut Scope) -> EvalResult {
         match try!(self.expand(scope)) {
-            Expr::Symbol { ref name, .. } => {
-                scope.get(name)
-                     .map(|e| Ok(e.clone()))
-                     .unwrap_or_else(|| Err(ResolveError(name.clone())))
+            sym_expr @ Expr::Symbol { .. } => {
+                sym_expr.eval_symbol(scope)
             },
             def_expr @ Expr::Def { .. } => {
                 def_expr.eval_def(scope)
@@ -73,6 +71,16 @@ impl Expr {
             other_expr => {
                 Ok(other_expr)
             },
+        }
+    }
+
+    fn eval_symbol(&self, scope: &mut Scope) -> EvalResult {
+        if let Expr::Symbol { ref name , .. } = *self {
+            scope.get(name)
+                     .map(|e| Ok(e.clone()))
+                     .unwrap_or_else(|| Err(ResolveError(name.clone())))
+        } else {
+            Err(DispatchError(self.clone()))
         }
     }
 
@@ -466,10 +474,10 @@ impl Expr {
                         return Err(IncorrectNumberOfArgumentsError(self.clone()))
                     }
 
-                    let ref mut fn_scope = Scope::new_chained(&scope);
+                    let ref mut macro_scope = Scope::new_chained(&scope);
                     for (p, a) in params.iter().zip(args.iter()) {
                         if let Expr::Symbol { ref name, .. } = *p {
-                            fn_scope.insert(name.clone(), a.clone());
+                            macro_scope.insert(name.clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
                         }
@@ -477,10 +485,10 @@ impl Expr {
 
                     let mut result = e_list![];
                     for e in body {
-                        result = try!(e.eval(fn_scope));
+                        result = try!(e.eval(macro_scope));
                     }
 
-                    Ok(try!(result.expand(fn_scope)))
+                    Ok(try!(result.expand(macro_scope)))
                 },
                 _ => {
                     Err(IncorrectTypeOfArgumentError(self.clone()))
