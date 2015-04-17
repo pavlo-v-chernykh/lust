@@ -45,6 +45,28 @@ fn test_read_symbol() {
 }
 
 #[test]
+fn test_read_ns_qualified_symbol() {
+    let ns_name = "my-ns";
+    let sym_name = "my-symbol";
+    let ns_quilified_sym_name = format!("{}/{}", ns_name, sym_name);
+    let mut lexer = Lexer::new(ns_quilified_sym_name.chars());
+    let t_sym = t_symbol!(ns_name, sym_name, span!(1, 1, 1, 16));
+    assert_eq!(Some(Ok(t_sym)), lexer.next());
+    assert_eq!(None, lexer.next());
+}
+
+#[test]
+fn test_read_ns_qualified_div() {
+    let ns_name = "my-ns";
+    let sym_name = "/";
+    let ns_quilified_sym_name = format!("{}/{}", ns_name, sym_name);
+    let mut lexer = Lexer::new(ns_quilified_sym_name.chars());
+    let t_sym = t_symbol!(ns_name, sym_name, span!(1, 1, 1, 8));
+    assert_eq!(Some(Ok(t_sym)), lexer.next());
+    assert_eq!(None, lexer.next());
+}
+
+#[test]
 fn test_read_incorrect_symbol_starting_with_digit() {
     let sym_name = "6-my-incorrect-symbol";
     let mut lexer = Lexer::new(sym_name.chars());

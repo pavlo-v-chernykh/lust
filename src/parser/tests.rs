@@ -25,6 +25,16 @@ fn test_parse_symbol() {
 }
 
 #[test]
+fn test_parse_ns_qualified_symbol() {
+    let ns = "my-ns";
+    let s = "symbol";
+    let ns_qualified_symbol = format!("{}/{}", ns, s);
+    let mut parser = Parser::new(ns_qualified_symbol.chars());
+    assert_eq!(e_symbol![ns, s],
+               parser.next().unwrap().ok().unwrap())
+}
+
+#[test]
 fn test_parse_keyword() {
     let k = ":keyword";
     let mut parser = Parser::new(k.chars());
