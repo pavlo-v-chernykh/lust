@@ -77,8 +77,8 @@ impl Expr {
     fn eval_symbol(&self, scope: &mut Scope) -> EvalResult {
         if let Expr::Symbol { ref name , .. } = *self {
             scope.get(name)
-                     .map(|e| Ok(e.clone()))
-                     .unwrap_or_else(|| Err(ResolveError(name.clone())))
+                 .map(|e| Ok(e.clone()))
+                 .unwrap_or_else(|| Err(ResolveError(name.clone())))
         } else {
             Err(DispatchError(self.clone()))
         }
@@ -742,10 +742,10 @@ impl Expr {
         }
     }
 
-    fn is_symbol(&self, sym: &str) -> bool {
+    fn is_symbol(&self, name: &str) -> bool {
         match *self {
-            Expr::Symbol { ref name, .. } if &name[..] == sym => {
-                true
+            Expr::Symbol { name: ref n, .. } => {
+                &n[..] == name
             },
             _ => {
                 false
