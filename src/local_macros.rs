@@ -90,7 +90,14 @@ macro_rules! e_symbol {
 }
 
 macro_rules! e_keyword {
-    ($e:expr) => (::ast::Expr::Keyword($e.to_string()))
+    ($name:expr) => (::ast::Expr::Keyword {
+        ns: None,
+        name: $name.to_string(),
+    });
+    ($ns:expr, $name:expr) => (::ast::Expr::Keyword {
+        ns: Some($ns.to_string()),
+        name: $name.to_string(),
+    });
 }
 
 macro_rules! e_list {

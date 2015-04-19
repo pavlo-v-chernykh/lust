@@ -155,21 +155,30 @@ impl<I: Iterator<Item=char>> Lexer<I> {
         }
 
         let span = span!(line, col, self.line, self.col);
-        if ns.is_some() {
-            Some(Ok(t_symbol!(ns.as_ref().unwrap(), symbol, span)))
-        } else {
-            Some(Ok(t_symbol!(symbol, span)))
+        match ns {
+            Some(ns) => {
+                Some(Ok(t_symbol!(ns, symbol, span)))
+            },
+            None => {
+                Some(Ok(t_symbol!(symbol, span)))
+            },
         }
     }
 
     fn read_keyword(&mut self) -> Option<LexerResult> {
         let (line, col) = (self.line, self.col);
+        let mut ns = None;
         let mut keyword = String::new();
 
+        self.bump();
         while let Some(c) = self.char {
             match c {
                 '(' | ')' | '[' | ']' | ';' => {
                     break
+                },
+                '/' if keyword.len() > 0 => {
+                    ns = Some(keyword);
+                    keyword = String::new();
                 },
                 c if c.is_whitespace() => {
                     break
@@ -180,8 +189,14 @@ impl<I: Iterator<Item=char>> Lexer<I> {
             }
             self.bump();
         }
-
-        Some(Ok(t_keyword!(keyword, span!(line, col, self.line, self.col))))
+        match ns {
+            Some(ns) => {
+                Some(Ok(t_keyword!(ns, keyword, span!(line, col, self.line, self.col))))
+            },
+            None => {
+                Some(Ok(t_keyword!(keyword, span!(line, col, self.line, self.col))))
+            }
+        }
     }
 
     fn read_number(&mut self) -> Option<LexerResult> {

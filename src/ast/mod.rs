@@ -18,7 +18,10 @@ pub enum Expr {
         ns: Option<String>,
         name: String,
     },
-    Keyword(String),
+    Keyword {
+        ns: Option<String>,
+        name: String,
+    },
     List(Vec<Expr>),
     Vec(Vec<Expr>),
     Let {
@@ -800,11 +803,25 @@ impl fmt::Display for Expr {
             Expr::Bool(b) => {
                 write!(f, "{}", b)
             },
-            Expr::Symbol { ref name, .. } => {
-                write!(f, "{}", name)
+            Expr::Symbol { ref ns, ref name, .. } => {
+                match *ns {
+                    Some(ref ns) => {
+                        write!(f, "{}/{}", ns, name)
+                    },
+                    None => {
+                        write!(f, "{}", name)
+                    },
+                }
             },
-            Expr::Keyword(ref s) => {
-                write!(f, "{}", s)
+            Expr::Keyword { ref ns, ref name, .. } => {
+                match *ns {
+                    Some(ref ns) => {
+                        write!(f, ":{}/{}", ns, name)
+                    },
+                    None => {
+                        write!(f, ":{}", name)
+                    },
+                }
             },
             Expr::String(ref s) => {
                 write!(f, r#""{}""#, s)

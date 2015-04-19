@@ -36,9 +36,8 @@ fn test_parse_ns_qualified_symbol() {
 
 #[test]
 fn test_parse_keyword() {
-    let k = ":keyword";
-    let mut parser = Parser::new(k.chars());
-    assert_eq!(e_keyword![k],
+    let mut parser = Parser::new(":keyword".chars());
+    assert_eq!(e_keyword!["keyword"],
                parser.next().unwrap().ok().unwrap())
 }
 
@@ -54,9 +53,9 @@ fn test_parse_list_expression() {
 
 #[test]
 fn test_parse_vec_expression() {
-    let expected_result = e_vec![e_keyword!(":1"),
-                                 e_keyword!(":2"),
-                                 e_keyword!(":3")];
+    let expected_result = e_vec![e_keyword!("1"),
+                                 e_keyword!("2"),
+                                 e_keyword!("3")];
     let mut parser = Parser::new("[:1 :2 :3]".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);
@@ -81,7 +80,7 @@ fn test_parse_nested_vec_expressions() {
                                   e_list![e_symbol!("+"),
                                           e_number!(1_f64),
                                           e_number!(2_f64)],
-                                  e_keyword![":k"]];
+                                  e_keyword!["k"]];
     let mut parser = Parser::new("[1 2 (+ 1 2) :k]".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);
