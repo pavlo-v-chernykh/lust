@@ -76,6 +76,20 @@ fn test_read_incorrect_symbol_starting_with_digit() {
 }
 
 #[test]
+fn test_read_keyword() {
+    let mut lexer = Lexer::new(":my-keyword".chars());
+    assert_eq!(Some(Ok(t_keyword!("my-keyword", span!(1, 1, 1, 12)))), lexer.next());
+    assert_eq!(None, lexer.next());
+}
+
+#[test]
+fn test_read_ns_qualified_keyword() {
+    let mut lexer = Lexer::new(":my-ns/my-keyword".chars());
+    assert_eq!(Some(Ok(t_keyword!("my-ns", "my-keyword", span!(1, 1, 1, 18)))), lexer.next());
+    assert_eq!(None, lexer.next());
+}
+
+#[test]
 fn test_read_explicitly_positive_number() {
     let mut lexer = Lexer::new("+1".chars());
     let t_num = t_number!(1_f64, span!(1, 1, 1, 3));

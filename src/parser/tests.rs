@@ -42,6 +42,13 @@ fn test_parse_keyword() {
 }
 
 #[test]
+fn test_parse_ns_qualified_keyword() {
+    let mut parser = Parser::new(":my-ns/keyword".chars());
+    assert_eq!(e_keyword!["my-ns", "keyword"],
+               parser.next().unwrap().ok().unwrap())
+}
+
+#[test]
 fn test_parse_list_expression() {
     let expected_result = e_list![e_symbol!("def"),
                                   e_symbol!("a"),
