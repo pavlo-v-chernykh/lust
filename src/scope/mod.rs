@@ -7,7 +7,7 @@ use ast::Expr;
 #[derive(Debug)]
 pub struct Scope<'a> {
     env: HashMap<String, Expr>,
-    parent: Option<&'a Scope<'a>>
+    parent: Option<&'a Scope<'a>>,
 }
 
 impl<'a> Scope<'a> {

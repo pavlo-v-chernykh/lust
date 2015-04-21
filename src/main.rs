@@ -9,6 +9,7 @@ use std::fs::{File, metadata};
 use docopt::Docopt;
 use lust::Parser;
 use lust::Scope;
+use lust::State;
 
 macro_rules! try_ok {
     ($e:expr) => (match $e {
@@ -50,6 +51,7 @@ struct CliArgs {
 fn main() {
     let args = try_ok!(Docopt::new(USAGE).and_then(|d| d.decode::<CliArgs>()));
     let ref mut root_scope = Scope::new_std();
+    let ref mut state = State::new("user".to_string());
     let mut last_evaled = None;
 
     if let Some(ref flag_file) = args.flag_file {
