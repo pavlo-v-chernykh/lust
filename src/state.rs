@@ -37,7 +37,20 @@ impl<'s> State<'s> {
     }
 
     fn eval_symbol(&self, expr: &Expr) -> EvalResult {
-        Ok(expr.clone())
+        if let Expr::Symbol { ref ns, ref name , .. } = *expr {
+            let ns_name = ns.as_ref().unwrap_or(&self.default_ns);
+            match self.namespaces.get(ns_name) {
+                Some(scope) => {
+                    scope.get(name)
+                         .map_or(Err(ResolveError(name.clone())), |e| Ok(e.clone()))
+                },
+                None => {
+                    Err(ResolveError(ns_name.clone()))
+                }
+            }
+        } else {
+            Err(DispatchError(expr.clone()))
+        }
     }
 
     fn eval_def(&self, expr: &Expr) -> EvalResult {
