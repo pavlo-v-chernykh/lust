@@ -18,6 +18,12 @@ impl<'s> State<'s> {
         }
     }
 
+    pub fn new_chained(parent: &'s State<'s>) -> State<'s> {
+        let mut state = State::new(format!("{}_chained", parent.default_ns));
+        state.parent = Some(parent);
+        state
+    }
+
     pub fn insert(&mut self, ns: Option<String>, name: String, expr: Expr) -> Option<Expr> {
         self.namespaces
             .get_mut(ns.as_ref().unwrap_or(&self.default_ns))
