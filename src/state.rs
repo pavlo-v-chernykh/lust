@@ -6,6 +6,7 @@ use ast::EvalError::*;
 pub struct State<'s> {
     default_ns: String,
     namespaces: HashMap<String, Scope<'s>>,
+    parent: Option<&'s State<'s>>,
 }
 
 impl<'s> State<'s> {
@@ -13,7 +14,21 @@ impl<'s> State<'s> {
         State {
             default_ns: default,
             namespaces: HashMap::new(),
+            parent: None,
         }
+    }
+
+    pub fn insert(&mut self, ns: Option<String>, name: String, expr: Expr) -> Option<Expr> {
+        if let Some(ns) = ns {
+            if let Some(ns) = self.namespaces.get_mut(&ns) {
+                return ns.insert(name, expr)
+            }
+        } else {
+            if let Some(ns) = self.namespaces.get_mut(&self.default_ns) {
+                return ns.insert(name, expr)
+            }
+        }
+        None
     }
 
     pub fn eval(&self, expr: &Expr) -> EvalResult {
