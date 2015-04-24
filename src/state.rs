@@ -19,14 +19,9 @@ impl<'s> State<'s> {
     }
 
     pub fn insert(&mut self, ns: Option<String>, name: String, expr: Expr) -> Option<Expr> {
-        if let Some(ns) = ns {
-            if let Some(ns) = self.namespaces.get_mut(&ns) {
-                return ns.insert(name, expr)
-            }
-        } else {
-            if let Some(ns) = self.namespaces.get_mut(&self.default_ns) {
-                return ns.insert(name, expr)
-            }
+        let ns = ns.as_ref().unwrap_or(&self.default_ns);
+        if let Some(scope) = self.namespaces.get_mut(ns) {
+            return scope.insert(name, expr)
         }
         None
     }
