@@ -36,9 +36,9 @@ impl<'s> State<'s> {
         state
     }
 
-    pub fn insert(&mut self, ns: Option<String>, name: String, expr: Expr) -> Option<Expr> {
+    pub fn insert(&mut self, name: String, expr: Expr) -> Option<Expr> {
         self.namespaces
-            .get_mut(ns.as_ref().unwrap_or(&self.default))
+            .get_mut(&self.default)
             .and_then(|scope| scope.insert(name, expr))
     }
 

@@ -352,7 +352,7 @@ fn test_eval_quote_builtin_fn() {
 #[test]
 fn test_eval_unquote_builtin_fn() {
     let ref mut state = State::new("user".to_string());
-    state.insert(None, "a".to_string(), e_number![3.]);
+    state.insert("a".to_string(), e_number![3.]);
     let expr = e_call!["quote", e_list![e_symbol!["+"],
                                         e_call!["unquote", e_symbol!["a"]], e_number![1.]]];
     let expected_result = e_list![e_symbol!["+"], e_number![3.], e_number![1.]];
@@ -362,7 +362,7 @@ fn test_eval_unquote_builtin_fn() {
 #[test]
 fn test_eval_unquote_splicing_builtin_fn() {
     let ref mut state = State::new("user".to_string());
-    state.insert(None, "a".to_string(), e_list![e_number![1.], e_number![2.], e_number![3.]]);
+    state.insert("a".to_string(), e_list![e_number![1.], e_number![2.], e_number![3.]]);
     let expr = e_call!["quote", e_list![e_symbol!["+"],
                                         e_call!["unquote-splicing", e_symbol!["a"]],
                                         e_number![1.]]];

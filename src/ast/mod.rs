@@ -108,7 +108,7 @@ impl Expr {
     fn eval_def(&self, state: &mut State) -> EvalResult {
         if let Expr::Def { ref sym, ref expr } = *self {
             let e = try!(expr.eval(state));
-            state.insert(None, sym.clone(), e.clone());
+            state.insert(sym.clone(), e.clone());
             Ok(e)
         } else {
             Err(DispatchError(self.clone()))
@@ -121,7 +121,7 @@ impl Expr {
             for c in bindings.chunks(2) {
                 if let (Some(&Expr::Symbol { ref name, .. }), Some(be)) = (c.first(), c.last()) {
                     let evaled_be = try!(be.eval(let_state));
-                    let_state.insert(None, name.clone(), evaled_be);
+                    let_state.insert(name.clone(), evaled_be);
                 }
             }
             let mut result = e_list![];
@@ -448,7 +448,7 @@ impl Expr {
                     let ref mut fn_state = State::new_chained(&state);
                     for (p, a) in params.iter().zip(e_args.iter()) {
                         if let &Expr::Symbol { ref name, .. } = p {
-                            fn_state.insert(None, name.clone(), a.clone());
+                            fn_state.insert(name.clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
                         }
@@ -470,7 +470,7 @@ impl Expr {
                     let ref mut macro_state = State::new_chained(&state);
                     for (p, a) in params.iter().zip(args.iter()) {
                         if let Expr::Symbol { ref name, .. } = *p {
-                            macro_state.insert(None, name.clone(), a.clone());
+                            macro_state.insert(name.clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
                         }
