@@ -8,7 +8,6 @@ use std::path::Path;
 use std::fs::{File, metadata};
 use docopt::Docopt;
 use lust::Parser;
-use lust::Scope;
 use lust::State;
 
 macro_rules! try_ok {
@@ -50,7 +49,6 @@ struct CliArgs {
 #[cfg_attr(test, allow(dead_code))]
 fn main() {
     let args = try_ok!(Docopt::new(USAGE).and_then(|d| d.decode::<CliArgs>()));
-    let ref mut root_scope = Scope::new_std();
     let ref mut state = State::new("user".to_string());
     let mut last_evaled = None;
 
@@ -63,7 +61,7 @@ fn main() {
                 let ref mut buf = String::new();
                 try_ok!(file.read_to_string(buf));
                 for parsed_expr in Parser::new(buf.chars()) {
-                    last_evaled = Some(try_ok!(try_ok!(parsed_expr).eval(root_scope)));
+                    last_evaled = Some(try_ok!(try_ok!(parsed_expr).eval(state)));
                 }
             } else {
                 return println!("Whoops, error detected.\n\
@@ -79,7 +77,7 @@ fn main() {
 
     if let Some(ref arg_expr) = args.arg_expr {
         for parsed_expr in Parser::new(arg_expr.chars()) {
-            last_evaled = Some(try_ok!(try_ok!(parsed_expr).eval(root_scope)))
+            last_evaled = Some(try_ok!(try_ok!(parsed_expr).eval(state)))
         }
     }
 
@@ -96,7 +94,7 @@ fn main() {
                 for expr in Parser::new(buf.chars()) {
                     match expr {
                         Ok(parsed_expr) => {
-                            match parsed_expr.eval(root_scope) {
+                            match parsed_expr.eval(state) {
                                 Ok(res) => {
                                     println!("{}", res);
                                 },
