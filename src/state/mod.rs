@@ -9,6 +9,7 @@ pub struct State<'s> {
     default: String,
     namespaces: HashMap<String, HashMap<String, Expr>>,
     parent: Option<&'s State<'s>>,
+    id: usize,
 }
 
 impl<'s> State<'s> {
@@ -25,6 +26,7 @@ impl<'s> State<'s> {
             default: default,
             namespaces: namespaces,
             parent: None,
+            id: 0,
         }
     }
 
@@ -53,4 +55,11 @@ impl<'s> State<'s> {
             }
         }
     }
+
+    pub fn next_id(&mut self) -> usize {
+        let next = self.id;
+        self.id += 1;
+        next
+    }
+
 }

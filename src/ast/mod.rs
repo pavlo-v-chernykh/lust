@@ -46,16 +46,6 @@ pub enum Expr {
     },
 }
 
-static mut id: usize = 0;
-
-fn next_id() -> usize {
-    unsafe {
-        let next = id;
-        id += 1;
-        next
-    }
-}
-
 impl Expr {
     pub fn eval(&self, state: &mut State) -> EvalResult {
         match try!(self.expand(state)) {
@@ -184,7 +174,7 @@ impl Expr {
                     self.eval_call_builtin_eval(state)
                 },
                 "gensym" => {
-                    self.eval_call_builtin_gensym()
+                    self.eval_call_builtin_gensym(state)
                 },
                 _ => {
                     self.eval_call_custom(state)
@@ -423,11 +413,11 @@ impl Expr {
         }
     }
 
-    fn eval_call_builtin_gensym(&self) -> EvalResult {
+    fn eval_call_builtin_gensym(&self, state: &mut State) -> EvalResult {
         if let Expr::Call { ref args, .. } = *self {
             if args.len() == 1 {
                 if let Expr::String(ref s) = args[0] {
-                    Ok(e_symbol![format!("{}{}", s, next_id())])
+                    Ok(e_symbol![format!("{}{}", s, state.next_id())])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
