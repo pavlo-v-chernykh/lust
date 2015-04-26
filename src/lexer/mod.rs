@@ -121,6 +121,11 @@ impl<I: Iterator<Item=char>> Lexer<I> {
                         Some(Ok(t_unquote![span![line, col, line, col + 1]]))
                     }
                 },
+                '`' => {
+                    let (line, col) = (self.line, self.col);
+                    self.bump();
+                    Some(Ok(t_syntax_quote![span![line, col, line, col + 1]]))
+                },
                 _ => {
                     Some(self.error())
                 }

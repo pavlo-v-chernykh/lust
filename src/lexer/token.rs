@@ -83,6 +83,9 @@ pub enum Token {
     UnquoteSplicing {
         span: Span,
     },
+    SyntaxQuote {
+        span: Span,
+    },
 }
 
 impl fmt::Display for Token {
@@ -134,6 +137,9 @@ impl fmt::Display for Token {
             },
             Token::UnquoteSplicing { ref span } => {
                 write!(f, "'Unquote Splicing' at {}", span)
+            },
+            Token::SyntaxQuote { ref span } => {
+                write!(f, "'Syntax Quote' at {}", span)
             },
         }
     }

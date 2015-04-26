@@ -60,6 +60,10 @@ macro_rules! t_unquote_splicing {
     ($span:expr) => (::lexer::Token::UnquoteSplicing { span: $span });
 }
 
+macro_rules! t_syntax_quote {
+    ($span:expr) => (::lexer::Token::SyntaxQuote { span: $span });
+}
+
 macro_rules! span {
     ($start_line:expr, $start_col:expr, $end_line:expr, $end_col:expr) => (
         ::lexer::Span::new($start_line, $start_col, $end_line, $end_col);
