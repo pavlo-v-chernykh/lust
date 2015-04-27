@@ -271,3 +271,31 @@ fn test_read_unquoted_splicing_list() {
                                Ok(t_list_end![span![1, 4, 1, 5]])];
     assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
 }
+
+#[test]
+fn test_read_syntax_quoted_symbol() {
+    let lexer = Lexer::new("`a".chars());
+    let expected_result = vec![Ok(t_syntax_quote![span![1, 1, 1, 2]]),
+                               Ok(t_symbol!["a", span![1, 2, 1, 3]])];
+    assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+}
+
+#[test]
+fn test_read_syntax_quoted_number() {
+    let lexer = Lexer::new("`1".chars());
+    let expected_result = vec![Ok(t_syntax_quote![span![1, 1, 1, 2]]),
+                               Ok(t_number![1., span![1, 2, 1, 3]])];
+    assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+}
+
+#[test]
+fn test_read_syntax_quoted_list() {
+    let lexer = Lexer::new("`(+ a 1)".chars());
+    let expected_result = vec![Ok(t_syntax_quote![span![1, 1, 1, 2]]),
+                               Ok(t_list_start![span![1, 2, 1, 3]]),
+                               Ok(t_symbol!["+", span![1, 3, 1, 4]]),
+                               Ok(t_symbol!["a", span![1, 5, 1, 6]]),
+                               Ok(t_number![1., span![1, 7, 1, 8]]),
+                               Ok(t_list_end![span![1, 8, 1, 9]])];
+    assert_eq!(expected_result, lexer.collect::<Vec<LexerResult>>());
+}
