@@ -5,6 +5,21 @@ use std::collections::HashMap;
 use ast::Expr;
 
 #[derive(Debug)]
+struct Namespace {
+    mappings: HashMap<String, Expr>,
+    aliases: HashMap<String, (String, String)>,
+}
+
+impl Namespace {
+    fn new() -> Namespace {
+        Namespace {
+            mappings: HashMap::new(),
+            aliases: HashMap::new(),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct State<'s> {
     default: String,
     namespaces: HashMap<String, HashMap<String, Expr>>,
