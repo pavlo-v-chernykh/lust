@@ -123,3 +123,13 @@ fn test_parse_unquoted_splicing_list() {
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);
 }
+
+#[test]
+fn test_parse_syntax_quoted_list() {
+    let expected_result = e_list![e_symbol!["syntax-quote"],
+                                  e_list![e_symbol!["+"],
+                                          e_number![1.],
+                                          e_number![2.]]];
+    let mut parser = Parser::new("`(+ 1 2)".chars());
+    assert_eq!(expected_result, parser.next().unwrap().ok().unwrap());
+}
