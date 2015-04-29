@@ -164,6 +164,9 @@ impl Expr {
                 "quote" => {
                     self.eval_call_builtin_quote(state)
                 },
+                "syntax-quote" => {
+                    self.eval_call_builtin_syntax_quote(state)
+                },
                 "unquote" => {
                     self.eval_call_builtin_unquote(state)
                 },
@@ -366,6 +369,18 @@ impl Expr {
     }
 
     fn eval_call_builtin_quote(&self, state: &mut State) -> EvalResult {
+        if let Expr::Call { ref args, .. } = *self {
+            if args.len() == 1 {
+                args[0].eval_quoted(state)
+            } else {
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
+            }
+        } else {
+            Err(DispatchError(self.clone()))
+        }
+    }
+
+    fn eval_call_builtin_syntax_quote(&self, state: &mut State) -> EvalResult {
         if let Expr::Call { ref args, .. } = *self {
             if args.len() == 1 {
                 args[0].eval_quoted(state)

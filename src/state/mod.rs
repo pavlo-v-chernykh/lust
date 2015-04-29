@@ -4,10 +4,12 @@ mod tests;
 use std::collections::HashMap;
 use ast::Expr;
 
+type Alias = (String, String);
+
 #[derive(Debug)]
 struct Namespace {
     mappings: HashMap<String, Expr>,
-    aliases: HashMap<String, (String, String)>,
+    aliases: HashMap<String, Alias>,
 }
 
 impl Namespace {
@@ -17,19 +19,35 @@ impl Namespace {
             aliases: HashMap::new(),
         }
     }
+
+    fn get(&self, name: &String) -> Option<&Expr> {
+        self.mappings.get(name)
+    }
+
+    fn insert(&mut self, name: String, expr: Expr) -> Option<Expr> {
+        self.mappings.insert(name, expr)
+    }
+
+    fn get_alias(&self, alias: &String) -> Option<&Alias> {
+        self.aliases.get(alias)
+    }
+
+    fn insert_alias(&mut self, alias: String, ns: String, name: String) -> Option<Alias> {
+        self.aliases.insert(alias, (ns, name))
+    }
 }
 
 #[derive(Debug)]
 pub struct State<'s> {
     default: String,
-    namespaces: HashMap<String, HashMap<String, Expr>>,
+    namespaces: HashMap<String, Namespace>,
     parent: Option<&'s State<'s>>,
     id: usize,
 }
 
 impl<'s> State<'s> {
     pub fn new(default: String) -> State<'s> {
-        let mut default_ns = HashMap::new();
+        let mut default_ns = Namespace::new();
         default_ns.insert("nil".to_string(), e_list![]);
         default_ns.insert("true".to_string(), e_bool!(true));
         default_ns.insert("false".to_string(), e_bool!(false));
@@ -76,5 +94,4 @@ impl<'s> State<'s> {
         self.id += 1;
         next
     }
-
 }
