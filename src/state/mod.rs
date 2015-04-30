@@ -39,24 +39,24 @@ impl Namespace {
 
 #[derive(Debug)]
 pub struct State<'s> {
-    default: String,
+    current: String,
     namespaces: HashMap<String, Namespace>,
     parent: Option<&'s State<'s>>,
     id: usize,
 }
 
 impl<'s> State<'s> {
-    pub fn new(default: String) -> State<'s> {
-        let mut default_ns = Namespace::new();
-        default_ns.insert("nil".to_string(), e_list![]);
-        default_ns.insert("true".to_string(), e_bool!(true));
-        default_ns.insert("false".to_string(), e_bool!(false));
+    pub fn new(current: String) -> State<'s> {
+        let mut current_ns = Namespace::new();
+        current_ns.insert("nil".to_string(), e_list![]);
+        current_ns.insert("true".to_string(), e_bool!(true));
+        current_ns.insert("false".to_string(), e_bool!(false));
 
         let mut namespaces = HashMap::new();
-        namespaces.insert(default.clone(), default_ns);
+        namespaces.insert(current.clone(), current_ns);
 
         State {
-            default: default,
+            current: current,
             namespaces: namespaces,
             parent: None,
             id: 0,
@@ -64,14 +64,14 @@ impl<'s> State<'s> {
     }
 
     pub fn new_chained(parent: &'s State<'s>) -> State<'s> {
-        let mut state = State::new(format!("{}_chained", parent.default));
+        let mut state = State::new(format!("{}_chained", parent.current));
         state.parent = Some(parent);
         state
     }
 
     pub fn insert(&mut self, name: String, expr: Expr) -> Option<Expr> {
         self.namespaces
-            .get_mut(&self.default)
+            .get_mut(&self.current)
             .and_then(|scope| scope.insert(name, expr))
     }
 
@@ -79,7 +79,7 @@ impl<'s> State<'s> {
         let mut state = self;
         loop {
             let v = state.namespaces
-                         .get(ns.unwrap_or(&state.default))
+                         .get(ns.unwrap_or(&state.current))
                          .and_then(|scope| scope.get(name));
             if v.is_none() && state.parent.is_some() {
                 state = state.parent.unwrap();
@@ -87,6 +87,10 @@ impl<'s> State<'s> {
                 return v
             }
         }
+    }
+
+    pub fn get_current_ns_name(&self) -> &String {
+        &self.current
     }
 
     pub fn next_id(&mut self) -> usize {

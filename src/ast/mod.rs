@@ -524,6 +524,9 @@ impl Expr {
                         "quote" => {
                             return self.expand_quote(state)
                         },
+                        "syntax-quote" => {
+                            return self.expand_syntax_quote(state)
+                        },
                         "unquote" => {
                             return self.expand_unquote(state)
                         },
@@ -548,9 +551,7 @@ impl Expr {
     fn expand_quoted(&self, state: &mut State) -> EvalResult {
         match *self {
             Expr::List(ref l) if l.len() > 0 => {
-                if l[0].is_symbol("unquote") {
-                    self.expand(state)
-                } else if l[0].is_symbol("unquote-splicing") {
+                if l[0].is_symbol("unquote") || l[0].is_symbol("unquote-splicing") {
                     self.expand(state)
                 } else {
                     let mut v = vec![];
@@ -563,6 +564,17 @@ impl Expr {
             _ => {
                 self.expand(state)
             }
+        }
+    }
+
+    fn expand_syntax_quoted(&self, state: &mut State) -> EvalResult {
+        match *self {
+            Expr::Symbol { ns: None, ref name } => {
+                Ok(e_symbol![state.get_current_ns_name(), name])
+            },
+            _ => {
+                self.expand_quoted(state)
+            },
         }
     }
 
@@ -643,6 +655,18 @@ impl Expr {
         if let Expr::List(ref l) = *self {
             if l.len() == 2 {
                 Ok(e_call!["quote", try!(l[1].expand_quoted(state))])
+            } else {
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
+            }
+        } else {
+            Err(DispatchError(self.clone()))
+        }
+    }
+
+    fn expand_syntax_quote(&self, state: &mut State) -> EvalResult {
+        if let Expr::List(ref l) = *self {
+            if l.len() == 2 {
+                Ok(e_call!["syntax-quote", try!(l[1].expand_syntax_quoted(state))])
             } else {
                 Err(IncorrectNumberOfArgumentsError(self.clone()))
             }
