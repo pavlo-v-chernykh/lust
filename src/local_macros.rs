@@ -135,9 +135,15 @@ macro_rules! e_macro {
 
 macro_rules! e_call {
     ($name:expr, $($arg:expr),*) => (::ast::Expr::Call {
+        ns: None,
         name: $name.to_string(),
         args: vec![$($arg),*],
-    })
+    });
+    ($ns:expr, $name:expr, $($arg:expr),*) => (::ast::Expr::Call {
+        ns: Some($ns.to_string()),
+        name: $name.to_string(),
+        args: vec![$($arg),*],
+    });
 }
 
 macro_rules! e_let {

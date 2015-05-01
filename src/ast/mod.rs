@@ -41,6 +41,7 @@ pub enum Expr {
         expr: Box<Expr>,
     },
     Call {
+        ns: Option<String>,
         name: String,
         args: Vec<Expr>,
     },
@@ -465,8 +466,8 @@ impl Expr {
     }
 
     fn eval_call_custom(&self, state: &mut State) -> EvalResult {
-        if let Expr::Call { ref name, ref args } = *self {
-            let func = try!(state.get(None, name)
+        if let Expr::Call { ref ns, ref name, ref args, .. } = *self {
+            let func = try!(state.get(ns.as_ref(), name)
                                  .map(|e| Ok(e.clone()))
                                  .unwrap_or_else(|| Err(ResolveError(name.clone()))));
             match func {
@@ -592,9 +593,20 @@ impl Expr {
             Expr::Symbol { ns: None, ref name } => {
                 Ok(e_symbol![state.get_current(), name])
             },
-            _ => {
-                self.expand_quoted(state)
+            Expr::List(ref l) if l.len() > 0 => {
+                if l[0].is_symbol("unquote") || l[0].is_symbol("unquote-splicing") {
+                    self.expand(state)
+                } else {
+                    let mut v = vec![];
+                    for i in l {
+                        v.push(try!(i.expand_syntax_quoted(state)));
+                    }
+                    Ok(Expr::List(v))
+                }
             },
+            _ => {
+                self.expand(state)
+            }
         }
     }
 
@@ -761,16 +773,17 @@ impl Expr {
 
     fn expand_call(&self, state: &mut State) -> EvalResult {
         if let Expr::List(ref l) = *self {
-            if let Expr::Symbol { ref name, .. } = l[0] {
+            if let Expr::Symbol { ref ns, ref name, .. } = l[0] {
                 let mut args = vec![];
                 for a in &l[1..] {
                     args.push(try!(a.expand(state)))
                 }
                 let call = Expr::Call {
+                    ns: ns.clone(),
                     name: name.clone(),
                     args: args
                 };
-                if state.get(None, name).map_or(false, |e| e.is_macro()) {
+                if state.get(ns.as_ref(), name).map_or(false, |e| e.is_macro()) {
                     Ok(try!(call.eval(state)))
                 } else {
                     Ok(call)
@@ -893,8 +906,16 @@ impl fmt::Display for Expr {
             Expr::Macro { ref params, ref body } => {
                 write!(f, "(macro [{}] {})", format_vec(params), format_vec(body))
             },
-            Expr::Call { ref name, ref args } => {
-                let mut a = format!("({}", name);
+            Expr::Call { ref ns, ref name, ref args } => {
+                let mut a = "(".to_string();
+                match *ns {
+                    Some(ref ns) => {
+                        a.push_str(&format!("{}/{}", ns, name));
+                    },
+                    None => {
+                        a.push_str(&format!("{}", name));
+                    }
+                }
                 if args.is_empty() {
                     a.push_str(")")
                 } else {
