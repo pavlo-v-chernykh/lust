@@ -89,8 +89,17 @@ impl<'s> State<'s> {
         }
     }
 
-    pub fn get_current_ns_name(&self) -> &String {
+    pub fn get_current(&self) -> &String {
         &self.current
+    }
+
+    pub fn set_current(&mut self, current: String) -> String {
+        if !self.namespaces.contains_key(&current) {
+            self.namespaces.insert(current.clone(), Namespace::new());
+        }
+        let old_current = self.current.clone();
+        self.current = current;
+        old_current
     }
 
     pub fn next_id(&mut self) -> usize {

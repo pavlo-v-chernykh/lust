@@ -179,6 +179,9 @@ impl Expr {
                 "gensym" => {
                     self.eval_call_builtin_gensym(state)
                 },
+                "in-ns" => {
+                    self.eval_call_builtin_in_ns(state)
+                },
                 _ => {
                     self.eval_call_custom(state)
                 },
@@ -444,6 +447,23 @@ impl Expr {
         }
     }
 
+    fn eval_call_builtin_in_ns(&self, state: &mut State) -> EvalResult {
+        if let Expr::Call { ref args, .. } = *self {
+            if args.len() == 1 {
+                if let Expr::String(ref s) = args[0] {
+                    state.set_current(s.clone());
+                    Ok(e_symbol!["nil"])
+                } else {
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
+                }
+            } else {
+                Err(IncorrectNumberOfArgumentsError(self.clone()))
+            }
+        } else {
+            Err(DispatchError(self.clone()))
+        }
+    }
+
     fn eval_call_custom(&self, state: &mut State) -> EvalResult {
         if let Expr::Call { ref name, ref args } = *self {
             let func = try!(state.get(None, name)
@@ -570,7 +590,7 @@ impl Expr {
     fn expand_syntax_quoted(&self, state: &mut State) -> EvalResult {
         match *self {
             Expr::Symbol { ns: None, ref name } => {
-                Ok(e_symbol![state.get_current_ns_name(), name])
+                Ok(e_symbol![state.get_current(), name])
             },
             _ => {
                 self.expand_quoted(state)
