@@ -38,3 +38,13 @@
 (def l '(1 2 3 4))
 
 '(+ ~@l 5)
+
+(in-ns "other")
+
+(def a 1)
+
+(def m (macro [b] `(+ a ~b)))
+
+(in-ns "user")
+
+(other/m 3)

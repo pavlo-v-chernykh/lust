@@ -27,6 +27,32 @@ fn test_macro_expansion() {
 }
 
 #[test]
+fn test_namespaced_syntax_quoted_macro_expansion() {
+    let ref mut state = State::new("user".to_string());
+    let switch_to_namespace_other = "(in-ns \"other\")";
+    Parser::new(switch_to_namespace_other.chars())
+        .next().unwrap().ok().unwrap()
+        .eval(state).ok().unwrap();
+    let define_symbol_a = "(def a 1)";
+    Parser::new(define_symbol_a.chars())
+        .next().unwrap().ok().unwrap()
+        .eval(state).ok().unwrap();
+    let define_macro_m = "(def m (macro [b] `(+ a ~b)))";
+    Parser::new(define_macro_m.chars())
+        .next().unwrap().ok().unwrap()
+        .eval(state).ok().unwrap();
+    let switch_to_namespace_user = "(in-ns \"user\")";
+    Parser::new(switch_to_namespace_user.chars())
+        .next().unwrap().ok().unwrap()
+        .eval(state).ok().unwrap();
+    let call_macro_as_function = "(other/m 3)";
+    let result = Parser::new(call_macro_as_function.chars())
+        .next().unwrap().ok().unwrap()
+        .eval(state).ok().unwrap();
+    assert_eq!(result, e_number![4.]);
+}
+
+#[test]
 fn test_features() {
     let ref mut state = State::new("user".to_string());
     let input = include_str!("./test.ls");
