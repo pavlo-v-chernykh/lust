@@ -41,9 +41,9 @@
 
 (in-ns 'other)
 
-(def a 1)
+(def c 1)
 
-(def m (macro [a b] `(+ ~a ~b)))
+(def m (macro [a b] `(+ ~a ~b c)))
 
 (in-ns 'user)
 
