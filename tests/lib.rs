@@ -29,7 +29,7 @@ fn test_macro_expansion() {
 #[test]
 fn test_namespaced_syntax_quoted_macro_expansion() {
     let ref mut state = State::new("user".to_string());
-    let switch_to_namespace_other = "(in-ns \"other\")";
+    let switch_to_namespace_other = "(in-ns 'other)";
     Parser::new(switch_to_namespace_other.chars())
         .next().unwrap().ok().unwrap()
         .eval(state).ok().unwrap();
@@ -41,7 +41,7 @@ fn test_namespaced_syntax_quoted_macro_expansion() {
     Parser::new(define_macro_m.chars())
         .next().unwrap().ok().unwrap()
         .eval(state).ok().unwrap();
-    let switch_to_namespace_user = "(in-ns \"user\")";
+    let switch_to_namespace_user = "(in-ns 'user)";
     Parser::new(switch_to_namespace_user.chars())
         .next().unwrap().ok().unwrap()
         .eval(state).ok().unwrap();

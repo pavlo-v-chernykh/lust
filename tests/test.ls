@@ -39,12 +39,18 @@
 
 '(+ ~@l 5)
 
-(in-ns "other")
+(in-ns 'other)
 
 (def a 1)
 
-(def m (macro [b] `(+ a ~b)))
+(def m (macro [a b] `(+ ~a ~b)))
 
-(in-ns "user")
+(in-ns 'user)
 
-(other/m 3)
+(def b 10)
+
+(other/m 1 3)
+
+(def f (fn [d] (let [a b c d] (other/m a c))))
+
+(f 8)

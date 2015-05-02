@@ -451,8 +451,8 @@ impl Expr {
     fn eval_call_builtin_in_ns(&self, state: &mut State) -> EvalResult {
         if let Expr::Call { ref args, .. } = *self {
             if args.len() == 1 {
-                if let Expr::String(ref s) = args[0] {
-                    state.set_current(s.clone());
+                if let Expr::Symbol { ref name, .. } = try!(args[0].eval(state)) {
+                    state.set_current(name.clone());
                     Ok(e_symbol!["nil"])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
