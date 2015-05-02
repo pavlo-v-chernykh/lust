@@ -452,8 +452,9 @@ impl Expr {
         if let Expr::Call { ref args, .. } = *self {
             if args.len() == 1 {
                 if let Expr::Symbol { ref name, .. } = try!(args[0].eval(state)) {
+                    let old_current = state.get_current().clone();
                     state.set_current(name.clone());
-                    Ok(e_symbol!["nil"])
+                    Ok(e_symbol![old_current])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
