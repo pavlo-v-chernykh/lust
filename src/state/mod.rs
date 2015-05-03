@@ -4,19 +4,15 @@ mod tests;
 use std::collections::HashMap;
 use ast::Expr;
 
-type Alias = (String, String);
-
 #[derive(Debug)]
 struct Namespace {
     mappings: HashMap<String, Expr>,
-    aliases: HashMap<String, Alias>,
 }
 
 impl Namespace {
     fn new() -> Namespace {
         Namespace {
             mappings: HashMap::new(),
-            aliases: HashMap::new(),
         }
     }
 
@@ -26,14 +22,6 @@ impl Namespace {
 
     fn insert(&mut self, name: String, expr: Expr) -> Option<Expr> {
         self.mappings.insert(name, expr)
-    }
-
-    fn get_alias(&self, alias: &String) -> Option<&Alias> {
-        self.aliases.get(alias)
-    }
-
-    fn insert_alias(&mut self, alias: String, ns: String, name: String) -> Option<Alias> {
-        self.aliases.insert(alias, (ns, name))
     }
 }
 
