@@ -54,51 +54,6 @@ impl<'s> State<'s> {
         }
     }
 
-    pub fn new_chained(parent: &'s State<'s>) -> State<'s> {
-        let mut state = State::new(format!("{}_chained", parent.current));
-        state.parent = Some(parent);
-        state
-    }
-
-    pub fn insert(&mut self, name: String, expr: Expr) -> Option<Expr> {
-        self.namespaces
-            .get_mut(&self.current)
-            .and_then(|scope| scope.insert(name, expr))
-    }
-
-    pub fn get(&self, ns: Option<&String>, name: &String) -> Option<&Expr> {
-        let mut state = self;
-        loop {
-            let v = state.namespaces
-                         .get(ns.unwrap_or(&state.current))
-                         .and_then(|scope| scope.get(name));
-            if v.is_none() && state.parent.is_some() {
-                state = state.parent.unwrap();
-            } else {
-                return v
-            }
-        }
-    }
-
-    pub fn get_current(&self) -> &String {
-        &self.current
-    }
-
-    pub fn set_current(&mut self, current: String) -> String {
-        if !self.namespaces.contains_key(&current) {
-            self.namespaces.insert(current.clone(), Namespace::new());
-        }
-        let old_current = self.current.clone();
-        self.current = current;
-        old_current
-    }
-
-    pub fn next_id(&mut self) -> usize {
-        let next = self.id;
-        self.id += 1;
-        next
-    }
-
     pub fn eval(&mut self, expr: &Expr) -> EvalResult {
         match try!(self.expand(expr)) {
             ref symbol_expr @ Expr::Symbol { .. } => {
@@ -117,6 +72,51 @@ impl<'s> State<'s> {
                 Ok(other_expr)
             },
         }
+    }
+
+    fn new_chained(parent: &'s State<'s>) -> State<'s> {
+        let mut state = State::new(format!("{}_chained", parent.current));
+        state.parent = Some(parent);
+        state
+    }
+
+    fn insert(&mut self, name: String, expr: Expr) -> Option<Expr> {
+        self.namespaces
+            .get_mut(&self.current)
+            .and_then(|scope| scope.insert(name, expr))
+    }
+
+    fn get(&self, ns: Option<&String>, name: &String) -> Option<&Expr> {
+        let mut state = self;
+        loop {
+            let v = state.namespaces
+                         .get(ns.unwrap_or(&state.current))
+                         .and_then(|scope| scope.get(name));
+            if v.is_none() && state.parent.is_some() {
+                state = state.parent.unwrap();
+            } else {
+                return v
+            }
+        }
+    }
+
+    fn get_current(&self) -> &String {
+        &self.current
+    }
+
+    fn set_current(&mut self, current: String) -> String {
+        if !self.namespaces.contains_key(&current) {
+            self.namespaces.insert(current.clone(), Namespace::new());
+        }
+        let old_current = self.current.clone();
+        self.current = current;
+        old_current
+    }
+
+    fn next_id(&mut self) -> usize {
+        let next = self.id;
+        self.id += 1;
+        next
     }
 
     fn eval_symbol(&mut self, expr: &Expr) -> EvalResult {
