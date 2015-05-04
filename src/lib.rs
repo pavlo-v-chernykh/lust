@@ -6,7 +6,7 @@ mod parser;
 mod state;
 
 pub use parser::Parser;
-pub use ast::Expr;
+pub use ast::Node;
 pub use state::State;
 
 #[macro_use]

@@ -1,12 +1,12 @@
 use std::fmt;
-use ast::Expr;
+use ast::Node;
 
 #[derive(Debug, PartialEq)]
 pub enum EvalError {
     ResolveError(String),
-    DispatchError(Expr),
-    IncorrectTypeOfArgumentError(Expr),
-    IncorrectNumberOfArgumentsError(Expr),
+    DispatchError(Node),
+    IncorrectTypeOfArgumentError(Node),
+    IncorrectNumberOfArgumentsError(Node),
 }
 
 impl fmt::Display for EvalError {

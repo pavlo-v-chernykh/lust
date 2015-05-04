@@ -3,10 +3,10 @@ mod error;
 mod tests;
 
 use self::error::ParserError;
-use ast::Expr;
+use ast::Node;
 use lexer::{Token, Lexer, LexerResult};
 
-pub type ParserResult = Result<Expr, ParserError>;
+pub type ParserResult = Result<Node, ParserError>;
 
 pub struct Parser<I: Iterator> {
     lexer: Lexer<I>,
@@ -45,16 +45,16 @@ impl<I: Iterator<Item=char>> Parser<I> {
     fn parse_expr(&mut self) -> ParserResult {
         match self.token {
             Some(Ok(Token::Number { val, .. })) => {
-                Ok(Expr::Number(val))
+                Ok(Node::Number(val))
             },
             Some(Ok(Token::String { ref val, .. })) => {
-                Ok(Expr::String(val.clone()))
+                Ok(Node::String(val.clone()))
             },
             Some(Ok(Token::Symbol { ref ns, ref name, .. })) => {
-                Ok(Expr::Symbol { ns: ns.clone(), name: name.clone() })
+                Ok(Node::Symbol { ns: ns.clone(), name: name.clone() })
             },
             Some(Ok(Token::Keyword { ref ns, ref name, .. })) => {
-                Ok(Expr::Keyword { ns: ns.clone(), name: name.clone() })
+                Ok(Node::Keyword { ns: ns.clone(), name: name.clone() })
             },
             Some(Ok(Token::ListStart { .. })) => {
                 self.parse_list()
@@ -92,7 +92,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
         loop {
             self.bump();
             if let Some(Ok(Token::ListEnd { .. })) = self.token {
-                return Ok(Expr::List(list))
+                return Ok(Node::List(list))
             }
             list.push(try!(self.parse_expr()))
         }
@@ -103,7 +103,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
         loop {
             self.bump();
             if let Some(Ok(Token::VecEnd { .. })) = self.token {
-                return Ok(Expr::Vec(vec))
+                return Ok(Node::Vec(vec))
             }
             vec.push(try!(self.parse_expr()))
         }

@@ -71,75 +71,75 @@ macro_rules! span {
 }
 
 macro_rules! e_number {
-    ($e:expr) => (::ast::Expr::Number($e))
+    ($e:expr) => (::ast::Node::Number($e))
 }
 
 macro_rules! e_bool {
-    ($e:expr) => (::ast::Expr::Bool($e))
+    ($e:expr) => (::ast::Node::Bool($e))
 }
 
 macro_rules! e_string {
-    ($e:expr) => (::ast::Expr::String($e.to_string()))
+    ($e:expr) => (::ast::Node::String($e.to_string()))
 }
 
 macro_rules! e_symbol {
-    ($name:expr) => (::ast::Expr::Symbol {
+    ($name:expr) => (::ast::Node::Symbol {
         ns: None,
         name: $name.to_string(),
     });
-    ($ns:expr, $name:expr) => ($crate::Expr::Symbol {
+    ($ns:expr, $name:expr) => ($crate::Node::Symbol {
         ns: Some($ns.to_string()),
         name: $name.to_string(),
     });
 }
 
 macro_rules! e_keyword {
-    ($name:expr) => (::ast::Expr::Keyword {
+    ($name:expr) => (::ast::Node::Keyword {
         ns: None,
         name: $name.to_string(),
     });
-    ($ns:expr, $name:expr) => (::ast::Expr::Keyword {
+    ($ns:expr, $name:expr) => (::ast::Node::Keyword {
         ns: Some($ns.to_string()),
         name: $name.to_string(),
     });
 }
 
 macro_rules! e_list {
-    ($($e:expr),*) => (::ast::Expr::List(vec![$($e),*]))
+    ($($e:expr),*) => (::ast::Node::List(vec![$($e),*]))
 }
 
 macro_rules! e_vec {
-    ($($e:expr),*) => (::ast::Expr::Vec(vec![$($e),*]))
+    ($($e:expr),*) => (::ast::Node::Vec(vec![$($e),*]))
 }
 
 macro_rules! e_def {
-    ($sym:expr, $e:expr) => (::ast::Expr::Def {
+    ($sym:expr, $e:expr) => (::ast::Node::Def {
         sym: $sym.to_string(),
         expr: Box::new($e),
     })
 }
 
 macro_rules! e_fn {
-    ([$($params:expr),*], [$($e:expr),*]) => (::ast::Expr::Fn {
+    ([$($params:expr),*], [$($e:expr),*]) => (::ast::Node::Fn {
         params: vec![$($params),*],
         body: vec![$($e),*],
     })
 }
 
 macro_rules! e_macro {
-    ([$($params:expr),*], [$($e:expr),*]) => (::ast::Expr::Macro {
+    ([$($params:expr),*], [$($e:expr),*]) => (::ast::Node::Macro {
         params: vec![$($params),*],
         body: vec![$($e),*],
     })
 }
 
 macro_rules! e_call {
-    ($name:expr, $($arg:expr),*) => (::ast::Expr::Call {
+    ($name:expr, $($arg:expr),*) => (::ast::Node::Call {
         ns: None,
         name: $name.to_string(),
         args: vec![$($arg),*],
     });
-    ($ns:expr, $name:expr, $($arg:expr),*) => (::ast::Expr::Call {
+    ($ns:expr, $name:expr, $($arg:expr),*) => (::ast::Node::Call {
         ns: Some($ns.to_string()),
         name: $name.to_string(),
         args: vec![$($arg),*],
@@ -147,7 +147,7 @@ macro_rules! e_call {
 }
 
 macro_rules! e_let {
-    ([$($s:expr, $e:expr),*], $($body:expr),*) => (::ast::Expr::Let {
+    ([$($s:expr, $e:expr),*], $($body:expr),*) => (::ast::Node::Let {
         bindings: vec![$($s, $e),*],
         body: vec![$($body),*],
     })

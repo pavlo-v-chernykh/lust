@@ -4,7 +4,7 @@ mod tests;
 use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Expr {
+pub enum Node {
     Number(f64),
     Bool(bool),
     String(String),
@@ -16,34 +16,34 @@ pub enum Expr {
         ns: Option<String>,
         name: String,
     },
-    List(Vec<Expr>),
-    Vec(Vec<Expr>),
+    List(Vec<Node>),
+    Vec(Vec<Node>),
     Let {
-        bindings: Vec<Expr>,
-        body: Vec<Expr>,
+        bindings: Vec<Node>,
+        body: Vec<Node>,
     },
     Fn {
-        params: Vec<Expr>,
-        body: Vec<Expr>,
+        params: Vec<Node>,
+        body: Vec<Node>,
     },
     Macro {
-        params: Vec<Expr>,
-        body: Vec<Expr>,
+        params: Vec<Node>,
+        body: Vec<Node>,
     },
     Def {
         sym: String,
-        expr: Box<Expr>,
+        expr: Box<Node>,
     },
     Call {
         ns: Option<String>,
         name: String,
-        args: Vec<Expr>,
+        args: Vec<Node>,
     },
 }
 
-impl Expr {
+impl Node {
     pub fn as_bool(&self) -> bool {
-        if let Expr::Bool(b) = *self {
+        if let Node::Bool(b) = *self {
             b
         } else {
             true
@@ -51,7 +51,7 @@ impl Expr {
     }
 
     pub fn is_symbol(&self, name: &str) -> bool {
-        if let Expr::Symbol { name: ref n, .. } = *self {
+        if let Node::Symbol { name: ref n, .. } = *self {
             &n[..] == name
         } else {
             false
@@ -59,7 +59,7 @@ impl Expr {
     }
 
     pub fn is_macro(&self) -> bool {
-        if let Expr::Macro { .. } = *self {
+        if let Node::Macro { .. } = *self {
             true
         } else {
             false
@@ -67,7 +67,7 @@ impl Expr {
     }
 
     pub fn is_call_of(&self, name: &str) -> bool {
-        if let Expr::Call { name: ref n, .. } = *self {
+        if let Node::Call { name: ref n, .. } = *self {
             &n[..] == name
         } else {
             false
@@ -75,7 +75,7 @@ impl Expr {
     }
 }
 
-fn format_vec(v: &[Expr]) -> String {
+fn format_vec(v: &[Node]) -> String {
     let mut a = String::new();
     if !v.is_empty() {
         let last_idx = v.len() - 1;
@@ -90,51 +90,51 @@ fn format_vec(v: &[Expr]) -> String {
     a
 }
 
-impl fmt::Display for Expr {
+impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Expr::Number(n) => {
+            Node::Number(n) => {
                 write!(f, "{}", n)
             },
-            Expr::Bool(b) => {
+            Node::Bool(b) => {
                 write!(f, "{}", b)
             },
-            Expr::Symbol { ref ns, ref name, .. } => {
+            Node::Symbol { ref ns, ref name, .. } => {
                 if let Some(ref ns) = *ns {
                     write!(f, "{}/{}", ns, name)
                 } else {
                     write!(f, "{}", name)
                 }
             },
-            Expr::Keyword { ref ns, ref name, .. } => {
+            Node::Keyword { ref ns, ref name, .. } => {
                 if let Some(ref ns) = *ns {
                     write!(f, ":{}/{}", ns, name)
                 } else {
                     write!(f, ":{}", name)
                 }
             },
-            Expr::String(ref s) => {
+            Node::String(ref s) => {
                 write!(f, r#""{}""#, s)
             },
-            Expr::List(ref l) => {
+            Node::List(ref l) => {
                 write!(f, "({})", format_vec(l))
             },
-            Expr::Vec(ref v) => {
+            Node::Vec(ref v) => {
                 write!(f, "[{}]", format_vec(v))
             },
-            Expr::Def { ref sym, ref expr } => {
+            Node::Def { ref sym, ref expr } => {
                 write!(f, "(def {} {})", sym, expr)
             },
-            Expr::Let { ref bindings, ref body } => {
+            Node::Let { ref bindings, ref body } => {
                 write!(f, "(let [{}] {})", format_vec(bindings), format_vec(body))
             },
-            Expr::Fn { ref params, ref body } => {
+            Node::Fn { ref params, ref body } => {
                 write!(f, "(fn [{}] {})", format_vec(params), format_vec(body))
             },
-            Expr::Macro { ref params, ref body } => {
+            Node::Macro { ref params, ref body } => {
                 write!(f, "(macro [{}] {})", format_vec(params), format_vec(body))
             },
-            Expr::Call { ref ns, ref name, ref args } => {
+            Node::Call { ref ns, ref name, ref args } => {
                 let mut a = "(".to_string();
                 if let Some(ref ns) = *ns {
                     a.push_str(&format!("{}/{}", ns, name));

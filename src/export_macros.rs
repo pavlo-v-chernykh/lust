@@ -1,25 +1,25 @@
 #[macro_export]
 macro_rules! e_number {
-    ($e:expr) => ($crate::Expr::Number($e))
+    ($e:expr) => ($crate::Node::Number($e))
 }
 
 #[macro_export]
 macro_rules! e_bool {
-    ($e:expr) => ($crate::Expr::Bool($e))
+    ($e:expr) => ($crate::Node::Bool($e))
 }
 
 #[macro_export]
 macro_rules! e_string {
-    ($e:expr) => ($crate::Expr::String($e.to_string()))
+    ($e:expr) => ($crate::Node::String($e.to_string()))
 }
 
 #[macro_export]
 macro_rules! e_symbol {
-    ($name:expr) => ($crate::Expr::Symbol {
+    ($name:expr) => ($crate::Node::Symbol {
         ns: None,
         name: $name.to_string(),
     });
-    ($ns:expr, $name:expr) => ($crate::Expr::Symbol {
+    ($ns:expr, $name:expr) => ($crate::Node::Symbol {
         ns: Some($ns.to_string()),
         name: $name.to_string(),
     });
@@ -27,17 +27,17 @@ macro_rules! e_symbol {
 
 #[macro_export]
 macro_rules! e_list {
-    ($($e:expr),*) => ($crate::Expr::List(vec![$($e),*]))
+    ($($e:expr),*) => ($crate::Node::List(vec![$($e),*]))
 }
 
 #[macro_export]
 macro_rules! e_vec {
-    ($($e:expr),*) => ($crate::Expr::Vec(vec![$($e),*]))
+    ($($e:expr),*) => ($crate::Node::Vec(vec![$($e),*]))
 }
 
 #[macro_export]
 macro_rules! e_def {
-    ($sym:expr, $e:expr) => ($crate::Expr::Def {
+    ($sym:expr, $e:expr) => ($crate::Node::Def {
         sym: $sym.to_string(),
         expr: Box::new($e),
     })
@@ -45,7 +45,7 @@ macro_rules! e_def {
 
 #[macro_export]
 macro_rules! e_fn {
-    ([$($params:expr),*], [$($e:expr),*]) => ($crate::Expr::Fn {
+    ([$($params:expr),*], [$($e:expr),*]) => ($crate::Node::Fn {
         params: vec![$($params),*],
         body: vec![$($e),*],
     })
@@ -53,7 +53,7 @@ macro_rules! e_fn {
 
 #[macro_export]
 macro_rules! e_macro {
-    ([$($params:expr),*], [$($e:expr),*]) => ($crate::Expr::Macro {
+    ([$($params:expr),*], [$($e:expr),*]) => ($crate::Node::Macro {
         params: vec![$($params),*],
         body: vec![$($e),*],
     })
@@ -61,12 +61,12 @@ macro_rules! e_macro {
 
 #[macro_export]
 macro_rules! e_call {
-    ($name:expr, $($arg:expr), *) => ($crate::Expr::Call {
+    ($name:expr, $($arg:expr), *) => ($crate::Node::Call {
         ns: None,
         name: $name.to_string(),
         args: vec![$($arg),*]
     });
-   ($ns:expr, $name:expr, $($arg:expr),*) => (::ast::Expr::Call {
+   ($ns:expr, $name:expr, $($arg:expr),*) => (::ast::Node::Call {
         ns: Some($ns.to_string()),
         name: $name.to_string(),
         args: vec![$($arg),*],
