@@ -22,14 +22,6 @@ macro_rules! try_ok {
     })
 }
 
-macro_rules! is_file {
-    ($md:expr) => ($md.map(|s| s.is_file()).unwrap_or(false))
-}
-
-macro_rules! is_file_exists {
-    ($md:expr) => ($md.is_ok())
-}
-
 static USAGE: &'static str = "
 Usage:
     lust [options] [<expr>]

@@ -72,3 +72,13 @@ macro_rules! e_call {
         args: vec![$($arg),*],
     });
 }
+
+#[macro_export]
+macro_rules! is_file {
+    ($md:expr) => ($md.map(|s| s.is_file()).unwrap_or(false))
+}
+
+#[macro_export]
+macro_rules! is_file_exists {
+    ($md:expr) => ($md.is_ok())
+}

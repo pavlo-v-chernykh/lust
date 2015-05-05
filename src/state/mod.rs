@@ -3,9 +3,13 @@ mod error;
 mod tests;
 
 use std::collections::HashMap;
-use ast::Node;
+use std::io::Read;
+use std::path::Path;
+use std::fs::{File, metadata};
 use self::error::EvalError::*;
 use self::error::EvalError;
+use ast::Node;
+use parser::Parser;
 
 pub type EvalResult = Result<Node, EvalError>;
 
@@ -233,6 +237,9 @@ impl<'s> State<'s> {
                 },
                 "in-ns" => {
                     self.eval_call_builtin_in_ns(node)
+                },
+                "load" => {
+                    self.eval_call_builtin_load(node)
                 },
                 _ => {
                     self.eval_call_custom(node)
@@ -506,6 +513,39 @@ impl<'s> State<'s> {
                     let old_current = self.get_current().clone();
                     self.set_current(name.clone());
                     Ok(e_symbol![old_current])
+                } else {
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
+                }
+            } else {
+                Err(IncorrectNumberOfArgumentsError(node.clone()))
+            }
+        } else {
+            Err(DispatchError(node.clone()))
+        }
+    }
+
+    fn eval_call_builtin_load(&mut self, node: &Node) -> EvalResult {
+        if let Node::Call { ref args, .. } = *node {
+            if args.len() == 1 {
+                if let Node::String(ref s) = try!(self.eval(&args[0])) {
+                    let path = Path::new(s);
+                    let md = metadata(path);
+                    if is_file_exists!(md) {
+                        if is_file!(md) {
+                            let mut file = try!(File::open(&path));
+                            let ref mut buf = String::new();
+                            try!(file.read_to_string(buf));
+                            let mut last_evaled = None;
+                            for parsed_expr in Parser::new(buf.chars()) {
+                                last_evaled = Some(try!(self.eval(&try!(parsed_expr))));
+                            }
+                            last_evaled.map_or(Ok(e_list![]), |e| Ok(e))
+                        } else {
+                            Err(IncorrectTypeOfArgumentError(Node::String(s.clone())))
+                        }
+                    } else {
+                        Err(IncorrectTypeOfArgumentError(Node::String(s.clone())))
+                    }
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }

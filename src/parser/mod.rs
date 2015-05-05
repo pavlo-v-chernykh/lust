@@ -2,10 +2,10 @@ mod error;
 #[cfg(test)]
 mod tests;
 
-use self::error::ParserError;
 use ast::Node;
 use lexer::{Token, Lexer, LexerResult};
 
+pub use self::error::ParserError;
 pub type ParserResult = Result<Node, ParserError>;
 
 pub struct Parser<I: Iterator> {

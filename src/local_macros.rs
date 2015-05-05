@@ -152,3 +152,11 @@ macro_rules! e_let {
         body: vec![$($body),*],
     })
 }
+
+macro_rules! is_file {
+    ($md:expr) => ($md.map(|s| s.is_file()).unwrap_or(false))
+}
+
+macro_rules! is_file_exists {
+    ($md:expr) => ($md.is_ok())
+}

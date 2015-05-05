@@ -1,5 +1,9 @@
 use std::fmt;
+use std::convert::From;
+use std::io::Error as IoError;
+use std::error::Error;
 use ast::Node;
+use parser::ParserError;
 
 #[derive(Debug, PartialEq)]
 pub enum EvalError {
@@ -7,6 +11,8 @@ pub enum EvalError {
     DispatchError(Node),
     IncorrectTypeOfArgumentError(Node),
     IncorrectNumberOfArgumentsError(Node),
+    IoError(String),
+    ParserError(ParserError),
 }
 
 impl fmt::Display for EvalError {
@@ -24,7 +30,25 @@ impl fmt::Display for EvalError {
             EvalError::IncorrectNumberOfArgumentsError(ref expr) => {
                 write!(f, r#"Incorrect number of arguments {}"#, expr)
             },
+            EvalError::IoError(ref e) => {
+                write!(f, r#"IoError {}"#, e)
+            },
+            EvalError::ParserError(ref e) => {
+                write!(f, r#"ParserError {}"#, e)
+            },
         }
+    }
+}
+
+impl From<IoError> for EvalError {
+    fn from(e: IoError) -> EvalError {
+        EvalError::IoError(e.description().to_string())
+    }
+}
+
+impl From<ParserError> for EvalError {
+    fn from(e: ParserError) -> EvalError {
+        EvalError::ParserError(e)
     }
 }
 

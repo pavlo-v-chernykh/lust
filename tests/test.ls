@@ -54,3 +54,5 @@
 (def f (fn [d] (let [a b c d] (other/m a c))))
 
 (f 8)
+
+(load "./tests/ns/some.ls")
