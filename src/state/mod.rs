@@ -232,6 +232,9 @@ impl<'s> State<'s> {
                 "eval" => {
                     self.eval_call_builtin_eval(node)
                 },
+                "apply" => {
+                    self.eval_call_builtin_apply(node)
+                },
                 "gensym" => {
                     self.eval_call_builtin_gensym(node)
                 },
@@ -482,6 +485,30 @@ impl<'s> State<'s> {
         if let Node::Call { ref args, .. } = *node {
             if args.len() == 1 {
                 self.eval(&args[0]).and_then(|e| self.eval(&e))
+            } else {
+                Err(IncorrectNumberOfArgumentsError(node.clone()))
+            }
+        } else {
+            Err(DispatchError(node.clone()))
+        }
+    }
+
+    fn eval_call_builtin_apply(&mut self, node: &Node) -> EvalResult {
+        if let Node::Call { ref args, .. } = *node {
+            if args.len() == 2 {
+                if let Node::Symbol { ref ns, ref name } = args[0] {
+                    if let Node::Vec(v) = try!(self.eval(&args[1])) {
+                        self.eval(&Node::Call {
+                            ns: ns.clone(),
+                            name: name.clone(),
+                            args: v
+                        })
+                    } else {
+                        Err(IncorrectTypeOfArgumentError(args[1].clone()))
+                    }
+                } else {
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
+                }
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }

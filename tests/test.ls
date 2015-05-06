@@ -55,4 +55,6 @@
 
 (f 8)
 
+(apply f [3])
+
 (load "./tests/ns/some.ls")

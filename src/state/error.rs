@@ -31,10 +31,10 @@ impl fmt::Display for EvalError {
                 write!(f, r#"Incorrect number of arguments {}"#, expr)
             },
             EvalError::IoError(ref e) => {
-                write!(f, r#"IoError {}"#, e)
+                write!(f, r#"{}"#, e)
             },
             EvalError::ParserError(ref e) => {
-                write!(f, r#"ParserError {}"#, e)
+                write!(f, r#"{}"#, e)
             },
         }
     }
