@@ -16,6 +16,10 @@ pub enum Node {
         ns: Option<String>,
         name: String,
     },
+    Alias {
+        ns: String,
+        name: String,
+    },
     List(Vec<Node>),
     Vec(Vec<Node>),
     Let {
@@ -105,6 +109,9 @@ impl fmt::Display for Node {
                 } else {
                     write!(f, "{}", name)
                 }
+            },
+            Node::Alias { ref ns, ref name, .. } => {
+                write!(f, "{}/{}", ns, name)
             },
             Node::Keyword { ref ns, ref name, .. } => {
                 if let Some(ref ns) = *ns {
