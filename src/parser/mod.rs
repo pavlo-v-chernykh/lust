@@ -111,21 +111,21 @@ impl<I: Iterator<Item=char>> Parser<I> {
 
     fn parse_quoted(&mut self) -> ParserResult {
         self.bump();
-        Ok(e_list![e_symbol!["quote"], try!(self.parse_expr())])
+        Ok(n_list![n_symbol!["quote"], try!(self.parse_expr())])
     }
 
     fn parse_unquoted(&mut self) -> ParserResult {
         self.bump();
-        Ok(e_list![e_symbol!["unquote"], try!(self.parse_expr())])
+        Ok(n_list![n_symbol!["unquote"], try!(self.parse_expr())])
     }
 
     fn parse_unquoted_splicing(&mut self) -> ParserResult {
         self.bump();
-        Ok(e_list![e_symbol!["unquote-splicing"], try!(self.parse_expr())])
+        Ok(n_list![n_symbol!["unquote-splicing"], try!(self.parse_expr())])
     }
 
     fn parse_syntax_quote(&mut self) -> ParserResult {
         self.bump();
-        Ok(e_list![e_symbol!["syntax-quote"], try!(self.parse_expr())])
+        Ok(n_list![n_symbol!["syntax-quote"], try!(self.parse_expr())])
     }
 }

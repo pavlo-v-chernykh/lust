@@ -10,20 +10,20 @@ fn test_macro_expansion() {
     let expr = state.eval(&Parser::new(input.chars())
                                   .next().unwrap().ok().unwrap())
                     .ok().unwrap();
-    assert_eq!(expr, e_macro![[e_symbol!["a"]],
-                              [e_call!["quote",
-                                       e_list![e_symbol!["+"],
-                                               e_number![1.],
-                                               e_call!["unquote",
-                                                       e_symbol!["a"]]]]]]);
+    assert_eq!(expr, n_macro![[n_symbol!["a"]],
+                              [n_call!["quote",
+                                       n_list![n_symbol!["+"],
+                                               n_number![1.],
+                                               n_call!["unquote",
+                                                       n_symbol!["a"]]]]]]);
     let input = "(def f (fn [b] (m b)))";
     let expr = state.eval(&Parser::new(input.chars())
                                   .next().unwrap().ok().unwrap())
                     .ok().unwrap();
-    assert_eq!(expr, e_fn![[e_symbol!["b"]],
-                           [e_call!["+",
-                                    e_number![1.],
-                                    e_symbol!["b"]]]]);
+    assert_eq!(expr, n_fn![[n_symbol!["b"]],
+                           [n_call!["+",
+                                    n_number![1.],
+                                    n_symbol!["b"]]]]);
 }
 
 #[test]
@@ -49,7 +49,7 @@ fn test_namespaced_syntax_quoted_macro_expansion() {
     let result = state.eval(&Parser::new(call_macro_as_function.chars())
                                     .next().unwrap().ok().unwrap())
                       .ok().unwrap();
-    assert_eq!(result, e_number![4.]);
+    assert_eq!(result, n_number![4.]);
 }
 
 #[test]

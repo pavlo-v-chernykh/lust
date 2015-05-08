@@ -43,9 +43,9 @@ pub struct State<'s> {
 impl<'s> State<'s> {
     pub fn new(current: String) -> State<'s> {
         let mut current_ns = Namespace::new();
-        current_ns.insert("nil".to_string(), e_list![]);
-        current_ns.insert("true".to_string(), e_bool!(true));
-        current_ns.insert("false".to_string(), e_bool!(false));
+        current_ns.insert("nil".to_string(), n_list![]);
+        current_ns.insert("true".to_string(), n_bool!(true));
+        current_ns.insert("false".to_string(), n_bool!(false));
 
         let mut namespaces = HashMap::new();
         namespaces.insert(current.clone(), current_ns);
@@ -180,7 +180,7 @@ impl<'s> State<'s> {
                     let_state.insert(name.clone(), evaled_be);
                 }
             }
-            let mut result = e_list![];
+            let mut result = n_list![];
             for e in body {
                 result = try!(let_state.eval(&e));
             }
@@ -521,7 +521,7 @@ impl<'s> State<'s> {
         if let Node::Call { ref args, .. } = *node {
             if args.len() == 1 {
                 if let Node::String(ref s) = args[0] {
-                    Ok(e_symbol![format!("{}{}", s, self.next_id())])
+                    Ok(n_symbol![format!("{}{}", s, self.next_id())])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
@@ -539,7 +539,7 @@ impl<'s> State<'s> {
                 if let Node::Symbol { ref name, .. } = try!(self.eval(&args[0])) {
                     let old_current = self.get_current().clone();
                     self.set_current(name.clone());
-                    Ok(e_symbol![old_current])
+                    Ok(n_symbol![old_current])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
@@ -566,7 +566,7 @@ impl<'s> State<'s> {
                             for parsed_expr in Parser::new(buf.chars()) {
                                 last_evaled = Some(try!(self.eval(&try!(parsed_expr))));
                             }
-                            last_evaled.map_or(Ok(e_list![]), |e| Ok(e))
+                            last_evaled.map_or(Ok(n_list![]), |e| Ok(e))
                         } else {
                             Err(IncorrectTypeOfArgumentError(Node::String(s.clone())))
                         }
@@ -609,7 +609,7 @@ impl<'s> State<'s> {
                         }
                     }
 
-                    let mut result = e_list![];
+                    let mut result = n_list![];
                     for e in body {
                         result = try!(fn_state.eval(e));
                     }
@@ -631,7 +631,7 @@ impl<'s> State<'s> {
                         }
                     }
 
-                    let mut result = e_list![];
+                    let mut result = n_list![];
                     for e in body {
                         result = try!(macro_state.eval(&e));
                     }
@@ -710,7 +710,7 @@ impl<'s> State<'s> {
     fn expand_syntax_quoted(&mut self, node: &Node) -> EvalResult {
         match *node {
             Node::Symbol { ns: None, ref name } => {
-                Ok(e_symbol![self.get_current(), name])
+                Ok(n_symbol![self.get_current(), name])
             },
             Node::List(ref l) if l.len() > 0 => {
                 if l[0].is_symbol("unquote") || l[0].is_symbol("unquote-splicing") {
@@ -805,7 +805,7 @@ impl<'s> State<'s> {
     fn expand_quote(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() == 2 {
-                Ok(e_call!["quote", try!(self.expand_quoted(&l[1]))])
+                Ok(n_call!["quote", try!(self.expand_quoted(&l[1]))])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -817,7 +817,7 @@ impl<'s> State<'s> {
     fn expand_syntax_quote(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() == 2 {
-                Ok(e_call!["syntax-quote", try!(self.expand_syntax_quoted(&l[1]))])
+                Ok(n_call!["syntax-quote", try!(self.expand_syntax_quoted(&l[1]))])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -829,7 +829,7 @@ impl<'s> State<'s> {
     fn expand_unquote(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() == 2 {
-                Ok(e_call!["unquote", try!(self.expand(&l[1]))])
+                Ok(n_call!["unquote", try!(self.expand(&l[1]))])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -841,7 +841,7 @@ impl<'s> State<'s> {
     fn expand_unquote_splicing(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() == 2 {
-                Ok(e_call!["unquote-splicing", try!(self.expand(&l[1]))])
+                Ok(n_call!["unquote-splicing", try!(self.expand(&l[1]))])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
