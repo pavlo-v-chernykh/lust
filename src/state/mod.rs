@@ -74,9 +74,12 @@ impl<'s> State<'s> {
     fn get(&self, ns: Option<&String>, name: &String) -> Option<&Node> {
         let mut state = self;
         loop {
-            let v = state.namespaces
+            let mut v = state.namespaces
                          .get(ns.unwrap_or(&state.current))
                          .and_then(|scope| scope.get(name));
+            if let Some(&Node::Alias { ref ns, ref name, .. }) = v {
+                v = self.namespaces.get(ns).and_then(|scope| scope.get(name));
+            }
             if v.is_none() && state.parent.is_some() {
                 state = state.parent.unwrap();
             } else {
