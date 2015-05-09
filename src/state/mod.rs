@@ -14,35 +14,16 @@ use parser::Parser;
 pub type EvalResult = Result<Node, EvalError>;
 
 #[derive(Debug)]
-struct Namespace {
-    mappings: HashMap<String, Node>,
-}
-
-impl Namespace {
-    fn new() -> Namespace {
-        Namespace { mappings: HashMap::new(), }
-    }
-
-    fn get(&self, name: &String) -> Option<&Node> {
-        self.mappings.get(name)
-    }
-
-    fn insert(&mut self, name: String, node: Node) -> Option<Node> {
-        self.mappings.insert(name, node)
-    }
-}
-
-#[derive(Debug)]
 pub struct State<'s> {
     current: String,
-    namespaces: HashMap<String, Namespace>,
+    namespaces: HashMap<String, HashMap<String, Node>>,
     parent: Option<&'s State<'s>>,
     id: usize,
 }
 
 impl<'s> State<'s> {
     pub fn new(current: String) -> State<'s> {
-        let mut current_ns = Namespace::new();
+        let mut current_ns = HashMap::new();
         current_ns.insert("nil".to_string(), n_list![]);
         current_ns.insert("true".to_string(), n_bool!(true));
         current_ns.insert("false".to_string(), n_bool!(false));
@@ -110,7 +91,7 @@ impl<'s> State<'s> {
 
     fn set_current(&mut self, current: String) -> String {
         if !self.namespaces.contains_key(&current) {
-            self.namespaces.insert(current.clone(), Namespace::new());
+            self.namespaces.insert(current.clone(), HashMap::new());
         }
         let old_current = self.current.clone();
         self.current = current;
