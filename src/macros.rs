@@ -166,6 +166,14 @@ macro_rules! n_let {
 }
 
 #[macro_export]
+macro_rules! n_alias {
+    ($ns:expr, $name:expr) => ($crate::Node::Alias {
+        ns: $ns.to_string(),
+        name: $name.to_string(),
+    });
+}
+
+#[macro_export]
 macro_rules! is_file {
     ($md:expr) => ($md.map(|s| s.is_file()).unwrap_or(false))
 }
