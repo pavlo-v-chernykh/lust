@@ -58,3 +58,9 @@
 (apply f [3])
 
 (load "./tests/ns/some.ls")
+
+(in-ns 'user)
+
+(refer some some/some-symbol)
+
+(+ 10 some)

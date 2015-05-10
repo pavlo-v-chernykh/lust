@@ -228,6 +228,9 @@ impl<'s> State<'s> {
                 "load" => {
                     self.eval_call_builtin_load(node)
                 },
+                "refer" => {
+                    self.eval_call_builtin_refer(node)
+                },
                 _ => {
                     self.eval_call_custom(node)
                 },
@@ -556,6 +559,27 @@ impl<'s> State<'s> {
                         }
                     } else {
                         Err(IncorrectTypeOfArgumentError(Node::String(s.clone())))
+                    }
+                } else {
+                    Err(IncorrectTypeOfArgumentError(args[0].clone()))
+                }
+            } else {
+                Err(IncorrectNumberOfArgumentsError(node.clone()))
+            }
+        } else {
+            Err(DispatchError(node.clone()))
+        }
+    }
+
+    fn eval_call_builtin_refer(&mut self, node: &Node) -> EvalResult {
+        if let Node::Call { ref args, .. } = *node {
+            if args.len() == 2 {
+                if let Node::Symbol { ref name, .. } = args[0] {
+                    if let Node::Symbol { ns: Some(ref to_ns), name: ref to_name, .. } = args[1] {
+                        self.insert(name.clone(), n_alias![to_ns.clone(), to_name.clone()]);
+                        Ok(n_list![])
+                    } else {
+                        Err(IncorrectTypeOfArgumentError(args[1].clone()))
                     }
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
