@@ -1,7 +1,9 @@
 #[cfg(test)]
 mod tests;
+mod nodes;
 
 use std::fmt;
+use self::nodes::Symbol;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Node {
