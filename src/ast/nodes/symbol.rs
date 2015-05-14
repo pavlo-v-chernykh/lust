@@ -7,18 +7,18 @@ pub struct Symbol {
 }
 
 impl Symbol {
-    fn new(ns: Option<String>, name: String) -> Symbol {
+    pub fn new(ns: Option<String>, name: String) -> Symbol {
         Symbol {
             ns: ns,
             name: name,
         }
     }
 
-    fn name(&self) -> &String {
+    pub fn name(&self) -> &String {
         &self.name
     }
 
-    fn ns(&self) -> Option<&String> {
+    pub fn ns(&self) -> Option<&String> {
         self.ns.as_ref()
     }
 }

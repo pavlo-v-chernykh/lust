@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests;
-mod nodes;
+pub mod nodes;
 
 use std::fmt;
 use self::nodes::Symbol;
@@ -10,10 +10,7 @@ pub enum Node {
     Number(f64),
     Bool(bool),
     String(String),
-    Symbol {
-        ns: Option<String>,
-        name: String,
-    },
+    Symbol(Symbol),
     Keyword {
         ns: Option<String>,
         name: String,
@@ -57,8 +54,8 @@ impl Node {
     }
 
     pub fn is_symbol(&self, name: &str) -> bool {
-        if let Node::Symbol { name: ref n, .. } = *self {
-            &n[..] == name
+        if let Node::Symbol(ref s) = *self {
+            s.name() == name
         } else {
             false
         }
@@ -105,12 +102,8 @@ impl fmt::Display for Node {
             Node::Bool(b) => {
                 write!(f, "{}", b)
             },
-            Node::Symbol { ref ns, ref name, .. } => {
-                if let Some(ref ns) = *ns {
-                    write!(f, "{}/{}", ns, name)
-                } else {
-                    write!(f, "{}", name)
-                }
+            Node::Symbol(ref s) => {
+                write!(f, "{}", s)
             },
             Node::Alias { ref ns, ref name, .. } => {
                 write!(f, "{}/{}", ns, name)

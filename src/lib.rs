@@ -7,4 +7,5 @@ mod state;
 
 pub use parser::Parser;
 pub use ast::Node;
+pub use ast::nodes;
 pub use state::State;

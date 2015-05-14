@@ -30,7 +30,7 @@ fn test_parse_ns_qualified_symbol() {
     let s = "symbol";
     let ns_qualified_symbol = format!("{}/{}", ns, s);
     let mut parser = Parser::new(ns_qualified_symbol.chars());
-    assert_eq!(n_symbol![ns, s],
+    assert_eq!(n_symbol![Some(ns.to_string()), s],
                parser.next().unwrap().ok().unwrap())
 }
 

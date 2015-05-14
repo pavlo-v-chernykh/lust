@@ -87,14 +87,12 @@ macro_rules! n_string {
 
 #[macro_export]
 macro_rules! n_symbol {
-    ($name:expr) => ($crate::Node::Symbol {
-        ns: None,
-        name: $name.to_string(),
-    });
-    ($ns:expr, $name:expr) => ($crate::Node::Symbol {
-        ns: Some($ns.to_string()),
-        name: $name.to_string(),
-    });
+    ($name:expr) => ($crate::Node::Symbol(
+        $crate::nodes::Symbol::new(None, $name.to_string())
+    ));
+    ($ns:expr, $name:expr) => ($crate::Node::Symbol(
+        $crate::nodes::Symbol::new($ns, $name.to_string())
+    ));
 }
 
 #[macro_export]

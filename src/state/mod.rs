@@ -41,7 +41,7 @@ impl<'s> State<'s> {
 
     pub fn eval(&mut self, node: &Node) -> EvalResult {
         match try!(self.expand(node)) {
-            ref symbol_node @ Node::Symbol { .. } => {
+            ref symbol_node @ Node::Symbol(..) => {
                 self.eval_symbol(symbol_node)
             },
             ref def_node @ Node::Def { .. } => {
@@ -108,10 +108,10 @@ impl<'s> State<'s> {
     }
 
     fn eval_symbol(&mut self, node: &Node) -> EvalResult {
-        if let Node::Symbol { ref ns, ref name, .. } = *node {
-            self.get(ns.as_ref(), name)
+        if let Node::Symbol(ref s) = *node {
+            self.get(s.ns(), s.name())
                 .map(|e| Ok(e.clone()))
-                .unwrap_or(Err(ResolveError(name.clone())))
+                .unwrap_or(Err(ResolveError(s.name().clone())))
         } else {
             Err(DispatchError(node.clone()))
         }
@@ -119,7 +119,7 @@ impl<'s> State<'s> {
 
     fn eval_quoted(&mut self, node: &Node) -> EvalResult {
         match *node {
-            Node::Symbol { .. } => {
+            Node::Symbol(..) => {
                 Ok(node.clone())
             },
             Node::List(ref l) => {
@@ -159,9 +159,9 @@ impl<'s> State<'s> {
         if let Node::Let { ref bindings, ref body } = *node {
             let ref mut let_state = State::new_chained(self);
             for c in bindings.chunks(2) {
-                if let (Some(&Node::Symbol { ref name, .. }), Some(be)) = (c.first(), c.last()) {
+                if let (Some(&Node::Symbol(ref s)), Some(be)) = (c.first(), c.last()) {
                     let evaled_be = try!(let_state.eval(&be));
-                    let_state.insert(name.clone(), evaled_be);
+                    let_state.insert(s.name().clone(), evaled_be);
                 }
             }
             let mut result = n_list![];
@@ -483,11 +483,11 @@ impl<'s> State<'s> {
     fn eval_call_builtin_apply(&mut self, node: &Node) -> EvalResult {
         if let Node::Call { ref args, .. } = *node {
             if args.len() == 2 {
-                if let Node::Symbol { ref ns, ref name } = args[0] {
+                if let Node::Symbol(ref s) = args[0] {
                     if let Node::Vec(v) = try!(self.eval(&args[1])) {
                         self.eval(&Node::Call {
-                            ns: ns.clone(),
-                            name: name.clone(),
+                            ns: s.ns().map(|ns| ns.clone()),
+                            name: s.name().clone(),
                             args: v
                         })
                     } else {
@@ -523,9 +523,9 @@ impl<'s> State<'s> {
     fn eval_call_builtin_in_ns(&mut self, node: &Node) -> EvalResult {
         if let Node::Call { ref args, .. } = *node {
             if args.len() == 1 {
-                if let Node::Symbol { ref name, .. } = try!(self.eval(&args[0])) {
+                if let Node::Symbol(ref s) = try!(self.eval(&args[0])) {
                     let old_current = self.get_current().clone();
-                    self.set_current(name.clone());
+                    self.set_current(s.name().clone());
                     Ok(n_symbol![old_current])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
@@ -574,9 +574,9 @@ impl<'s> State<'s> {
     fn eval_call_builtin_refer(&mut self, node: &Node) -> EvalResult {
         if let Node::Call { ref args, .. } = *node {
             if args.len() == 2 {
-                if let Node::Symbol { ref name, .. } = args[0] {
-                    if let Node::Symbol { ns: Some(ref to_ns), name: ref to_name, .. } = args[1] {
-                        self.insert(name.clone(), n_alias![to_ns.clone(), to_name.clone()]);
+                if let Node::Symbol(ref s) = args[0] {
+                    if let Node::Symbol(ref to_s) = args[1] {
+                        self.insert(s.name().clone(), n_alias![to_s.ns().unwrap(), to_s.name().clone()]);
                         Ok(n_list![])
                     } else {
                         Err(IncorrectTypeOfArgumentError(args[1].clone()))
@@ -610,8 +610,8 @@ impl<'s> State<'s> {
 
                     let ref mut fn_state = State::new_chained(self);
                     for (p, a) in params.iter().zip(e_args.iter()) {
-                        if let &Node::Symbol { ref name, .. } = p {
-                            fn_state.insert(name.clone(), a.clone());
+                        if let &Node::Symbol(ref s) = p {
+                            fn_state.insert(s.name().clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
                         }
@@ -632,8 +632,8 @@ impl<'s> State<'s> {
 
                     let ref mut macro_state = State::new_chained(self);
                     for (p, a) in params.iter().zip(args.iter()) {
-                        if let Node::Symbol { ref name, .. } = *p {
-                            macro_state.insert(name.clone(), a.clone());
+                        if let Node::Symbol(ref s) = *p {
+                            macro_state.insert(s.name().clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
                         }
@@ -658,8 +658,8 @@ impl<'s> State<'s> {
     fn expand(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() > 0 {
-                if let Node::Symbol { ref name, .. } = l[0] {
-                    match &name[..] {
+                if let Node::Symbol(ref s) = l[0] {
+                    match &s.name()[..] {
                         "def" => {
                             return self.expand_def(node)
                         },
@@ -717,8 +717,8 @@ impl<'s> State<'s> {
 
     fn expand_syntax_quoted(&mut self, node: &Node) -> EvalResult {
         match *node {
-            Node::Symbol { ns: None, ref name } => {
-                Ok(n_symbol![self.get_current(), name])
+            Node::Symbol(ref s) if s.ns().is_none() => {
+                Ok(n_symbol![Some(self.get_current().clone()), s.name()])
             },
             Node::List(ref l) if l.len() > 0 => {
                 if l[0].is_symbol("unquote") || l[0].is_symbol("unquote-splicing") {
@@ -740,9 +740,9 @@ impl<'s> State<'s> {
     fn expand_def(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() == 3 {
-                if let Node::Symbol { ref name, .. } = l[1] {
+                if let Node::Symbol(ref s) = l[1] {
                     Ok(Node::Def {
-                        sym: name.clone(),
+                        sym: s.name().clone(),
                         expr: Box::new(try!(self.expand(&l[2]))),
                     })
                 } else {
@@ -865,7 +865,7 @@ impl<'s> State<'s> {
                     if v.len() % 2 == 0 {
                         let mut let_bindings = vec![];
                         for c in v.chunks(2) {
-                            if let Some(s @ &Node::Symbol {.. }) = c.first() {
+                            if let Some(s @ &Node::Symbol(..)) = c.first() {
                                 let_bindings.push(s.clone())
                             } else {
                                 return Err(IncorrectTypeOfArgumentError(node.clone()))
@@ -900,17 +900,17 @@ impl<'s> State<'s> {
 
     fn expand_call(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if let Node::Symbol { ref ns, ref name, .. } = l[0] {
+            if let Node::Symbol(ref s) = l[0] {
                 let mut args = vec![];
                 for a in &l[1..] {
                     args.push(try!(self.expand(a)))
                 }
                 let call = Node::Call {
-                    ns: ns.clone(),
-                    name: name.clone(),
+                    ns: s.ns().map(|ns| ns.clone()),
+                    name: s.name().clone(),
                     args: args
                 };
-                if self.get(ns.as_ref(), name).map_or(false, |e| e.is_macro()) {
+                if self.get(s.ns(), s.name()).map_or(false, |e| e.is_macro()) {
                     Ok(try!(self.eval(&call)))
                 } else {
                     Ok(call)

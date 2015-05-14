@@ -3,6 +3,7 @@ mod error;
 mod tests;
 
 use ast::Node;
+use ast::nodes::Symbol;
 use lexer::{Token, Lexer, LexerResult};
 
 pub use self::error::ParserError;
@@ -51,7 +52,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
                 Ok(Node::String(val.clone()))
             },
             Some(Ok(Token::Symbol { ref ns, ref name, .. })) => {
-                Ok(Node::Symbol { ns: ns.clone(), name: name.clone() })
+                Ok(Node::Symbol(Symbol::new(ns.clone(), name.clone())))
             },
             Some(Ok(Token::Keyword { ref ns, ref name, .. })) => {
                 Ok(Node::Keyword { ns: ns.clone(), name: name.clone() })
