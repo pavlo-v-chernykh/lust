@@ -4,6 +4,7 @@ pub mod nodes;
 
 use std::fmt;
 use self::nodes::Symbol;
+use self::nodes::Number;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Node {
