@@ -3,15 +3,13 @@ mod tests;
 pub mod nodes;
 
 use std::fmt;
-use self::nodes::Symbol;
-use self::nodes::Number;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Node {
-    Number(f64),
+    Number(nodes::Number),
     Bool(bool),
     String(String),
-    Symbol(Symbol),
+    Symbol(nodes::Symbol),
     Keyword {
         ns: Option<String>,
         name: String,
@@ -97,7 +95,7 @@ fn format_vec(v: &[Node]) -> String {
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Node::Number(n) => {
+            Node::Number(ref n) => {
                 write!(f, "{}", n)
             },
             Node::Bool(b) => {

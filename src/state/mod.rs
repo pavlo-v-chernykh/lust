@@ -245,12 +245,12 @@ impl<'s> State<'s> {
             let mut result = 0_f64;
             for a in args {
                 if let Node::Number(n) = try!(self.eval(&a)) {
-                    result += n;
+                    result += n.value();
                 } else {
                     return Err(IncorrectTypeOfArgumentError(a.clone()))
                 }
             }
-            Ok(Node::Number(result))
+            Ok(n_number![result])
         } else {
             Err(DispatchError(node.clone()))
         }
@@ -260,15 +260,16 @@ impl<'s> State<'s> {
         if let Node::Call { ref args, .. } = *node {
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
-                    let mut result = if args.len() == 1 { -n } else { n };
+                    let value = n.value();
+                    let mut result = if args.len() == 1 { -value } else { value };
                     for a in &args[1..] {
                         if let Node::Number(n) = try!(self.eval(&a)) {
-                            result -= n
+                            result -= n.value()
                         } else {
                             return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
-                    Ok(Node::Number(result))
+                    Ok(n_number![result])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
@@ -285,12 +286,12 @@ impl<'s> State<'s> {
             let mut result = 1_f64;
             for a in args {
                 if let Node::Number(n) = try!(self.eval(&a)) {
-                    result *= n
+                    result *= n.value()
                 } else {
                     return Err(IncorrectTypeOfArgumentError(a.clone()))
                 }
             }
-            Ok(Node::Number(result))
+            Ok(n_number![result])
         } else {
             Err(DispatchError(node.clone()))
         }
@@ -300,15 +301,16 @@ impl<'s> State<'s> {
         if let Node::Call { ref args, .. } = *node {
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
-                    let mut result = if args.len() == 1 { 1. / n } else { n };
+                    let value = n.value();
+                    let mut result = if args.len() == 1 { 1. / value } else { value };
                     for a in &args[1..] {
                         if let Node::Number(n) = try!(self.eval(&a)) {
-                            result /= n
+                            result /= n.value()
                         } else {
                             return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
-                    Ok(Node::Number(result))
+                    Ok(n_number![result])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
@@ -324,19 +326,20 @@ impl<'s> State<'s> {
         if let Node::Call { ref args, .. } = *node {
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
-                    let mut temp = n;
+                    let mut temp = n.value();
                     for a in &args[1..] {
                         if let Node::Number(n) = try!(self.eval(&a)) {
-                            if temp < n {
-                                temp = n
+                            let value = n.value();
+                            if temp < value {
+                                temp = value
                             } else {
-                                return Ok(Node::Bool(false))
+                                return Ok(n_bool![false])
                             }
                         } else {
                             return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
-                    Ok(Node::Bool(true))
+                    Ok(n_bool![true])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
@@ -352,19 +355,20 @@ impl<'s> State<'s> {
         if let Node::Call { ref args, .. } = *node {
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
-                    let mut temp = n;
+                    let mut temp = n.value();
                     for a in &args[1..] {
                         if let Node::Number(n) = try!(self.eval(&a)) {
-                            if temp > n {
-                                temp = n
+                            let value = n.value();
+                            if temp > value {
+                                temp = value
                             } else {
-                                return Ok(Node::Bool(false))
+                                return Ok(n_bool![false])
                             }
                         } else {
                             return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
-                    Ok(Node::Bool(true))
+                    Ok(n_bool![true])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }
@@ -380,19 +384,20 @@ impl<'s> State<'s> {
         if let Node::Call { ref args, .. } = *node {
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
-                    let mut temp = n;
+                    let mut temp = n.value();
                     for a in &args[1..] {
                         if let Node::Number(n) = try!(self.eval(&a)) {
-                            if temp == n {
-                                temp = n
+                            let value = n.value();
+                            if temp == value {
+                                temp = value
                             } else {
-                                return Ok(Node::Bool(false))
+                                return Ok(n_bool![false])
                             }
                         } else {
                             return Err(IncorrectTypeOfArgumentError(a.clone()))
                         }
                     }
-                    Ok(Node::Bool(true))
+                    Ok(n_bool![true])
                 } else {
                     Err(IncorrectTypeOfArgumentError(args[0].clone()))
                 }

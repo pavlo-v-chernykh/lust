@@ -72,7 +72,7 @@ macro_rules! span {
 
 #[macro_export]
 macro_rules! n_number {
-    ($e:expr) => ($crate::Node::Number($e))
+    ($e:expr) => ($crate::Node::Number($crate::nodes::Number::new($e)))
 }
 
 #[macro_export]

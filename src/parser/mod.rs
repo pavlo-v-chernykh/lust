@@ -46,13 +46,13 @@ impl<I: Iterator<Item=char>> Parser<I> {
     fn parse_expr(&mut self) -> ParserResult {
         match self.token {
             Some(Ok(Token::Number { val, .. })) => {
-                Ok(Node::Number(val))
+                Ok(n_number![val])
             },
             Some(Ok(Token::String { ref val, .. })) => {
                 Ok(Node::String(val.clone()))
             },
             Some(Ok(Token::Symbol { ref ns, ref name, .. })) => {
-                Ok(Node::Symbol(Symbol::new(ns.clone(), name.clone())))
+                Ok(n_symbol![ns.clone(), name.clone()])
             },
             Some(Ok(Token::Keyword { ref ns, ref name, .. })) => {
                 Ok(Node::Keyword { ns: ns.clone(), name: name.clone() })
