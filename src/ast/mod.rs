@@ -7,7 +7,7 @@ use std::fmt;
 #[derive(Debug, PartialEq, Clone)]
 pub enum Node {
     Number(nodes::Number),
-    Bool(bool),
+    Bool(nodes::Bool),
     String(String),
     Symbol(nodes::Symbol),
     Keyword {
@@ -45,8 +45,8 @@ pub enum Node {
 
 impl Node {
     pub fn as_bool(&self) -> bool {
-        if let Node::Bool(b) = *self {
-            b
+        if let Node::Bool(ref b) = *self {
+            b.value()
         } else {
             true
         }
@@ -98,7 +98,7 @@ impl fmt::Display for Node {
             Node::Number(ref n) => {
                 write!(f, "{}", n)
             },
-            Node::Bool(b) => {
+            Node::Bool(ref b) => {
                 write!(f, "{}", b)
             },
             Node::Symbol(ref s) => {

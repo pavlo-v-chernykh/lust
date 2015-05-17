@@ -77,7 +77,7 @@ macro_rules! n_number {
 
 #[macro_export]
 macro_rules! n_bool {
-    ($e:expr) => ($crate::Node::Bool($e))
+    ($e:expr) => ($crate::Node::Bool($crate::nodes::Bool::new($e)))
 }
 
 #[macro_export]
