@@ -115,7 +115,7 @@ impl fmt::Display for Node {
                 }
             },
             Node::String(ref s) => {
-                write!(f, r#""{}""#, s)
+                write!(f, "{}", s)
             },
             Node::List(ref l) => {
                 write!(f, "({})", format_vec(l))
