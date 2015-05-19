@@ -82,7 +82,7 @@ macro_rules! n_bool {
 
 #[macro_export]
 macro_rules! n_string {
-    ($e:expr) => ($crate::Node::String($e.to_string()))
+    ($e:expr) => ($crate::Node::String($crate::nodes::String::new($e.to_string())))
 }
 
 #[macro_export]

@@ -8,7 +8,7 @@ use std::fmt;
 pub enum Node {
     Number(nodes::Number),
     Bool(nodes::Bool),
-    String(String),
+    String(nodes::String),
     Symbol(nodes::Symbol),
     Keyword {
         ns: Option<String>,

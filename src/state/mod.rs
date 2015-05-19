@@ -547,7 +547,7 @@ impl<'s> State<'s> {
         if let Node::Call { ref args, .. } = *node {
             if args.len() == 1 {
                 if let Node::String(ref s) = try!(self.eval(&args[0])) {
-                    let path = Path::new(s);
+                    let path = Path::new(s.value());
                     let md = metadata(path);
                     if is_file_exists!(md) {
                         if is_file!(md) {

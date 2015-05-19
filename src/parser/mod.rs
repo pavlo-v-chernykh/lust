@@ -49,7 +49,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
                 Ok(n_number![val])
             },
             Some(Ok(Token::String { ref val, .. })) => {
-                Ok(Node::String(val.clone()))
+                Ok(n_string![val.clone()])
             },
             Some(Ok(Token::Symbol { ref ns, ref name, .. })) => {
                 Ok(n_symbol![ns.clone(), name.clone()])

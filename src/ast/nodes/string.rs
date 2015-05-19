@@ -1,6 +1,7 @@
 use std::fmt;
 use std::string;
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct String {
     value: string::String
 }
