@@ -44,7 +44,7 @@ fn test_parse_keyword() {
 #[test]
 fn test_parse_ns_qualified_keyword() {
     let mut parser = Parser::new(":my-ns/keyword".chars());
-    assert_eq!(n_keyword!["my-ns", "keyword"],
+    assert_eq!(n_keyword![Some("my-ns".to_string()), "keyword"],
                parser.next().unwrap().ok().unwrap())
 }
 

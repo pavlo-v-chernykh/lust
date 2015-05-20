@@ -10,10 +10,7 @@ pub enum Node {
     Bool(nodes::Bool),
     String(nodes::String),
     Symbol(nodes::Symbol),
-    Keyword {
-        ns: Option<String>,
-        name: String,
-    },
+    Keyword(nodes::Keyword),
     Alias {
         ns: String,
         name: String,
@@ -107,12 +104,8 @@ impl fmt::Display for Node {
             Node::Alias { ref ns, ref name, .. } => {
                 write!(f, "{}/{}", ns, name)
             },
-            Node::Keyword { ref ns, ref name, .. } => {
-                if let Some(ref ns) = *ns {
-                    write!(f, ":{}/{}", ns, name)
-                } else {
-                    write!(f, ":{}", name)
-                }
+            Node::Keyword(ref k) => {
+                write!(f, "{}", k)
             },
             Node::String(ref s) => {
                 write!(f, "{}", s)

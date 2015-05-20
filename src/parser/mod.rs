@@ -55,7 +55,7 @@ impl<I: Iterator<Item=char>> Parser<I> {
                 Ok(n_symbol![ns.clone(), name.clone()])
             },
             Some(Ok(Token::Keyword { ref ns, ref name, .. })) => {
-                Ok(Node::Keyword { ns: ns.clone(), name: name.clone() })
+                Ok(n_keyword![ns.clone(), name.clone()])
             },
             Some(Ok(Token::ListStart { .. })) => {
                 self.parse_list()

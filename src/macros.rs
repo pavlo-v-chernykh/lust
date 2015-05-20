@@ -97,14 +97,12 @@ macro_rules! n_symbol {
 
 #[macro_export]
 macro_rules! n_keyword {
-    ($name:expr) => ($crate::Node::Keyword {
-        ns: None,
-        name: $name.to_string(),
-    });
-    ($ns:expr, $name:expr) => ($crate::Node::Keyword {
-        ns: Some($ns.to_string()),
-        name: $name.to_string(),
-    });
+    ($name:expr) => ($crate::Node::Keyword(
+        $crate::nodes::Keyword::new(None, $name.to_string())
+    ));
+    ($ns:expr, $name:expr) => ($crate::Node::Keyword(
+        $crate::nodes::Keyword::new($ns, $name.to_string())
+    ));
 }
 
 #[macro_export]
