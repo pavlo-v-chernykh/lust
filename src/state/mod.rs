@@ -77,8 +77,8 @@ impl<'s> State<'s> {
             let mut v = state.namespaces
                          .get(ns.unwrap_or(&state.current))
                          .and_then(|scope| scope.get(name));
-            if let Some(&Node::Alias { ref ns, ref name, .. }) = v {
-                v = self.namespaces.get(ns).and_then(|scope| scope.get(name));
+            if let Some(&Node::Alias(ref a)) = v {
+                v = self.namespaces.get(a.ns()).and_then(|scope| scope.get(a.name()));
             }
             if v.is_none() && state.parent.is_some() {
                 state = state.parent.unwrap();
