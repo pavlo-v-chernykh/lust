@@ -50,7 +50,7 @@ impl<'s> State<'s> {
             ref call_node @ Node::Call { .. } => {
                 self.eval_call(call_node)
             },
-            ref let_node @ Node::Let { .. } => {
+            ref let_node @ Node::Let(..) => {
                 self.eval_let(let_node)
             },
             other_node => {
@@ -156,16 +156,16 @@ impl<'s> State<'s> {
     }
 
     fn eval_let(&mut self, node: &Node) -> EvalResult {
-        if let Node::Let { ref bindings, ref body } = *node {
+        if let Node::Let(ref l) = *node {
             let ref mut let_state = State::new_chained(self);
-            for c in bindings.chunks(2) {
+            for c in l.bindings().chunks(2) {
                 if let (Some(&Node::Symbol(ref s)), Some(be)) = (c.first(), c.last()) {
                     let evaled_be = try!(let_state.eval(&be));
                     let_state.insert(s.name().clone(), evaled_be);
                 }
             }
             let mut result = n_list![];
-            for e in body {
+            for e in l.body() {
                 result = try!(let_state.eval(&e));
             }
             Ok(result)
@@ -885,10 +885,7 @@ impl<'s> State<'s> {
                         for be in &l[2..] {
                             let_body.push(try!(self.expand(be)))
                         }
-                        Ok(Node::Let {
-                            bindings: let_bindings,
-                            body: let_body,
-                        })
+                        Ok(n_let![let_bindings, let_body])
                     } else {
                         Err(IncorrectNumberOfArgumentsError(node.clone()))
                     }

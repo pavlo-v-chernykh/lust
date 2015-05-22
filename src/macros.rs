@@ -155,10 +155,14 @@ macro_rules! n_call {
 
 #[macro_export]
 macro_rules! n_let {
-    ([$($s:expr, $e:expr),*], $($body:expr),*) => ($crate::Node::Let {
-        bindings: vec![$($s, $e),*],
-        body: vec![$($body),*],
-    })
+    ([$($s:expr, $e:expr),*], $($body:expr),*) => ($crate::Node::Let($crate::nodes::Let::new(
+        vec![$($s, $e),*],
+        vec![$($body),*],
+    )));
+    ($bindings:expr, $body:expr) => ($crate::Node::Let($crate::nodes::Let::new(
+        $bindings,
+        $body,
+    )));
 }
 
 #[macro_export]

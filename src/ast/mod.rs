@@ -3,6 +3,7 @@ mod tests;
 pub mod nodes;
 
 use std::fmt;
+use utils::format_vec;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Node {
@@ -14,10 +15,7 @@ pub enum Node {
     Alias(nodes::Alias),
     List(Vec<Node>),
     Vec(Vec<Node>),
-    Let {
-        bindings: Vec<Node>,
-        body: Vec<Node>,
-    },
+    Let(nodes::Let),
     Fn {
         params: Vec<Node>,
         body: Vec<Node>,
@@ -71,21 +69,6 @@ impl Node {
     }
 }
 
-fn format_vec(v: &[Node]) -> String {
-    let mut a = String::new();
-    if !v.is_empty() {
-        let last_idx = v.len() - 1;
-        for (i, e) in v.iter().enumerate() {
-            if i < last_idx {
-                a.push_str(&format!("{} ", e))
-            } else {
-                a.push_str(&format!("{}", e))
-            }
-        }
-    }
-    a
-}
-
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -116,8 +99,8 @@ impl fmt::Display for Node {
             Node::Def { ref sym, ref expr } => {
                 write!(f, "(def {} {})", sym, expr)
             },
-            Node::Let { ref bindings, ref body } => {
-                write!(f, "(let [{}] {})", format_vec(bindings), format_vec(body))
+            Node::Let(ref l) => {
+                write!(f, "{}", l)
             },
             Node::Fn { ref params, ref body } => {
                 write!(f, "(fn [{}] {})", format_vec(params), format_vec(body))
