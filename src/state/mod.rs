@@ -603,8 +603,8 @@ impl<'s> State<'s> {
                                 .map(|e| Ok(e.clone()))
                                 .unwrap_or_else(|| Err(ResolveError(name.clone()))));
             match func {
-                Node::Fn { ref params, ref body } => {
-                    if args.len() != params.len() {
+                Node::Fn(ref f) => {
+                    if args.len() != f.params().len() {
                         return Err(IncorrectNumberOfArgumentsError(node.clone()))
                     }
 
@@ -614,7 +614,7 @@ impl<'s> State<'s> {
                     }
 
                     let ref mut fn_state = State::new_chained(self);
-                    for (p, a) in params.iter().zip(e_args.iter()) {
+                    for (p, a) in f.params().iter().zip(e_args.iter()) {
                         if let &Node::Symbol(ref s) = p {
                             fn_state.insert(s.name().clone(), a.clone());
                         } else {
@@ -623,7 +623,7 @@ impl<'s> State<'s> {
                     }
 
                     let mut result = n_list![];
-                    for e in body {
+                    for e in f.body() {
                         result = try!(fn_state.eval(e));
                     }
 
@@ -773,10 +773,7 @@ impl<'s> State<'s> {
                     for be in &l[2..] {
                         fn_body.push(try!(self.expand(be)))
                     }
-                    Ok(Node::Fn {
-                        params: fn_params,
-                        body: fn_body,
-                    })
+                    Ok(n_fn![fn_params, fn_body])
                 } else {
                     Err(IncorrectTypeOfArgumentError(l[1].clone()))
                 }

@@ -16,10 +16,7 @@ pub enum Node {
     List(Vec<Node>),
     Vec(Vec<Node>),
     Let(nodes::Let),
-    Fn {
-        params: Vec<Node>,
-        body: Vec<Node>,
-    },
+    Fn(nodes::Fn),
     Macro {
         params: Vec<Node>,
         body: Vec<Node>,
@@ -102,8 +99,8 @@ impl fmt::Display for Node {
             Node::Let(ref l) => {
                 write!(f, "{}", l)
             },
-            Node::Fn { ref params, ref body } => {
-                write!(f, "(fn [{}] {})", format_vec(params), format_vec(body))
+            Node::Fn(ref fn_node) => {
+                write!(f, "{}", fn_node)
             },
             Node::Macro { ref params, ref body } => {
                 write!(f, "(macro [{}] {})", format_vec(params), format_vec(body))
