@@ -137,10 +137,14 @@ macro_rules! n_fn {
 
 #[macro_export]
 macro_rules! n_macro {
-    ([$($params:expr),*], [$($e:expr),*]) => ($crate::Node::Macro {
-        params: vec![$($params),*],
-        body: vec![$($e),*],
-    })
+    ([$($params:expr),*], [$($e:expr),*]) => ($crate::Node::Macro($crate::nodes::Macro::new(
+        vec![$($params),*],
+        vec![$($e),*],
+    )));
+    ($params:expr, $body:expr) => ($crate::Node::Macro($crate::nodes::Macro::new(
+        $params,
+        $body,
+    )));
 }
 
 #[macro_export]

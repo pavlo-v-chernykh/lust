@@ -17,10 +17,7 @@ pub enum Node {
     Vec(Vec<Node>),
     Let(nodes::Let),
     Fn(nodes::Fn),
-    Macro {
-        params: Vec<Node>,
-        body: Vec<Node>,
-    },
+    Macro(nodes::Macro),
     Def {
         sym: String,
         expr: Box<Node>,
@@ -50,7 +47,7 @@ impl Node {
     }
 
     pub fn is_macro(&self) -> bool {
-        if let Node::Macro { .. } = *self {
+        if let Node::Macro(..) = *self {
             true
         } else {
             false
@@ -102,8 +99,8 @@ impl fmt::Display for Node {
             Node::Fn(ref fn_node) => {
                 write!(f, "{}", fn_node)
             },
-            Node::Macro { ref params, ref body } => {
-                write!(f, "(macro [{}] {})", format_vec(params), format_vec(body))
+            Node::Macro(ref m) => {
+                write!(f, "{}", m)
             },
             Node::Call { ref ns, ref name, ref args } => {
                 let mut a = "(".to_string();
