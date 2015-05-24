@@ -44,7 +44,7 @@ impl<'s> State<'s> {
             ref symbol_node @ Node::Symbol(..) => {
                 self.eval_symbol(symbol_node)
             },
-            ref def_node @ Node::Def { .. } => {
+            ref def_node @ Node::Def(..) => {
                 self.eval_def(def_node)
             },
             ref call_node @ Node::Call { .. } => {
@@ -146,9 +146,9 @@ impl<'s> State<'s> {
     }
 
     fn eval_def(&mut self, node: &Node) -> EvalResult {
-        if let Node::Def { ref sym, ref expr } = *node {
-            let e = try!(self.eval(expr));
-            self.insert(sym.clone(), e.clone());
+        if let Node::Def(ref d) = *node {
+            let e = try!(self.eval(d.expr()));
+            self.insert(d.sym().clone(), e.clone());
             Ok(e)
         } else {
             Err(DispatchError(node.clone()))
@@ -746,10 +746,7 @@ impl<'s> State<'s> {
         if let Node::List(ref l) = *node {
             if l.len() == 3 {
                 if let Node::Symbol(ref s) = l[1] {
-                    Ok(Node::Def {
-                        sym: s.name().clone(),
-                        expr: Box::new(try!(self.expand(&l[2]))),
-                    })
+                    Ok(n_def![s.name(), try!(self.expand(&l[2]))])
                 } else {
                     Err(IncorrectTypeOfArgumentError(l[1].clone()))
                 }

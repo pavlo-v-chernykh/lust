@@ -18,10 +18,7 @@ pub enum Node {
     Let(nodes::Let),
     Fn(nodes::Fn),
     Macro(nodes::Macro),
-    Def {
-        sym: String,
-        expr: Box<Node>,
-    },
+    Def(nodes::Def),
     Call {
         ns: Option<String>,
         name: String,
@@ -90,8 +87,8 @@ impl fmt::Display for Node {
             Node::Vec(ref v) => {
                 write!(f, "[{}]", format_vec(v))
             },
-            Node::Def { ref sym, ref expr } => {
-                write!(f, "(def {} {})", sym, expr)
+            Node::Def(ref d) => {
+                write!(f, "{}", d)
             },
             Node::Let(ref l) => {
                 write!(f, "{}", l)

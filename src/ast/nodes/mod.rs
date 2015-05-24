@@ -1,5 +1,6 @@
 mod alias;
 mod bool;
+mod def;
 mod fn_node;
 mod keyword;
 mod let_node;
@@ -10,6 +11,7 @@ mod symbol;
 
 pub use self::alias::Alias;
 pub use self::bool::Bool;
+pub use self::def::Def;
 pub use self::fn_node::Fn;
 pub use self::keyword::Keyword;
 pub use self::let_node::Let;

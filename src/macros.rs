@@ -117,10 +117,10 @@ macro_rules! n_vec {
 
 #[macro_export]
 macro_rules! n_def {
-    ($sym:expr, $e:expr) => ($crate::Node::Def {
-        sym: $sym.to_string(),
-        expr: Box::new($e),
-    })
+    ($sym:expr, $e:expr) => ($crate::Node::Def($crate::nodes::Def::new(
+        $sym.to_string(),
+        $e,
+    )))
 }
 
 #[macro_export]
