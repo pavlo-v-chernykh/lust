@@ -19,11 +19,7 @@ pub enum Node {
     Fn(nodes::Fn),
     Macro(nodes::Macro),
     Def(nodes::Def),
-    Call {
-        ns: Option<String>,
-        name: String,
-        args: Vec<Node>,
-    },
+    Call(nodes::Call),
 }
 
 impl Node {
@@ -52,8 +48,8 @@ impl Node {
     }
 
     pub fn is_call_of(&self, name: &str) -> bool {
-        if let Node::Call { name: ref n, .. } = *self {
-            &n[..] == name
+        if let Node::Call(ref c) = *self {
+            &c.name()[..] == name
         } else {
             false
         }
@@ -99,19 +95,8 @@ impl fmt::Display for Node {
             Node::Macro(ref m) => {
                 write!(f, "{}", m)
             },
-            Node::Call { ref ns, ref name, ref args } => {
-                let mut a = "(".to_string();
-                if let Some(ref ns) = *ns {
-                    a.push_str(&format!("{}/{}", ns, name));
-                } else {
-                    a.push_str(&format!("{}", name));
-                }
-                if args.is_empty() {
-                    a.push_str(")")
-                } else {
-                    a.push_str(&format!(" {})", format_vec(args)))
-                }
-                write!(f, "{}", a)
+            Node::Call(ref c) => {
+                write!(f, "{}", c)
             },
         }
     }

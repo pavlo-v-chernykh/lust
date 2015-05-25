@@ -149,16 +149,16 @@ macro_rules! n_macro {
 
 #[macro_export]
 macro_rules! n_call {
-    ($name:expr, $($arg:expr),*) => ($crate::Node::Call {
-        ns: None,
-        name: $name.to_string(),
-        args: vec![$($arg),*],
-    });
-    ($ns:expr, $name:expr, $($arg:expr),*) => ($crate::Node::Call {
-        ns: Some($ns.to_string()),
-        name: $name.to_string(),
-        args: vec![$($arg),*],
-    });
+    ($name:expr, $args:expr) => ($crate::Node::Call($crate::nodes::Call::new(
+        None,
+        $name.to_string(),
+        $args,
+    )));
+    ($ns:expr, $name:expr, $args:expr) => ($crate::Node::Call($crate::nodes::Call::new(
+        $ns,
+        $name.to_string(),
+        $args,
+    )));
 }
 
 #[macro_export]

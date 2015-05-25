@@ -67,7 +67,7 @@ mod tests {
                    format!("{}", err));
         let err = EvalError::IncorrectTypeOfArgumentError(n_symbol!["a"]);
         assert_eq!(r#"Incorrect type of argument "a""#, format!("{}", err));
-        let err = EvalError::IncorrectNumberOfArgumentsError(n_call!["+",]);
+        let err = EvalError::IncorrectNumberOfArgumentsError(n_call!["+", vec![]]);
         assert_eq!(r#"Incorrect number of arguments (+)"#, format!("{}", err));
     }
 }

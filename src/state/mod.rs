@@ -47,7 +47,7 @@ impl<'s> State<'s> {
             ref def_node @ Node::Def(..) => {
                 self.eval_def(def_node)
             },
-            ref call_node @ Node::Call { .. } => {
+            ref call_node @ Node::Call(..) => {
                 self.eval_call(call_node)
             },
             ref let_node @ Node::Let(..) => {
@@ -175,8 +175,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref name, .. } = *node {
-            match &name[..] {
+        if let Node::Call(ref c) = *node {
+            match &c.name()[..] {
                 "+" => {
                     self.eval_call_builtin_plus(node)
                 },
@@ -241,9 +241,9 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_plus(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
             let mut result = 0_f64;
-            for a in args {
+            for a in c.args() {
                 if let Node::Number(n) = try!(self.eval(&a)) {
                     result += n.value();
                 } else {
@@ -257,7 +257,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_minus(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
                     let value = n.value();
@@ -282,7 +283,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_mul(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             let mut result = 1_f64;
             for a in args {
                 if let Node::Number(n) = try!(self.eval(&a)) {
@@ -298,7 +300,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_div(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
                     let value = n.value();
@@ -323,7 +326,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_lt(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
                     let mut temp = n.value();
@@ -352,7 +356,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_gt(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
                     let mut temp = n.value();
@@ -381,7 +386,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_eq(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() >= 1 {
                 if let Node::Number(n) = try!(self.eval(&args[0])) {
                     let mut temp = n.value();
@@ -410,7 +416,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_if(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 3 {
                 if try!(self.eval(&args[0])).as_bool() {
                     self.eval(&args[1])
@@ -426,7 +433,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_quote(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 1 {
                 self.eval_quoted(&args[0])
             } else {
@@ -438,7 +446,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_syntax_quote(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 1 {
                 self.eval_quoted(&args[0])
             } else {
@@ -450,7 +459,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_unquote(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 1 {
                 self.eval(&args[0])
             } else {
@@ -462,7 +472,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_unquote_splicing(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 1 {
                 self.eval(&args[0])
             } else {
@@ -474,7 +485,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_eval(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 1 {
                 self.eval(&args[0]).and_then(|e| self.eval(&e))
             } else {
@@ -486,15 +498,12 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_apply(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 2 {
                 if let Node::Symbol(ref s) = args[0] {
                     if let Node::Vec(v) = try!(self.eval(&args[1])) {
-                        self.eval(&Node::Call {
-                            ns: s.ns().map(|ns| ns.clone()),
-                            name: s.name().clone(),
-                            args: v
-                        })
+                        self.eval(&n_call![s.ns().map(|ns| ns.clone()), s.name().clone(), v])
                     } else {
                         Err(IncorrectTypeOfArgumentError(args[1].clone()))
                     }
@@ -510,7 +519,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_gensym(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 1 {
                 if let Node::String(ref s) = args[0] {
                     Ok(n_symbol![format!("{}{}", s, self.next_id())])
@@ -526,7 +536,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_in_ns(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 1 {
                 if let Node::Symbol(ref s) = try!(self.eval(&args[0])) {
                     let old_current = self.get_current().clone();
@@ -544,7 +555,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_load(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 1 {
                 if let Node::String(ref s) = try!(self.eval(&args[0])) {
                     let path = Path::new(s.value());
@@ -577,7 +589,8 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_builtin_refer(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref args, .. } = *node {
+        if let Node::Call(ref c) = *node {
+            let args = c.args();
             if args.len() == 2 {
                 if let Node::Symbol(ref s) = args[0] {
                     if let Node::Symbol(ref to_s) = args[1] {
@@ -598,8 +611,9 @@ impl<'s> State<'s> {
     }
 
     fn eval_call_custom(&mut self, node: &Node) -> EvalResult {
-        if let Node::Call { ref ns, ref name, ref args, .. } = *node {
-            let func = try!(self.get(ns.as_ref(), name)
+        if let Node::Call(ref c) = *node {
+            let (ns, name, args) = (c.ns(), c.name(), c.args());
+            let func = try!(self.get(ns, name)
                                 .map(|e| Ok(e.clone()))
                                 .unwrap_or_else(|| Err(ResolveError(name.clone()))));
             match func {
@@ -809,7 +823,7 @@ impl<'s> State<'s> {
     fn expand_quote(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() == 2 {
-                Ok(n_call!["quote", try!(self.expand_quoted(&l[1]))])
+                Ok(n_call!["quote", vec![try!(self.expand_quoted(&l[1]))]])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -821,7 +835,7 @@ impl<'s> State<'s> {
     fn expand_syntax_quote(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() == 2 {
-                Ok(n_call!["syntax-quote", try!(self.expand_syntax_quoted(&l[1]))])
+                Ok(n_call!["syntax-quote", vec![try!(self.expand_syntax_quoted(&l[1]))]])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -833,7 +847,7 @@ impl<'s> State<'s> {
     fn expand_unquote(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() == 2 {
-                Ok(n_call!["unquote", try!(self.expand(&l[1]))])
+                Ok(n_call!["unquote", vec![try!(self.expand(&l[1]))]])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -845,7 +859,7 @@ impl<'s> State<'s> {
     fn expand_unquote_splicing(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.len() == 2 {
-                Ok(n_call!["unquote-splicing", try!(self.expand(&l[1]))])
+                Ok(n_call!["unquote-splicing", vec![try!(self.expand(&l[1]))]])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -898,11 +912,7 @@ impl<'s> State<'s> {
                 for a in &l[1..] {
                     args.push(try!(self.expand(a)))
                 }
-                let call = Node::Call {
-                    ns: s.ns().map(|ns| ns.clone()),
-                    name: s.name().clone(),
-                    args: args
-                };
+                let call = n_call![s.ns().map(|ns| ns.clone()), s.name().clone(), args];
                 if self.get(s.ns(), s.name()).map_or(false, |e| e.is_macro()) {
                     Ok(try!(self.eval(&call)))
                 } else {

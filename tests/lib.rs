@@ -12,18 +12,18 @@ fn test_macro_expansion() {
                     .ok().unwrap();
     assert_eq!(expr, n_macro![[n_symbol!["a"]],
                               [n_call!["quote",
-                                       n_list![n_symbol!["+"],
-                                               n_number![1.],
-                                               n_call!["unquote",
-                                                       n_symbol!["a"]]]]]]);
+                                       vec![n_list![n_symbol!["+"],
+                                                    n_number![1.],
+                                                    n_call!["unquote",
+                                                            vec![n_symbol!["a"]]]]]]]]);
     let input = "(def f (fn [b] (m b)))";
     let expr = state.eval(&Parser::new(input.chars())
                                   .next().unwrap().ok().unwrap())
                     .ok().unwrap();
     assert_eq!(expr, n_fn![[n_symbol!["b"]],
                            [n_call!["+",
-                                    n_number![1.],
-                                    n_symbol!["b"]]]]);
+                                    vec![n_number![1.],
+                                         n_symbol!["b"]]]]]);
 }
 
 #[test]
