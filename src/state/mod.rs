@@ -9,6 +9,7 @@ use std::fs::{File, metadata};
 use self::error::EvalError::*;
 use self::error::EvalError;
 use ast::Node;
+use ast::nodes::Symbol;
 use parser::Parser;
 
 pub type EvalResult = Result<Node, EvalError>;
@@ -16,24 +17,21 @@ pub type EvalResult = Result<Node, EvalError>;
 #[derive(Debug)]
 pub struct State<'s> {
     current: String,
-    namespaces: HashMap<String, HashMap<String, Node>>,
+    state: HashMap<Symbol, Node>,
     parent: Option<&'s State<'s>>,
     id: usize,
 }
 
 impl<'s> State<'s> {
     pub fn new(current: String) -> State<'s> {
-        let mut current_ns = HashMap::new();
-        current_ns.insert("nil".to_string(), n_list![]);
-        current_ns.insert("true".to_string(), n_bool!(true));
-        current_ns.insert("false".to_string(), n_bool!(false));
-
-        let mut namespaces = HashMap::new();
-        namespaces.insert(current.clone(), current_ns);
+        let mut state = HashMap::new();
+        state.insert(Symbol::new(Some(current.clone()), "nil".to_string()), n_list![]);
+        state.insert(Symbol::new(Some(current.clone()), "true".to_string()), n_bool!(true));
+        state.insert(Symbol::new(Some(current.clone()), "false".to_string()), n_bool!(false));
 
         State {
             current: current,
-            namespaces: namespaces,
+            state: state,
             parent: None,
             id: 0,
         }
@@ -66,19 +64,17 @@ impl<'s> State<'s> {
     }
 
     fn insert(&mut self, name: String, node: Node) -> Option<Node> {
-        self.namespaces
-            .get_mut(&self.current)
-            .and_then(|scope| scope.insert(name, node))
+        self.state.insert(Symbol::new(Some(self.current.clone()), name), node)
     }
 
     fn get(&self, ns: Option<&String>, name: &String) -> Option<&Node> {
         let mut state = self;
         loop {
-            let mut v = state.namespaces
-                         .get(ns.unwrap_or(&state.current))
-                         .and_then(|scope| scope.get(name));
+            let symbol = Symbol::new(ns.map(|ns| ns.clone()).or(Some(state.current.clone())),
+                                     name.clone());
+            let mut v = state.state.get(&symbol);
             if let Some(&Node::Alias(ref a)) = v {
-                v = self.namespaces.get(a.ns()).and_then(|scope| scope.get(a.name()));
+                v = state.state.get(&a.to_symbol());
             }
             if v.is_none() && state.parent.is_some() {
                 state = state.parent.unwrap();
@@ -93,9 +89,6 @@ impl<'s> State<'s> {
     }
 
     fn set_current(&mut self, current: String) -> String {
-        if !self.namespaces.contains_key(&current) {
-            self.namespaces.insert(current.clone(), HashMap::new());
-        }
         let old_current = self.current.clone();
         self.current = current;
         old_current

@@ -1,4 +1,5 @@
 use std::fmt;
+use super::Symbol;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Alias {
@@ -20,6 +21,10 @@ impl Alias {
 
     pub fn ns(&self) -> &String {
         &self.ns
+    }
+
+    pub fn to_symbol(&self) -> Symbol {
+        Symbol::new(Some(self.ns.clone()), self.name.clone())
     }
 }
 
