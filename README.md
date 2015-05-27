@@ -2,7 +2,8 @@
 
 Lisp interpreter implemented in Rust
 
-Currently it is anchored at ```1.0.0-beta```.
+Work on rust nightly.
+
 Use nice [multirust][multirust] tool for managing your Rust toolchains.
 
 ## Usage
