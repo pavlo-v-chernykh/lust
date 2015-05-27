@@ -63,16 +63,22 @@ impl<'s> State<'s> {
         state
     }
 
-    fn insert(&mut self, name: String, node: Node) -> Option<Node> {
-        self.state.insert(Symbol::new(Some(self.current.clone()), name), node)
+    fn insert(&mut self, symbol: Symbol, node: Node) -> Option<Node> {
+        if symbol.ns().is_some() {
+            self.state.insert(symbol, node)
+        } else {
+            self.state.insert(Symbol::new(Some(self.current.clone()), symbol.name().clone()), node)
+        }
     }
 
-    fn get(&self, ns: Option<&String>, name: &String) -> Option<&Node> {
+    fn get(&self, symbol: &Symbol) -> Option<&Node> {
         let mut state = self;
         loop {
-            let symbol = Symbol::new(ns.map(|ns| ns.clone()).or(Some(state.current.clone())),
-                                     name.clone());
-            let mut v = state.state.get(&symbol);
+            let mut v = if symbol.ns().is_some() {
+                state.state.get(symbol)
+            } else {
+                state.state.get(&Symbol::new(Some(state.current.clone()), symbol.name().clone()))
+            };
             if let Some(&Node::Alias(ref a)) = v {
                 v = state.state.get(&a.to_symbol());
             }
@@ -102,7 +108,7 @@ impl<'s> State<'s> {
 
     fn eval_symbol(&mut self, node: &Node) -> EvalResult {
         if let Node::Symbol(ref s) = *node {
-            self.get(s.ns(), s.name())
+            self.get(s)
                 .map(|e| Ok(e.clone()))
                 .unwrap_or(Err(ResolveError(s.name().clone())))
         } else {
@@ -141,7 +147,7 @@ impl<'s> State<'s> {
     fn eval_def(&mut self, node: &Node) -> EvalResult {
         if let Node::Def(ref d) = *node {
             let e = try!(self.eval(d.expr()));
-            self.insert(d.sym().clone(), e.clone());
+            self.insert(d.symbol().clone(), e.clone());
             Ok(e)
         } else {
             Err(DispatchError(node.clone()))
@@ -154,7 +160,7 @@ impl<'s> State<'s> {
             for c in l.bindings().chunks(2) {
                 if let (Some(&Node::Symbol(ref s)), Some(be)) = (c.first(), c.last()) {
                     let evaled_be = try!(let_state.eval(&be));
-                    let_state.insert(s.name().clone(), evaled_be);
+                    let_state.insert(s.clone(), evaled_be);
                 }
             }
             let mut result = n_list![];
@@ -169,7 +175,7 @@ impl<'s> State<'s> {
 
     fn eval_call(&mut self, node: &Node) -> EvalResult {
         if let Node::Call(ref c) = *node {
-            match &c.name()[..] {
+            match &c.symbol().name()[..] {
                 "+" => {
                     self.eval_call_builtin_plus(node)
                 },
@@ -587,7 +593,7 @@ impl<'s> State<'s> {
             if args.len() == 2 {
                 if let Node::Symbol(ref s) = args[0] {
                     if let Node::Symbol(ref to_s) = args[1] {
-                        self.insert(s.name().clone(), n_alias![to_s.ns().unwrap(), to_s.name().clone()]);
+                        self.insert(s.clone(), n_alias![to_s.ns().unwrap(), to_s.name().clone()]);
                         Ok(n_list![])
                     } else {
                         Err(IncorrectTypeOfArgumentError(args[1].clone()))
@@ -605,10 +611,10 @@ impl<'s> State<'s> {
 
     fn eval_call_custom(&mut self, node: &Node) -> EvalResult {
         if let Node::Call(ref c) = *node {
-            let (ns, name, args) = (c.ns(), c.name(), c.args());
-            let func = try!(self.get(ns, name)
+            let (symbol, args) = (c.symbol(), c.args());
+            let func = try!(self.get(symbol)
                                 .map(|e| Ok(e.clone()))
-                                .unwrap_or_else(|| Err(ResolveError(name.clone()))));
+                                .unwrap_or_else(|| Err(ResolveError(symbol.name().clone()))));
             match func {
                 Node::Fn(ref f) => {
                     if args.len() != f.params().len() {
@@ -623,7 +629,7 @@ impl<'s> State<'s> {
                     let ref mut fn_state = State::new_chained(self);
                     for (p, a) in f.params().iter().zip(e_args.iter()) {
                         if let &Node::Symbol(ref s) = p {
-                            fn_state.insert(s.name().clone(), a.clone());
+                            fn_state.insert(s.clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
                         }
@@ -645,7 +651,7 @@ impl<'s> State<'s> {
                     let ref mut macro_state = State::new_chained(self);
                     for (p, a) in m.params().iter().zip(args.iter()) {
                         if let Node::Symbol(ref s) = *p {
-                            macro_state.insert(s.name().clone(), a.clone());
+                            macro_state.insert(s.clone(), a.clone());
                         } else {
                             return Err(IncorrectTypeOfArgumentError(p.clone()))
                         }
@@ -906,7 +912,7 @@ impl<'s> State<'s> {
                     args.push(try!(self.expand(a)))
                 }
                 let call = n_call![s.ns().map(|ns| ns.clone()), s.name().clone(), args];
-                if self.get(s.ns(), s.name()).map_or(false, |e| e.is_macro()) {
+                if self.get(s).map_or(false, |e| e.is_macro()) {
                     Ok(try!(self.eval(&call)))
                 } else {
                     Ok(call)

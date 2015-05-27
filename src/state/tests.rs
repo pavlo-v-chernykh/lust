@@ -1,13 +1,14 @@
 use super::State;
 use super::error::EvalError::*;
+use ast::nodes::Symbol;
 
 #[test]
 fn test_insert_to_and_get_from_root_state() {
     let mut state = State::new("user".to_string());
     let key = "rust-is-terrific".to_string();
     let val = n_number!(10.5);
-    state.insert(key.clone(), val.clone());
-    assert_eq!(&val, state.get(None, &key).unwrap());
+    state.insert(Symbol::new(None, key.clone()), val.clone());
+    assert_eq!(&val, state.get(&Symbol::new(None, key.clone())).unwrap());
 }
 
 #[test]
@@ -16,8 +17,8 @@ fn test_insert_to_and_get_from_child_state() {
     let mut state = State::new_chained(&root_state);
     let key = "rust-is-terrific".to_string();
     let val = n_number!(10.5);
-    state.insert(key.clone(), val.clone());
-    assert_eq!(&val, state.get(None, &key).unwrap());
+    state.insert(Symbol::new(None, key.clone()), val.clone());
+    assert_eq!(&val, state.get(&Symbol::new(None, key.clone())).unwrap());
 }
 
 #[test]
@@ -25,9 +26,9 @@ fn test_insert_to_root_state_and_get_from_child_state() {
     let mut root_state = State::new("user".to_string());
     let key = "rust-is-terrific".to_string();
     let val = n_number!(10.5);
-    root_state.insert(key.clone(), val.clone());
+    root_state.insert(Symbol::new(None, key.clone()), val.clone());
     let state = State::new_chained(&root_state);
-    assert_eq!(&val, state.get(None, &key).unwrap());
+    assert_eq!(&val, state.get(&Symbol::new(None, key.clone())).unwrap());
 }
 
 #[test]
@@ -36,8 +37,8 @@ fn test_insert_to_child_state_and_get_none_from_root_state() {
     let key = "rust-is-terrific".to_string();
     let val = n_number!(10.5);
     let mut state = State::new_chained(&root_state);
-    state.insert(key.clone(), val.clone());
-    assert!(root_state.get(None, &key).is_none());
+    state.insert(Symbol::new(None, key.clone()), val.clone());
+    assert!(root_state.get(&Symbol::new(None, key.clone())).is_none());
 }
 
 #[test]
@@ -45,11 +46,11 @@ fn test_shadow_val_in_root_state() {
     let mut root_state = State::new("user".to_string());
     let key = "rust-is-terrific".to_string();
     let val_in_root = n_number!(10.5);
-    root_state.insert(key.clone(), val_in_root);
+    root_state.insert(Symbol::new(None, key.clone()), val_in_root);
     let val_in_child = n_number!(0_f64);
     let mut state = State::new_chained(&root_state);
-    state.insert(key.clone(), val_in_child.clone());
-    assert_eq!(&val_in_child, state.get(None, &key).unwrap());
+    state.insert(Symbol::new(None, key.clone()), val_in_child.clone());
+    assert_eq!(&val_in_child, state.get(&Symbol::new(None, key.clone())).unwrap());
 }
 
 #[test]
@@ -57,8 +58,8 @@ fn test_insert_to_and_get_from_root_state_with_namespace() {
     let mut state = State::new("user".to_string());
     let key = "rust-is-terrific".to_string();
     let val = n_number!(10.5);
-    state.insert(key.clone(), val.clone());
-    assert_eq!(&val, state.get(Some("user".to_string()).as_ref(), &key).unwrap());
+    state.insert(Symbol::new(None, key.clone()), val.clone());
+    assert_eq!(&val, state.get(&Symbol::new(Some("user".to_string()), key.clone())).unwrap());
 }
 
 #[test]
@@ -67,8 +68,8 @@ fn test_insert_to_and_get_from_child_state_with_namespace() {
     let mut state = State::new_chained(&root_state);
     let key = "rust-is-terrific".to_string();
     let val = n_number!(10.5);
-    state.insert(key.clone(), val.clone());
-    assert_eq!(&val, state.get(Some("user_chained".to_string()).as_ref(), &key).unwrap());
+    state.insert(Symbol::new(None, key.clone()), val.clone());
+    assert_eq!(&val, state.get(&Symbol::new(Some("user_chained".to_string()), key.clone())).unwrap());
 }
 
 #[test]
@@ -76,9 +77,9 @@ fn test_insert_to_root_state_and_get_from_child_state_with_namespace() {
     let mut root_state = State::new("user".to_string());
     let key = "rust-is-terrific".to_string();
     let val = n_number!(10.5);
-    root_state.insert(key.clone(), val.clone());
+    root_state.insert(Symbol::new(None, key.clone()), val.clone());
     let state = State::new_chained(&root_state);
-    assert_eq!(&val, state.get(Some("user".to_string()).as_ref(), &key).unwrap());
+    assert_eq!(&val, state.get(&Symbol::new(Some("user".to_string()), key.clone())).unwrap());
 }
 
 #[test]
@@ -87,8 +88,8 @@ fn test_insert_to_child_state_and_get_none_from_root_state_with_namespace() {
     let key = "rust-is-terrific".to_string();
     let val = n_number!(10.5);
     let mut state = State::new_chained(&root_state);
-    state.insert(key.clone(), val.clone());
-    assert!(root_state.get(Some("user".to_string()).as_ref(), &key).is_none());
+    state.insert(Symbol::new(None, key.clone()), val.clone());
+    assert!(root_state.get(&Symbol::new(Some("user".to_string()), key.clone())).is_none());
 }
 
 #[test]
@@ -96,11 +97,11 @@ fn test_shadow_val_in_root_state_with_namespace() {
     let mut root_state = State::new("user".to_string());
     let key = "rust-is-terrific".to_string();
     let val_in_root = n_number!(10.5);
-    root_state.insert(key.clone(), val_in_root);
+    root_state.insert(Symbol::new(None, key.clone()), val_in_root);
     let val_in_child = n_number!(0_f64);
     let mut state = State::new_chained(&root_state);
-    state.insert(key.clone(), val_in_child.clone());
-    assert_eq!(&val_in_child, state.get(None, &key).unwrap());
+    state.insert(Symbol::new(None, key.clone()), val_in_child.clone());
+    assert_eq!(&val_in_child, state.get(&Symbol::new(None, key.clone())).unwrap());
 }
 
 #[test]
@@ -456,7 +457,7 @@ fn test_eval_quote_builtin_fn() {
 #[test]
 fn test_eval_unquote_builtin_fn() {
     let ref mut state = State::new("user".to_string());
-    state.insert("a".to_string(), n_number![3.]);
+    state.insert(Symbol::new(None, "a".to_string()), n_number![3.]);
     let expr = n_call!["quote", vec![n_list![n_symbol!["+"],
                                              n_call!["unquote", vec![n_symbol!["a"]]],
                                              n_number![1.]]]];
@@ -467,7 +468,8 @@ fn test_eval_unquote_builtin_fn() {
 #[test]
 fn test_eval_unquote_splicing_builtin_fn() {
     let ref mut state = State::new("user".to_string());
-    state.insert("a".to_string(), n_list![n_number![1.], n_number![2.], n_number![3.]]);
+    state.insert(Symbol::new(None, "a".to_string()),
+                 n_list![n_number![1.], n_number![2.], n_number![3.]]);
     let expr = n_call!["quote", vec![n_list![n_symbol!["+"],
                                              n_call!["unquote-splicing", vec![n_symbol!["a"]]],
                                              n_number![1.]]]];

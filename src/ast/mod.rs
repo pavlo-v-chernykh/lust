@@ -49,7 +49,7 @@ impl Node {
 
     pub fn is_call_of(&self, name: &str) -> bool {
         if let Node::Call(ref c) = *self {
-            &c.name()[..] == name
+            &c.symbol().name()[..] == name
         } else {
             false
         }

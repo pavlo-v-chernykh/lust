@@ -117,10 +117,14 @@ macro_rules! n_vec {
 
 #[macro_export]
 macro_rules! n_def {
-    ($sym:expr, $e:expr) => ($crate::Node::Def($crate::nodes::Def::new(
-        $sym.to_string(),
+    ($name:expr, $e:expr) => ($crate::Node::Def($crate::nodes::Def::new(
+        $crate::nodes::Symbol::new(None, $name.to_string()),
         $e,
-    )))
+    )));
+    ($ns:expr, $name:expr, $e:expr) => ($crate::Node::Def($crate::nodes::Def::new(
+        $crate::nodes::Symbol::new(Some($ns.to_string()), $name.to_string()),
+        $e,
+    )));
 }
 
 #[macro_export]
@@ -150,13 +154,11 @@ macro_rules! n_macro {
 #[macro_export]
 macro_rules! n_call {
     ($name:expr, $args:expr) => ($crate::Node::Call($crate::nodes::Call::new(
-        None,
-        $name.to_string(),
+        $crate::nodes::Symbol::new(None, $name.to_string()),
         $args,
     )));
     ($ns:expr, $name:expr, $args:expr) => ($crate::Node::Call($crate::nodes::Call::new(
-        $ns,
-        $name.to_string(),
+        $crate::nodes::Symbol::new($ns, $name.to_string()),
         $args,
     )));
 }
