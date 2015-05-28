@@ -643,13 +643,13 @@ impl<'s> State<'s> {
                     Ok(result)
 
                 },
-                Node::Macro(ref m) => {
-                    if args.len() != m.params().len() {
+                Node::Macro(ref f) => {
+                    if args.len() != f.params().len() {
                         return Err(IncorrectNumberOfArgumentsError(node.clone()))
                     }
 
                     let ref mut macro_state = State::new_chained(self);
-                    for (p, a) in m.params().iter().zip(args.iter()) {
+                    for (p, a) in f.params().iter().zip(args.iter()) {
                         if let Node::Symbol(ref s) = *p {
                             macro_state.insert(s.clone(), a.clone());
                         } else {
@@ -658,7 +658,7 @@ impl<'s> State<'s> {
                     }
 
                     let mut result = n_list![];
-                    for e in m.body() {
+                    for e in f.body() {
                         result = try!(macro_state.eval(&e));
                     }
 

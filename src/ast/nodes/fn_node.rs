@@ -27,6 +27,6 @@ impl Fn {
 
 impl fmt::Display for Fn {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "(fn [{}] {})", format_vec(&self.params[..]), format_vec(&self.body[..]))
+        write!(f, "[{}] {}", format_vec(&self.params[..]), format_vec(&self.body[..]))
     }
 }

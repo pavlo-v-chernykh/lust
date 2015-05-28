@@ -17,7 +17,7 @@ pub enum Node {
     Vec(Vec<Node>),
     Let(nodes::Let),
     Fn(nodes::Fn),
-    Macro(nodes::Macro),
+    Macro(nodes::Fn),
     Def(nodes::Def),
     Call(nodes::Call),
 }
@@ -90,10 +90,10 @@ impl fmt::Display for Node {
                 write!(f, "{}", l)
             },
             Node::Fn(ref fn_node) => {
-                write!(f, "{}", fn_node)
+                write!(f, "(fn {})", fn_node)
             },
-            Node::Macro(ref m) => {
-                write!(f, "{}", m)
+            Node::Macro(ref fn_node) => {
+                write!(f, "(macro {})", fn_node)
             },
             Node::Call(ref c) => {
                 write!(f, "{}", c)
