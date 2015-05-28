@@ -80,7 +80,7 @@ impl<'s> State<'s> {
                 state.state.get(&Symbol::new(Some(state.current.clone()), symbol.name().clone()))
             };
             if let Some(&Node::Alias(ref a)) = v {
-                v = state.state.get(&a.to_symbol());
+                v = state.state.get(a.symbol());
             }
             if v.is_none() && state.parent.is_some() {
                 state = state.parent.unwrap();

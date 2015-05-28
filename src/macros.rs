@@ -178,7 +178,9 @@ macro_rules! n_let {
 #[macro_export]
 macro_rules! n_alias {
     ($ns:expr, $name:expr) => ($crate::Node::Alias(
-        $crate::nodes::Alias::new($ns.to_string(), $name.to_string())
+        $crate::nodes::Alias::new(
+            $crate::nodes::Symbol::new(Some($ns.to_string()), $name.to_string()
+        ))
     ));
 }
 
