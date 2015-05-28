@@ -11,7 +11,7 @@ pub enum Node {
     Bool(nodes::Bool),
     String(nodes::String),
     Symbol(nodes::Symbol),
-    Keyword(nodes::Keyword),
+    Keyword(nodes::Symbol),
     Alias(nodes::Symbol),
     List(Vec<Node>),
     Vec(Vec<Node>),
@@ -68,11 +68,11 @@ impl fmt::Display for Node {
             Node::Symbol(ref s) => {
                 write!(f, "{}", s)
             },
-            Node::Alias(ref a) => {
-                write!(f, "{}", a)
+            Node::Alias(ref s) => {
+                write!(f, "{}", s)
             },
-            Node::Keyword(ref k) => {
-                write!(f, "{}", k)
+            Node::Keyword(ref s) => {
+                write!(f, ":{}", s)
             },
             Node::String(ref s) => {
                 write!(f, "{}", s)

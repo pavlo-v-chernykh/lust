@@ -98,10 +98,10 @@ macro_rules! n_symbol {
 #[macro_export]
 macro_rules! n_keyword {
     ($name:expr) => ($crate::Node::Keyword(
-        $crate::nodes::Keyword::new(None, $name.to_string())
+        $crate::nodes::Symbol::new(None, $name.to_string())
     ));
     ($ns:expr, $name:expr) => ($crate::Node::Keyword(
-        $crate::nodes::Keyword::new($ns, $name.to_string())
+        $crate::nodes::Symbol::new($ns, $name.to_string())
     ));
 }
 
