@@ -20,6 +20,6 @@ impl String {
 
 impl fmt::Display for String {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, r#""{}""#, self.value)
+        write!(f, "{}", self.value)
     }
 }
