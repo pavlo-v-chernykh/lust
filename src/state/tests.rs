@@ -143,9 +143,9 @@ fn test_expand_fn() {
     let ref mut state = State::new("user".to_string());
     let e = n_fn!([n_symbol!("a")],
                   [n_call!["+", vec![n_symbol!("a"), n_number!(1_f64)]]]);
-    let n = n_list![n_symbol!("fn"),
-                    n_vec![n_symbol!("a")],
-                    n_list![n_symbol!("+"), n_symbol!("a"), n_number!(1_f64)]];
+    let n = n_list![vec![n_symbol!("fn"),
+                         n_vec![n_symbol!("a")],
+                         n_list![vec![n_symbol!("+"), n_symbol!("a"), n_number!(1_f64)]]]];
     assert_eq!(e, state.expand(&n).ok().unwrap());
 }
 
@@ -154,9 +154,9 @@ fn test_expand_macro() {
     let ref mut state = State::new("user".to_string());
     let e = n_macro!([n_symbol!("a")],
                      [n_call!["+", vec![n_symbol!("a"), n_number!(1_f64)]]]);
-    let n = n_list![n_symbol!("macro"),
-                    n_vec![n_symbol!("a")],
-                    n_list![n_symbol!("+"), n_symbol!("a"), n_number!(1_f64)]];
+    let n = n_list![vec![n_symbol!("macro"),
+                         n_vec![n_symbol!("a")],
+                         n_list![vec![n_symbol!("+"), n_symbol!("a"), n_number!(1_f64)]]]];
     assert_eq!(e, state.expand(&n).ok().unwrap());
 }
 
@@ -164,7 +164,7 @@ fn test_expand_macro() {
 fn test_expand_def() {
     let ref mut state = State::new("user".to_string());
     let e = n_def!["a", n_number![1_f64]];
-    let n = n_list![n_symbol!["def"], n_symbol!["a"], n_number![1_f64]];
+    let n = n_list![vec![n_symbol!["def"], n_symbol!["a"], n_number![1_f64]]];
     assert_eq!(e, state.expand(&n).ok().unwrap());
 }
 
@@ -172,7 +172,7 @@ fn test_expand_def() {
 fn test_expand_call_fn() {
     let ref mut state = State::new("user".to_string());
     let e = n_call!["+", vec![n_symbol!["a"], n_number![1_f64]]];
-    let n = n_list![n_symbol!["+"], n_symbol!["a"], n_number![1_f64]];
+    let n = n_list![vec![n_symbol!["+"], n_symbol!["a"], n_number![1_f64]]];
     assert_eq!(e, state.expand(&n).ok().unwrap());
 }
 
@@ -183,53 +183,59 @@ fn test_expand_call_macro() {
                                  [n_call!["+", vec![n_symbol!["a"], n_symbol!["b"]]]]]];
     state.eval(&m).ok().unwrap();
     let e = n_number![3.];
-    let n = n_list![n_symbol!["m"], n_number![1.], n_number![2.]];
+    let n = n_list![vec![n_symbol!["m"], n_number![1.], n_number![2.]]];
     assert_eq!(e, state.expand(&n).ok().unwrap());
 }
 
 #[test]
 fn test_expand_quote() {
     let ref mut state = State::new("user".to_string());
-    let n = n_list![n_symbol!["quote"], n_symbol!["a"]];
+    let n = n_list![vec![n_symbol!["quote"], n_symbol!["a"]]];
     assert_eq!(n_call!["quote", vec![n_symbol!["a"]]], state.expand(&n).ok().unwrap());
-    let n = n_list![n_symbol!["quote"],
-                    n_list![n_symbol!["+"], n_symbol!["a"], n_symbol!["b"]]];
-    assert_eq!(n_call!["quote", vec![n_list![n_symbol!["+"], n_symbol!["a"], n_symbol!["b"]]]],
+    let n = n_list![vec![n_symbol!["quote"],
+                         n_list![vec![n_symbol!["+"], n_symbol!["a"], n_symbol!["b"]]]]];
+    assert_eq!(n_call!["quote", vec![n_list![vec![n_symbol!["+"],
+                                                  n_symbol!["a"],
+                                                  n_symbol!["b"]]]]],
                state.expand(&n).ok().unwrap());
 }
 
 #[test]
 fn test_expand_unquote() {
     let ref mut state = State::new("user".to_string());
-    let n = n_list![n_symbol!["quote"], n_list![n_symbol!["a"],
-                                                n_list![n_symbol!["unquote"], n_symbol!["b"]]]];
-    let expected_result = n_call!["quote", vec![n_list![n_symbol!["a"],
-                                                n_call!["unquote", vec![n_symbol!["b"]]]]]];
+    let n = n_list![vec![n_symbol!["quote"], n_list![vec![n_symbol!["a"],
+                                                     n_list![vec![n_symbol!["unquote"],
+                                                                  n_symbol!["b"]]]]]]];
+    let expected_result = n_call!["quote", vec![n_list![vec![n_symbol!["a"],
+                                                             n_call!["unquote",
+                                                                     vec![n_symbol!["b"]]]]]]];
     assert_eq!(expected_result, state.expand(&n).ok().unwrap());
 }
 
 #[test]
 fn test_expand_unquote_splicing() {
     let ref mut state = State::new("user".to_string());
-    let n = n_list![n_symbol!["quote"], n_list![n_symbol!["a"],
-                                                n_list![n_symbol!["unquote-splicing"],
-                                                        n_symbol!["b"]]]];
-    let expected_result = n_call!["quote", vec![n_list![n_symbol!["a"],
-                                                n_call!["unquote-splicing",
-                                                        vec![n_symbol!["b"]]]]]];
+    let n = n_list![vec![n_symbol!["quote"], n_list![vec![n_symbol!["a"],
+                                                          n_list![vec![n_symbol!["unquote-splicing"],
+                                                                       n_symbol!["b"]]]]]]];
+    let expected_result = n_call!["quote", vec![n_list![vec![n_symbol!["a"],
+                                                             n_call!["unquote-splicing",
+                                                                     vec![n_symbol!["b"]]]]]]];
     assert_eq!(expected_result, state.expand(&n).ok().unwrap());
 }
 
 #[test]
 fn test_expand_let() {
     let ref mut state = State::new("user".to_string());
-    let n = n_list![n_symbol!["let"], n_vec![n_symbol!["a"], n_list![n_symbol!["+"],
+    let n = n_list![vec![n_symbol!["let"], n_vec![n_symbol!["a"], n_list![vec![n_symbol!["+"],
                                                                      n_number![1.],
-                                                                     n_number![2.]],
-                                             n_symbol!["b"], n_list![n_symbol!["+"],
+                                                                     n_number![2.]]],
+                                             n_symbol!["b"], n_list![vec![n_symbol!["+"],
                                                                      n_symbol!["a"],
-                                                                     n_number![3.]]],
-                                      n_list![n_symbol!["+"], n_symbol!["a"], n_symbol!["b"]]];
+                                                                     n_number![3.]]]],
+                                      n_list![vec![n_symbol!["+"],
+                                                   n_symbol!["a"],
+                                                   n_symbol!["b"]]]]];
     let expected_result = n_let![[n_symbol!["a"], n_call!["+", vec![n_number![1.], n_number![2.]]],
                                   n_symbol!["b"], n_call!["+", vec![n_symbol!["a"],
                                                                     n_number![3.]]]],
@@ -449,8 +455,10 @@ fn test_eval_gt_builtin_fn_negative_case() {
 #[test]
 fn test_eval_quote_builtin_fn() {
     let ref mut state = State::new("user".to_string());
-    let expr = &n_call!["quote", vec![n_list![n_symbol!["+"], n_symbol!["true"], n_number![1.]]]];
-    let expected_result = n_list![n_symbol!["+"], n_symbol!["true"], n_number![1.]];
+    let expr = &n_call!["quote", vec![n_list![vec![n_symbol!["+"],
+                                                   n_symbol!["true"],
+                                                   n_number![1.]]]]];
+    let expected_result = n_list![vec![n_symbol!["+"], n_symbol!["true"], n_number![1.]]];
     assert_eq!(expected_result, state.eval(&expr).ok().unwrap());
 }
 
@@ -458,10 +466,12 @@ fn test_eval_quote_builtin_fn() {
 fn test_eval_unquote_builtin_fn() {
     let ref mut state = State::new("user".to_string());
     state.insert(Symbol::new(None, "a".to_string()), n_number![3.]);
-    let expr = n_call!["quote", vec![n_list![n_symbol!["+"],
-                                             n_call!["unquote", vec![n_symbol!["a"]]],
-                                             n_number![1.]]]];
-    let expected_result = n_list![n_symbol!["+"], n_number![3.], n_number![1.]];
+    let expr = n_call!["quote", vec![n_list![vec![n_symbol!["+"],
+                                                  n_call!["unquote", vec![n_symbol!["a"]]],
+                                                  n_number![1.]]]]];
+    let expected_result = n_list![vec![n_symbol!["+"],
+                                       n_number![3.],
+                                       n_number![1.]]];
     assert_eq!(expected_result, state.eval(&expr).ok().unwrap());
 }
 
@@ -469,27 +479,29 @@ fn test_eval_unquote_builtin_fn() {
 fn test_eval_unquote_splicing_builtin_fn() {
     let ref mut state = State::new("user".to_string());
     state.insert(Symbol::new(None, "a".to_string()),
-                 n_list![n_number![1.], n_number![2.], n_number![3.]]);
-    let expr = n_call!["quote", vec![n_list![n_symbol!["+"],
-                                             n_call!["unquote-splicing", vec![n_symbol!["a"]]],
-                                             n_number![1.]]]];
-    let expected_result = n_list![n_symbol!["+"],
-                                  n_number![1.],
-                                  n_number![2.],
-                                  n_number![3.],
-                                  n_number![1.]];
+                 n_list![vec![n_number![1.], n_number![2.], n_number![3.]]]);
+    let expr = n_call!["quote", vec![n_list![vec![n_symbol!["+"],
+                                                  n_call!["unquote-splicing", vec![n_symbol!["a"]]],
+                                                  n_number![1.]]]]];
+    let expected_result = n_list![vec![n_symbol!["+"],
+                                       n_number![1.],
+                                       n_number![2.],
+                                       n_number![3.],
+                                       n_number![1.]]];
     assert_eq!(expected_result, state.eval(&expr).ok().unwrap());
 }
 
 #[test]
 fn test_eval_eval_builtin_fn() {
     let ref mut state = State::new("user".to_string());
-    let expr = n_call!["eval", vec![n_list![n_symbol!["+"], n_number![1.], n_number![2.]]]];
+    let expr = n_call!["eval", vec![n_list![vec![n_symbol!["+"],
+                                                 n_number![1.],
+                                                 n_number![2.]]]]];
     let expected_result = n_number![3.];
     assert_eq!(expected_result, state.eval(&expr).ok().unwrap());
-    let expr = n_call!["eval", vec![n_call!["quote", vec![n_list![n_symbol!["+"],
+    let expr = n_call!["eval", vec![n_call!["quote", vec![n_list![vec![n_symbol!["+"],
                                                                   n_number![1.],
-                                                                  n_number![2.]]]]]];
+                                                                  n_number![2.]]]]]]];
     let expected_result = n_number![3.];
     assert_eq!(expected_result, state.eval(&expr).ok().unwrap());
 }

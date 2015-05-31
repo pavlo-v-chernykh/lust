@@ -60,9 +60,9 @@ mod tests {
     fn test_descriptions_for_error_codes() {
         let err = EvalError::ResolveError("name".to_string());
         assert_eq!(r#"Unable to resolve symbol "name""#, format!("{}", err));
-        let err = EvalError::DispatchError(n_list![n_symbol!["def"],
-                                                   n_symbol!["a"],
-                                                   n_number![1.]]);
+        let err = EvalError::DispatchError(n_list![vec![n_symbol!["def"],
+                                                        n_symbol!["a"],
+                                                        n_number![1.]]]);
         assert_eq!(r#"Unable to dispatch expression "(def a 1)""#,
                    format!("{}", err));
         let err = EvalError::IncorrectTypeOfArgumentError(n_symbol!["a"]);

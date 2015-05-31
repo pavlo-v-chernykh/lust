@@ -50,9 +50,9 @@ fn test_parse_ns_qualified_keyword() {
 
 #[test]
 fn test_parse_list_expression() {
-    let expected_result = n_list![n_symbol!("def"),
-                                  n_symbol!("a"),
-                                  n_number!(1_f64)];
+    let expected_result = n_list![vec![n_symbol!("def"),
+                                       n_symbol!("a"),
+                                       n_number!(1_f64)]];
     let mut parser = Parser::new("(def a 1)".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);
@@ -70,11 +70,11 @@ fn test_parse_vec_expression() {
 
 #[test]
 fn test_parse_nested_list_expressions() {
-    let expected_result =  n_list![n_symbol!("def"),
-                                   n_symbol!("a"),
-                                   n_list![n_symbol!("+"),
-                                           n_number!(1_f64),
-                                           n_number!(2_f64)]];
+    let expected_result =  n_list![vec![n_symbol!("def"),
+                                        n_symbol!("a"),
+                                        n_list![vec![n_symbol!("+"),
+                                                     n_number!(1_f64),
+                                                     n_number!(2_f64)]]]];
     let mut parser = Parser::new("(def a (+ 1 2))".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);
@@ -84,9 +84,9 @@ fn test_parse_nested_list_expressions() {
 fn test_parse_nested_vec_expressions() {
     let expected_result =  n_vec![n_number!(1.),
                                   n_number!(2.),
-                                  n_list![n_symbol!("+"),
-                                          n_number!(1_f64),
-                                          n_number!(2_f64)],
+                                  n_list![vec![n_symbol!("+"),
+                                               n_number!(1_f64),
+                                               n_number!(2_f64)]],
                                   n_keyword!["k"]];
     let mut parser = Parser::new("[1 2 (+ 1 2) :k]".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
@@ -95,10 +95,10 @@ fn test_parse_nested_vec_expressions() {
 
 #[test]
 fn test_parse_quoted_list() {
-    let expected_result =  n_list![n_symbol!["quote"],
-                                   n_list![n_symbol!["+"],
-                                           n_number![1.],
-                                           n_number![2.]]];
+    let expected_result =  n_list![vec![n_symbol!["quote"],
+                                        n_list![vec![n_symbol!["+"],
+                                                     n_number![1.],
+                                                     n_number![2.]]]]];
     let mut parser = Parser::new("'(+ 1 2)".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);
@@ -106,8 +106,8 @@ fn test_parse_quoted_list() {
 
 #[test]
 fn test_parse_unquoted_symbol() {
-    let expected_result =  n_list![n_symbol!["unquote"],
-                                   n_symbol!["symbol"]];
+    let expected_result =  n_list![vec![n_symbol!["unquote"],
+                                        n_symbol!["symbol"]]];
     let mut parser = Parser::new("~symbol".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);
@@ -115,10 +115,10 @@ fn test_parse_unquoted_symbol() {
 
 #[test]
 fn test_parse_unquoted_splicing_list() {
-    let expected_result =  n_list![n_symbol!["unquote-splicing"],
-                                   n_list![n_number![1.],
-                                           n_number![2.],
-                                           n_number![3.]]];
+    let expected_result =  n_list![vec![n_symbol!["unquote-splicing"],
+                                        n_list![vec![n_number![1.],
+                                                     n_number![2.],
+                                                     n_number![3.]]]]];
     let mut parser = Parser::new("~@(1 2 3)".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);
@@ -126,10 +126,10 @@ fn test_parse_unquoted_splicing_list() {
 
 #[test]
 fn test_parse_syntax_quoted_list() {
-    let expected_result = n_list![n_symbol!["syntax-quote"],
-                                  n_list![n_symbol!["+"],
-                                          n_number![1.],
-                                          n_number![2.]]];
+    let expected_result = n_list![vec![n_symbol!["syntax-quote"],
+                                       n_list![vec![n_symbol!["+"],
+                                                    n_number![1.],
+                                                    n_number![2.]]]]];
     let mut parser = Parser::new("`(+ 1 2)".chars());
     assert_eq!(expected_result, parser.next().unwrap().ok().unwrap());
 }

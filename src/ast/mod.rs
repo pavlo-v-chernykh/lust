@@ -13,7 +13,7 @@ pub enum Node {
     Symbol(nodes::Symbol),
     Keyword(nodes::Symbol),
     Alias(nodes::Symbol),
-    List(Vec<Node>),
+    List(nodes::List),
     Vec(Vec<Node>),
     Let(nodes::Let),
     Fn(nodes::Fn),
@@ -78,7 +78,7 @@ impl fmt::Display for Node {
                 write!(f, r#""{}""#, s)
             },
             Node::List(ref l) => {
-                write!(f, "({})", format_vec(l))
+                write!(f, "({})", l)
             },
             Node::Vec(ref v) => {
                 write!(f, "[{}]", format_vec(v))

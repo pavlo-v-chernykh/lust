@@ -123,10 +123,10 @@ impl<'s> State<'s> {
             },
             Node::List(ref l) => {
                 let mut v = vec![];
-                for e in l {
+                for e in l.list() {
                     if e.is_call_of("unquote-splicing") {
                         if let Node::List(ref l) = try!(self.eval(&e)) {
-                            for e in l {
+                            for e in l.list() {
                                 v.push(e.clone())
                             }
                         } else {
@@ -136,7 +136,7 @@ impl<'s> State<'s> {
                         v.push(try!(self.eval_quoted(&e)))
                     }
                 }
-                Ok(Node::List(v))
+                Ok(n_list![v])
             },
             _ => {
                 self.eval(node)
@@ -675,8 +675,8 @@ impl<'s> State<'s> {
 
     fn expand(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if l.len() > 0 {
-                if let Node::Symbol(ref s) = l[0] {
+            if l.list().len() > 0 {
+                if let Node::Symbol(ref s) = l.list()[0] {
                     match &s.name()[..] {
                         "def" => {
                             return self.expand_def(node)
@@ -707,7 +707,7 @@ impl<'s> State<'s> {
                         }
                     }
                 } else {
-                    return Err(DispatchError(l[0].clone()))
+                    return Err(DispatchError(l.list()[0].clone()))
                 }
             }
         }
@@ -716,15 +716,15 @@ impl<'s> State<'s> {
 
     fn expand_quoted(&mut self, node: &Node) -> EvalResult {
         match *node {
-            Node::List(ref l) if l.len() > 0 => {
-                if l[0].is_symbol("unquote") || l[0].is_symbol("unquote-splicing") {
+            Node::List(ref l) if l.list().len() > 0 => {
+                if l.list()[0].is_symbol("unquote") || l.list()[0].is_symbol("unquote-splicing") {
                     self.expand(node)
                 } else {
                     let mut v = vec![];
-                    for i in l {
+                    for i in l.list() {
                         v.push(try!(self.expand_quoted(i)));
                     }
-                    Ok(Node::List(v))
+                    Ok(n_list![v])
                 }
             },
             _ => {
@@ -738,15 +738,15 @@ impl<'s> State<'s> {
             Node::Symbol(ref s) if s.ns().is_none() => {
                 Ok(n_symbol![Some(self.get_current().clone()), s.name()])
             },
-            Node::List(ref l) if l.len() > 0 => {
-                if l[0].is_symbol("unquote") || l[0].is_symbol("unquote-splicing") {
+            Node::List(ref l) if l.list().len() > 0 => {
+                if l.list()[0].is_symbol("unquote") || l.list()[0].is_symbol("unquote-splicing") {
                     self.expand(node)
                 } else {
                     let mut v = vec![];
-                    for i in l {
+                    for i in l.list() {
                         v.push(try!(self.expand_syntax_quoted(i)));
                     }
-                    Ok(Node::List(v))
+                    Ok(n_list![v])
                 }
             },
             _ => {
@@ -757,11 +757,11 @@ impl<'s> State<'s> {
 
     fn expand_def(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if l.len() == 3 {
-                if let Node::Symbol(ref s) = l[1] {
-                    Ok(n_def![s.name(), try!(self.expand(&l[2]))])
+            if l.list().len() == 3 {
+                if let Node::Symbol(ref s) = l.list()[1] {
+                    Ok(n_def![s.name(), try!(self.expand(&l.list()[2]))])
                 } else {
-                    Err(IncorrectTypeOfArgumentError(l[1].clone()))
+                    Err(IncorrectTypeOfArgumentError(l.list()[1].clone()))
                 }
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
@@ -773,19 +773,19 @@ impl<'s> State<'s> {
 
     fn expand_fn(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if l.len() >= 3 {
-                if let Node::Vec(ref params) = l[1] {
+            if l.list().len() >= 3 {
+                if let Node::Vec(ref params) = l.list()[1] {
                     let mut fn_params = vec![];
                     for p in params {
                         fn_params.push(try!(self.expand(p)))
                     }
                     let mut fn_body = vec![];
-                    for be in &l[2..] {
+                    for be in &l.list()[2..] {
                         fn_body.push(try!(self.expand(be)))
                     }
                     Ok(n_fn![fn_params, fn_body])
                 } else {
-                    Err(IncorrectTypeOfArgumentError(l[1].clone()))
+                    Err(IncorrectTypeOfArgumentError(l.list()[1].clone()))
                 }
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
@@ -797,19 +797,19 @@ impl<'s> State<'s> {
 
     fn expand_macro(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if l.len() >= 3 {
-                if let Node::Vec(ref params) = l[1] {
+            if l.list().len() >= 3 {
+                if let Node::Vec(ref params) = l.list()[1] {
                     let mut macro_params = vec![];
                     for p in params {
                         macro_params.push(try!(self.expand(p)))
                     }
                     let mut macro_body = vec![];
-                    for be in &l[2..] {
+                    for be in &l.list()[2..] {
                         macro_body.push(try!(self.expand(be)))
                     }
                     Ok(n_macro![macro_params, macro_body])
                 } else {
-                    Err(IncorrectTypeOfArgumentError(l[1].clone()))
+                    Err(IncorrectTypeOfArgumentError(l.list()[1].clone()))
                 }
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
@@ -821,8 +821,8 @@ impl<'s> State<'s> {
 
     fn expand_quote(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if l.len() == 2 {
-                Ok(n_call!["quote", vec![try!(self.expand_quoted(&l[1]))]])
+            if l.list().len() == 2 {
+                Ok(n_call!["quote", vec![try!(self.expand_quoted(&l.list()[1]))]])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -833,8 +833,8 @@ impl<'s> State<'s> {
 
     fn expand_syntax_quote(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if l.len() == 2 {
-                Ok(n_call!["syntax-quote", vec![try!(self.expand_syntax_quoted(&l[1]))]])
+            if l.list().len() == 2 {
+                Ok(n_call!["syntax-quote", vec![try!(self.expand_syntax_quoted(&l.list()[1]))]])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -845,8 +845,8 @@ impl<'s> State<'s> {
 
     fn expand_unquote(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if l.len() == 2 {
-                Ok(n_call!["unquote", vec![try!(self.expand(&l[1]))]])
+            if l.list().len() == 2 {
+                Ok(n_call!["unquote", vec![try!(self.expand(&l.list()[1]))]])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -857,8 +857,8 @@ impl<'s> State<'s> {
 
     fn expand_unquote_splicing(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if l.len() == 2 {
-                Ok(n_call!["unquote-splicing", vec![try!(self.expand(&l[1]))]])
+            if l.list().len() == 2 {
+                Ok(n_call!["unquote-splicing", vec![try!(self.expand(&l.list()[1]))]])
             } else {
                 Err(IncorrectNumberOfArgumentsError(node.clone()))
             }
@@ -869,8 +869,8 @@ impl<'s> State<'s> {
 
     fn expand_let(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if l.len() >= 3 {
-                if let Node::Vec(ref v) = l[1] {
+            if l.list().len() >= 3 {
+                if let Node::Vec(ref v) = l.list()[1] {
                     if v.len() % 2 == 0 {
                         let mut let_bindings = vec![];
                         for c in v.chunks(2) {
@@ -886,7 +886,7 @@ impl<'s> State<'s> {
                             }
                         }
                         let mut let_body = vec![];
-                        for be in &l[2..] {
+                        for be in &l.list()[2..] {
                             let_body.push(try!(self.expand(be)))
                         }
                         Ok(n_let![let_bindings, let_body])
@@ -906,9 +906,9 @@ impl<'s> State<'s> {
 
     fn expand_call(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
-            if let Node::Symbol(ref s) = l[0] {
+            if let Node::Symbol(ref s) = l.list()[0] {
                 let mut args = vec![];
-                for a in &l[1..] {
+                for a in &l.list()[1..] {
                     args.push(try!(self.expand(a)))
                 }
                 let call = n_call![s.ns().map(|ns| ns.clone()), s.name().clone(), args];
@@ -918,7 +918,7 @@ impl<'s> State<'s> {
                     Ok(call)
                 }
             } else {
-                Err(IncorrectTypeOfArgumentError(l[0].clone()))
+                Err(IncorrectTypeOfArgumentError(l.list()[0].clone()))
             }
         } else {
             Err(DispatchError(node.clone()))

@@ -89,11 +89,11 @@ impl<I: Iterator<Item=char>> Parser<I> {
     }
 
     fn parse_list(&mut self) -> ParserResult {
-        let mut list = Vec::new();
+        let mut list = vec![];
         loop {
             self.bump();
             if let Some(Ok(Token::ListEnd { .. })) = self.token {
-                return Ok(Node::List(list))
+                return Ok(n_list![list])
             }
             list.push(try!(self.parse_expr()))
         }
@@ -112,21 +112,21 @@ impl<I: Iterator<Item=char>> Parser<I> {
 
     fn parse_quoted(&mut self) -> ParserResult {
         self.bump();
-        Ok(n_list![n_symbol!["quote"], try!(self.parse_expr())])
+        Ok(n_list![vec![n_symbol!["quote"], try!(self.parse_expr())]])
     }
 
     fn parse_unquoted(&mut self) -> ParserResult {
         self.bump();
-        Ok(n_list![n_symbol!["unquote"], try!(self.parse_expr())])
+        Ok(n_list![vec![n_symbol!["unquote"], try!(self.parse_expr())]])
     }
 
     fn parse_unquoted_splicing(&mut self) -> ParserResult {
         self.bump();
-        Ok(n_list![n_symbol!["unquote-splicing"], try!(self.parse_expr())])
+        Ok(n_list![vec![n_symbol!["unquote-splicing"], try!(self.parse_expr())]])
     }
 
     fn parse_syntax_quote(&mut self) -> ParserResult {
         self.bump();
-        Ok(n_list![n_symbol!["syntax-quote"], try!(self.parse_expr())])
+        Ok(n_list![vec![n_symbol!["syntax-quote"], try!(self.parse_expr())]])
     }
 }

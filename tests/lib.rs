@@ -12,10 +12,10 @@ fn test_macro_expansion() {
                     .ok().unwrap();
     assert_eq!(expr, n_macro![[n_symbol!["a"]],
                               [n_call!["quote",
-                                       vec![n_list![n_symbol!["+"],
-                                                    n_number![1.],
-                                                    n_call!["unquote",
-                                                            vec![n_symbol!["a"]]]]]]]]);
+                                       vec![n_list![vec![n_symbol!["+"],
+                                                         n_number![1.],
+                                                         n_call!["unquote",
+                                                                 vec![n_symbol!["a"]]]]]]]]]);
     let input = "(def f (fn [b] (m b)))";
     let expr = state.eval(&Parser::new(input.chars())
                                   .next().unwrap().ok().unwrap())

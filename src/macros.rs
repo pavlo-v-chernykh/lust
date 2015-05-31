@@ -107,7 +107,8 @@ macro_rules! n_keyword {
 
 #[macro_export]
 macro_rules! n_list {
-    ($($e:expr),*) => ($crate::Node::List(vec![$($e),*]))
+    () => ($crate::Node::List($crate::nodes::List::new(vec![])));
+    ($list:expr) => ($crate::Node::List($crate::nodes::List::new($list)))
 }
 
 #[macro_export]
