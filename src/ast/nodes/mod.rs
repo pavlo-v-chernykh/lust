@@ -7,6 +7,7 @@ mod list;
 mod number;
 mod string;
 mod symbol;
+mod vector;
 
 pub use self::bool::Bool;
 pub use self::call::Call;
@@ -17,3 +18,4 @@ pub use self::list::List;
 pub use self::number::Number;
 pub use self::symbol::Symbol;
 pub use self::string::String;
+pub use self::vector::Vector;
