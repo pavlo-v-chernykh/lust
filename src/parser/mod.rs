@@ -100,13 +100,13 @@ impl<I: Iterator<Item=char>> Parser<I> {
     }
 
     fn parse_vec(&mut self) -> ParserResult {
-        let mut vec = Vec::new();
+        let mut v = Vec::new();
         loop {
             self.bump();
             if let Some(Ok(Token::VecEnd { .. })) = self.token {
-                return Ok(Node::Vec(vec))
+                return Ok(n_vec![v])
             }
-            vec.push(try!(self.parse_expr()))
+            v.push(try!(self.parse_expr()))
         }
     }
 

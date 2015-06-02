@@ -113,7 +113,7 @@ macro_rules! n_list {
 
 #[macro_export]
 macro_rules! n_vec {
-    ($($e:expr),*) => ($crate::Node::Vec(vec![$($e),*]))
+    ($vec:expr) => ($crate::Node::Vector($crate::nodes::Vector::new($vec)))
 }
 
 #[macro_export]

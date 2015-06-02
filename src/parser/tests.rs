@@ -60,9 +60,9 @@ fn test_parse_list_expression() {
 
 #[test]
 fn test_parse_vec_expression() {
-    let expected_result = n_vec![n_keyword!("1"),
-                                 n_keyword!("2"),
-                                 n_keyword!("3")];
+    let expected_result = n_vec![vec![n_keyword!("1"),
+                                      n_keyword!("2"),
+                                      n_keyword!("3")]];
     let mut parser = Parser::new("[:1 :2 :3]".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);
@@ -82,12 +82,12 @@ fn test_parse_nested_list_expressions() {
 
 #[test]
 fn test_parse_nested_vec_expressions() {
-    let expected_result =  n_vec![n_number!(1.),
-                                  n_number!(2.),
-                                  n_list![vec![n_symbol!("+"),
-                                               n_number!(1_f64),
-                                               n_number!(2_f64)]],
-                                  n_keyword!["k"]];
+    let expected_result =  n_vec![vec![n_number!(1.),
+                                       n_number!(2.),
+                                       n_list![vec![n_symbol!("+"),
+                                                    n_number!(1_f64),
+                                                    n_number!(2_f64)]],
+                                  n_keyword!["k"]]];
     let mut parser = Parser::new("[1 2 (+ 1 2) :k]".chars());
     let actual_result = parser.next().unwrap().ok().unwrap();
     assert_eq!(expected_result, actual_result);

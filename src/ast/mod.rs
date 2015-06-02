@@ -3,7 +3,6 @@ mod tests;
 pub mod nodes;
 
 use std::fmt;
-use utils::format_vec;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Node {
@@ -14,7 +13,7 @@ pub enum Node {
     Keyword(nodes::Symbol),
     Alias(nodes::Symbol),
     List(nodes::List),
-    Vec(Vec<Node>),
+    Vector(nodes::Vector),
     Let(nodes::Let),
     Fn(nodes::Fn),
     Macro(nodes::Fn),
@@ -80,8 +79,8 @@ impl fmt::Display for Node {
             Node::List(ref l) => {
                 write!(f, "({})", l)
             },
-            Node::Vec(ref v) => {
-                write!(f, "[{}]", format_vec(v))
+            Node::Vector(ref v) => {
+                write!(f, "[{}]", v)
             },
             Node::Def(ref d) => {
                 write!(f, "{}", d)

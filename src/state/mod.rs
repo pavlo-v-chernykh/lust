@@ -501,8 +501,10 @@ impl<'s> State<'s> {
             let args = c.args();
             if args.len() == 2 {
                 if let Node::Symbol(ref s) = args[0] {
-                    if let Node::Vec(v) = try!(self.eval(&args[1])) {
-                        self.eval(&n_call![s.ns().map(|ns| ns.clone()), s.name().clone(), v])
+                    if let Node::Vector(ref v) = try!(self.eval(&args[1])) {
+                        let mut vec = vec![];
+                        vec.extend(v.vector().iter().map(|n| n.clone()));
+                        self.eval(&n_call![s.ns().map(|ns| ns.clone()), s.name().clone(), vec])
                     } else {
                         Err(IncorrectTypeOfArgumentError(args[1].clone()))
                     }
@@ -774,9 +776,9 @@ impl<'s> State<'s> {
     fn expand_fn(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.list().len() >= 3 {
-                if let Node::Vec(ref params) = l.list()[1] {
+                if let Node::Vector(ref params) = l.list()[1] {
                     let mut fn_params = vec![];
-                    for p in params {
+                    for p in params.vector() {
                         fn_params.push(try!(self.expand(p)))
                     }
                     let mut fn_body = vec![];
@@ -798,9 +800,9 @@ impl<'s> State<'s> {
     fn expand_macro(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.list().len() >= 3 {
-                if let Node::Vec(ref params) = l.list()[1] {
+                if let Node::Vector(ref params) = l.list()[1] {
                     let mut macro_params = vec![];
-                    for p in params {
+                    for p in params.vector() {
                         macro_params.push(try!(self.expand(p)))
                     }
                     let mut macro_body = vec![];
@@ -870,10 +872,10 @@ impl<'s> State<'s> {
     fn expand_let(&mut self, node: &Node) -> EvalResult {
         if let Node::List(ref l) = *node {
             if l.list().len() >= 3 {
-                if let Node::Vec(ref v) = l.list()[1] {
-                    if v.len() % 2 == 0 {
+                if let Node::Vector(ref v) = l.list()[1] {
+                    if v.vector().len() % 2 == 0 {
                         let mut let_bindings = vec![];
-                        for c in v.chunks(2) {
+                        for c in v.vector().chunks(2) {
                             if let Some(s @ &Node::Symbol(..)) = c.first() {
                                 let_bindings.push(s.clone())
                             } else {

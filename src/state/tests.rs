@@ -144,7 +144,7 @@ fn test_expand_fn() {
     let e = n_fn!([n_symbol!("a")],
                   [n_call!["+", vec![n_symbol!("a"), n_number!(1_f64)]]]);
     let n = n_list![vec![n_symbol!("fn"),
-                         n_vec![n_symbol!("a")],
+                         n_vec![vec![n_symbol!("a")]],
                          n_list![vec![n_symbol!("+"), n_symbol!("a"), n_number!(1_f64)]]]];
     assert_eq!(e, state.expand(&n).ok().unwrap());
 }
@@ -155,7 +155,7 @@ fn test_expand_macro() {
     let e = n_macro!([n_symbol!("a")],
                      [n_call!["+", vec![n_symbol!("a"), n_number!(1_f64)]]]);
     let n = n_list![vec![n_symbol!("macro"),
-                         n_vec![n_symbol!("a")],
+                         n_vec![vec![n_symbol!("a")]],
                          n_list![vec![n_symbol!("+"), n_symbol!("a"), n_number!(1_f64)]]]];
     assert_eq!(e, state.expand(&n).ok().unwrap());
 }
@@ -227,12 +227,14 @@ fn test_expand_unquote_splicing() {
 #[test]
 fn test_expand_let() {
     let ref mut state = State::new("user".to_string());
-    let n = n_list![vec![n_symbol!["let"], n_vec![n_symbol!["a"], n_list![vec![n_symbol!["+"],
-                                                                     n_number![1.],
-                                                                     n_number![2.]]],
-                                             n_symbol!["b"], n_list![vec![n_symbol!["+"],
-                                                                     n_symbol!["a"],
-                                                                     n_number![3.]]]],
+    let n = n_list![vec![n_symbol!["let"], n_vec![vec![n_symbol!["a"],
+                                                       n_list![vec![n_symbol!["+"],
+                                                                    n_number![1.],
+                                                                    n_number![2.]]],
+                                                       n_symbol!["b"],
+                                                       n_list![vec![n_symbol!["+"],
+                                                                    n_symbol!["a"],
+                                                                    n_number![3.]]]]],
                                       n_list![vec![n_symbol!["+"],
                                                    n_symbol!["a"],
                                                    n_symbol!["b"]]]]];
