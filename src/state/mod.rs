@@ -90,6 +90,10 @@ impl<'s> State<'s> {
         }
     }
 
+    fn contains(&self, symbol: &Symbol) -> bool {
+        self.state.contains_key(symbol)
+    }
+
     fn get_current(&self) -> &String {
         &self.current
     }
@@ -175,59 +179,60 @@ impl<'s> State<'s> {
 
     fn eval_call(&mut self, node: &Node) -> EvalResult {
         if let Node::Call(ref c) = *node {
+            let is_contains = self.contains(c.symbol());
             match &c.symbol().name()[..] {
-                "+" => {
+                "+" if !is_contains => {
                     self.eval_call_builtin_plus(node)
                 },
-                "-" => {
+                "-" if !is_contains => {
                     self.eval_call_builtin_minus(node)
                 },
-                "*" => {
+                "*" if !is_contains => {
                     self.eval_call_builtin_mul(node)
                 },
-                "/" => {
+                "/" if !is_contains => {
                     self.eval_call_builtin_div(node)
                 },
-                "<" => {
+                "<" if !is_contains => {
                     self.eval_call_builtin_lt(node)
                 },
-                ">" => {
+                ">" if !is_contains => {
                     self.eval_call_builtin_gt(node)
                 },
-                "=" => {
+                "=" if !is_contains => {
                     self.eval_call_builtin_eq(node)
                 },
-                "if" => {
+                "if" if !is_contains => {
                     self.eval_call_builtin_if(node)
                 },
-                "quote" => {
+                "quote" if !is_contains => {
                     self.eval_call_builtin_quote(node)
                 },
-                "syntax-quote" => {
+                "syntax-quote" if !is_contains => {
                     self.eval_call_builtin_syntax_quote(node)
                 },
-                "unquote" => {
+                "unquote" if !is_contains => {
                     self.eval_call_builtin_unquote(node)
                 },
-                "unquote-splicing" => {
+                "unquote-splicing" if !is_contains => {
                     self.eval_call_builtin_unquote_splicing(node)
                 },
-                "eval" => {
+                "eval" if !is_contains => {
                     self.eval_call_builtin_eval(node)
                 },
-                "apply" => {
+                "apply" if !is_contains => {
                     self.eval_call_builtin_apply(node)
                 },
-                "gensym" => {
+                "gensym" if !is_contains => {
                     self.eval_call_builtin_gensym(node)
                 },
-                "in-ns" => {
+                "in-ns" if !is_contains => {
                     self.eval_call_builtin_in_ns(node)
                 },
-                "load" => {
+                "load" if !is_contains => {
                     self.eval_call_builtin_load(node)
                 },
-                "refer" => {
+                "refer" if !is_contains => {
                     self.eval_call_builtin_refer(node)
                 },
                 _ => {
