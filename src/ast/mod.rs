@@ -12,7 +12,7 @@ pub enum Node {
     Symbol(nodes::Symbol),
     Keyword(nodes::Symbol),
     Alias(nodes::Symbol),
-    List(nodes::List),
+    List(nodes::Vector),
     Vector(nodes::Vector),
     Let(nodes::Let),
     Fn(nodes::Fn),
