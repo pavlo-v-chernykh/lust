@@ -75,7 +75,7 @@ fn main() {
 
 
     if args.flag_interactive {
-        let mut stdin = io::stdin();
+        let stdin = io::stdin();
         let mut stdout = io::stdout();
 
         loop {
