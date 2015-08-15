@@ -10,14 +10,18 @@ use docopt::Docopt;
 use lust::Parser;
 use lust::State;
 
+macro_rules! println_error {
+    ($err:expr) => (println!("Whoops, error detected.\n{}.\n\
+                              Please, try again...", $err))
+}
+
 macro_rules! try_ok {
     ($e:expr) => (match $e {
         Ok(res) => {
             res
         },
         Err(err) => {
-            return println!("Whoops, error detected.\n{}.\n\
-                             Please, try again...", err)
+            return println_error!(err)
         }
     })
 }
@@ -56,14 +60,10 @@ fn main() {
                     last_evaled = Some(try_ok!(state.eval(&try_ok!(parsed_expr))));
                 }
             } else {
-                return println!("Whoops, error detected.\n\
-                                 Specified path is not a file.\n\
-                                 Please, specify existing file.");
+                return println_error!("Specified path is not a file.");
             }
         } else {
-            return println!("Whoops, error detected.\n\
-                             File doesn't exist.\n\
-                             Please, specify existing file.");
+            return println_error!("File doesn't exist.");
         }
     }
 
@@ -91,14 +91,12 @@ fn main() {
                                     println!("{}", res);
                                 },
                                 Err(err) => {
-                                    println!("Whoops, error detected.\n{}.\n\
-                                              Please, try again...", err);
+                                    println_error!(err);
                                 }
                             }
                         },
                         Err(err) => {
-                            println!("Whoops, error detected.\n{}.\n\
-                                      Please, try again...", err)
+                            println_error!(err);
                         },
                     }
                 }
