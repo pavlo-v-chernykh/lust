@@ -1,7 +1,7 @@
 [package]
 
 name = "lust"
-version = "0.0.1"
+version = "0.1.0"
 description = "LISP interpreter implemented in Rust"
 license = "MIT"
 readme = "README.md"

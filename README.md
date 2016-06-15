@@ -4,7 +4,7 @@ Lisp interpreter implemented in Rust
 
 Work on rust nightly.
 
-Use nice [multirust][multirust] tool for managing your Rust toolchains.
+Use nice [rustup][rustup] tool for managing your Rust toolchains.
 
 ## Usage
 
@@ -23,4 +23,4 @@ Options:
 
 It's more about learning Rust :)
 
-[multirust]: https://github.com/brson/multirust
+[rustup]: https://www.rustup.rs/

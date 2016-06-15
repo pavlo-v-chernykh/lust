@@ -16,12 +16,14 @@ macro_rules! println_error {
 }
 
 macro_rules! try_ok {
-    ($e:expr) => (match $e {
-        Ok(res) => {
-            res
-        },
-        Err(err) => {
-            return println_error!(err)
+    ($e:expr) => ({
+        match $e {
+            Ok(res) => {
+                res
+            },
+            Err(err) => {
+                return println_error!(err)
+            }
         }
     })
 }

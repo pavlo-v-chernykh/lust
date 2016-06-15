@@ -3,7 +3,6 @@ mod error;
 mod tests;
 
 use ast::Node;
-use ast::nodes::Symbol;
 use lexer::{Token, Lexer, LexerResult};
 
 pub use self::error::ParserError;
